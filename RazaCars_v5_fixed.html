@@ -208,8 +208,39 @@ async function calcMonth(drv,y,m){
   const ym=`${y}-${pad(m)}`;
   const q=query(collection(db,'entries'),where('driverId','==',drv.id),where('yearMonth','==',ym));
   const s=await getDocs(q);
-  let t={pT:0,cT:0,uA:0,uC:0,cC:0,ex:0,tip:0,adj:0,rent:0,income:0,phys:0,actualCash:0,salary:0,netSal:0,bal:0,days:0};
-  s.docs.forEach(d=>{const c=calcDay(d.data(),drv.salType,drv.salParams);Object.keys(t).forEach(k=>{if(k!=='days')t[k]+=c[k]||0;});t.days++;});
+  if(s.empty)return{pT:0,cT:0,uA:0,uC:0,cC:0,tip:0,adj:0,rent:0,driverExp:0,income:0,phys:0,actualCash:0,totalInHand:0,salary:0,netSal:0,bal:0,days:0};
+
+  // Accumulate raw fields first (not salary — salary depends on type)
+  let t={pT:0,cT:0,uA:0,uC:0,cC:0,tip:0,adj:0,rent:0,driverExp:0,income:0,phys:0,actualCash:0,totalInHand:0,salary:0,netSal:0,bal:0,days:0};
+  s.docs.forEach(d=>{
+    const e=d.data();
+    t.pT+=+e.paidTrans||0; t.cT+=+e.cashTrans||0; t.uA+=+e.uberApp||0;
+    t.uC+=+e.uberCash||0;  t.cC+=+e.cardCash||0;  t.tip+=+e.tip||0;
+    t.adj+=+e.adjustment||0; t.rent+=+e.carRent||0;
+    t.driverExp+=(+e.driverExp||0)+(+e.cashFuel||0)+(+e.expenses||0);
+    t.days++;
+  });
+  t.income=t.pT+t.cT+t.uA;
+  t.phys=t.uC+t.cT;
+  t.actualCash=t.phys-t.cC;
+  t.totalInHand=t.phys+t.tip;
+
+  // Calculate salary ONCE on monthly totals (correct for base_bonus)
+  const p=drv.salParams||{};
+  if(drv.salType==='base_bonus'){
+    const base=+p.base||1600,thr=+p.thr||6000,bp=+p.bonusPct||40;
+    t.salary=t.income<=thr?base:base+(bp/100)*(t.income-thr);
+  }else if(drv.salType==='uber_pct'){
+    const pct=+p.pct||35,ud=+p.uberDeduct||10;
+    t.salary=t.uA*(1-ud/100)*(pct/100)+(t.pT+t.cT)*(pct/100);
+  }else if(drv.salType==='flat_pct'){
+    t.salary=t.income*(+p.pct||35)/100;
+  }else if(drv.salType==='custom'){
+    t.salary=(t.pT+t.cT)*(+p.tPct||35)/100+t.uA*(1-(+p.uberDeduct||10)/100)*((+p.uPct||35)/100);
+  }
+
+  t.netSal=t.salary+t.tip-t.rent+t.driverExp;
+  t.bal=(t.actualCash-t.netSal)-t.adj;
   return t;
 }
 
