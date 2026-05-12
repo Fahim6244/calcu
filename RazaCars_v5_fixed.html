@@ -6,6 +6,23 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<!-- v8 -->
+<script>
+// Force fresh load — kills browser cache on every visit
+(function(){
+  const key='rc_ver';
+  const ver='v7';
+  if(sessionStorage.getItem(key)!==ver){
+    sessionStorage.setItem(key,ver);
+    // Add cache-busting param and reload if not already there
+    const url=new URL(window.location.href);
+    if(!url.searchParams.get('_rc')){
+      url.searchParams.set('_rc',Date.now());
+      window.location.replace(url.toString());
+    }
+  }
+})();
+</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Raza Cars</title>
@@ -248,9 +265,21 @@ async function calcMonth(drv,y,m){
 }
 
 async function getDebt(drv){
-  let total=0;
+  // Get all distinct yearMonths this driver has entries for
   const eq=query(collection(db,'entries'),where('driverId','==',drv.id));
-  const es=await getDocs(eq);es.docs.forEach(d=>total+=calcDay(d.data(),drv.salType,drv.salParams).bal);
+  const es=await getDocs(eq);
+  const months=new Set();
+  es.docs.forEach(d=>{const ym=d.data().yearMonth;if(ym)months.add(ym);});
+  // Also derive from date if yearMonth missing
+  es.docs.forEach(d=>{const dt=d.data().date;if(!d.data().yearMonth&&dt)months.add(dt.slice(0,7));});
+  // Sum balance across all months using calcMonth (correct salary per month)
+  let total=0;
+  for(const ym of months){
+    const [yStr,mStr]=ym.split('-');
+    const t=await calcMonth(drv,+yStr,+mStr);
+    total+=t.bal;
+  }
+  // Add unpaid advances
   const aq=query(collection(db,'advances'),where('driverId','==',drv.id),where('repaid','==',false));
   const as=await getDocs(aq);as.docs.forEach(d=>total+=+d.data().amount||0);
   return total;
@@ -762,7 +791,9 @@ window.exportCSV=async()=>{
   for(const d of drivers){
     const q=query(collection(db,'entries'),where('driverId','==',d.id),where('yearMonth','==',`${rY}-${pad(rM)}`));
     const s=await getDocs(q);
-    s.docs.forEach(e=>{const c=calcDay(e.data(),d.salType,d.salParams);csv+=`"${d.name}",${e.data().date},${c.pT},${c.cT},${c.uA},${c.income},${c.ex},${c.salary.toFixed(2)},${c.rent.toFixed(2)},${c.netSal.toFixed(2)},${c.bal.toFixed(2)},${e.data().status||'saved'}\n`;});
+    // For CSV: use monthly salary ÷ days for per-row salary (correct for base_bonus)
+    const tM=await calcMonth(d,rY,rM);const salPerDay=tM.days>0?tM.salary/tM.days:0;
+    s.docs.forEach(e=>{const c=calcDay(e.data(),d.salType,d.salParams);const dailySal=salPerDay;const dailyExp=(+e.data().driverExp||0)+(+e.data().cashFuel||0)+(+e.data().expenses||0);const dailyNet=dailySal+(+e.data().tip||0)+dailyExp;csv+=`"${d.name}",${e.data().date},${c.pT},${c.cT},${c.uA},${c.income},${dailyExp.toFixed(2)},${dailySal.toFixed(2)},0,${dailyNet.toFixed(2)},,${e.data().status||'saved'}\n`;});
   }
   const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`RazaCars_${rY}_${rM}.csv`;a.click();URL.revokeObjectURL(url);showToast('CSV exported!');
 };
