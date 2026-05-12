@@ -165,7 +165,7 @@ body.modal-open{overflow:hidden;touch-action:none}
   <div class="content">
     <div id="op-dash" class="panel on"></div><div id="op-drvs" class="panel"></div><div id="op-cars" class="panel"></div>
     <div id="op-appr" class="panel"></div><div id="op-debt" class="panel"></div><div id="op-rpts" class="panel"></div>
-    <div id="op-exps" class="panel"></div><div id="op-sets" class="panel"></div>
+    <div id="op-exps" class="panel"></div><div id="op-hist" class="panel"></div><div id="op-sets" class="panel"></div>
   </div>
 </div>
 <div id="screen-driver" class="screen">
@@ -477,19 +477,30 @@ window.doRegister=async()=>{
 
 window.fbLogout=async()=>{_ownerEmail='';_ownerPass='';try{await signOut(auth);}catch(e){}};
 
-const OTABS=[['dash','Board'],['drvs','Drivers'],['cars','Cars'],['appr','Approve'],['debt','Debt'],['rpts','Reports'],['exps','Expenses'],['sets','Settings']];
-const OICONS=['📊','👥','🚗','✅','💰','📈','💸','⚙️'];
+const OTABS_FIXED=[['dash','Board','📊'],['drvs','Drivers','👥'],['cars','Cars','🚗'],['appr','Approve','✅'],['debt','Debt','💰'],['rpts','Reports','📈'],['exps','Expenses','💸'],['hist','History','📋'],['sets','Settings','⚙️']];
 let oTab='dash';
-function buildOTabs(){document.getElementById('otabs').innerHTML=OTABS.map((t,i)=>`<button class="tab${t[0]===oTab?' on':''}" onclick="oSwitch('${t[0]}')"><span class="ti">${OICONS[i]}</span><span>${t[1]}</span></button>`).join('');}
-window.oSwitch=async tab=>{oTab=tab;buildOTabs();OTABS.forEach(t=>document.getElementById('op-'+t[0]).classList.toggle('on',t[0]===tab));
+
+function buildOTabs(){
+  document.getElementById('otabs').innerHTML=OTABS_FIXED.map(t=>`<button class="tab${t[0]===oTab?' on':''}" onclick="oSwitch('${t[0]}')"><span class="ti">${t[2]}</span><span>${t[1]}</span></button>`).join('');
+}
+
+window.oSwitch=async tab=>{
+  oTab=tab;buildOTabs();
+  OTABS_FIXED.forEach(t=>document.getElementById('op-'+t[0]).classList.toggle('on',t[0]===tab));
   try{
-    if(tab==='dash')await renderDash();else if(tab==='drvs')await renderDrvs();else if(tab==='cars')await renderCars();
-    else if(tab==='appr')await renderAppr();else if(tab==='debt')await renderDebt();else if(tab==='rpts')await renderRpts();
-    else if(tab==='exps')await renderExps();else if(tab==='sets')renderSets();
+    if(tab==='dash')await renderDash();
+    else if(tab==='drvs')await renderDrvs();
+    else if(tab==='cars')await renderCars();
+    else if(tab==='appr')await renderAppr();
+    else if(tab==='debt')await renderDebt();
+    else if(tab==='rpts')await renderRpts();
+    else if(tab==='exps')await renderExps();
+    else if(tab==='hist')await renderOwnerHist();
+    else if(tab==='sets')renderSets();
   }catch(e){
     const el=document.getElementById('op-'+tab);
-    if(el)el.innerHTML='<div class="alert ad" style="margin-top:10px">⚠️ Error loading this section: '+esc(e.message)+'<br><button class="btn bs bsm" style="margin-top:8px" onclick="oSwitch(\''+tab+'\')">Retry</button></div>';
-    console.error('Tab render error ('+tab+'):',e);
+    if(el)el.innerHTML='<div class="alert ad" style="margin-top:10px">⚠️ Error: '+esc(e.message)+'<br><button class="btn bs bsm" style="margin-top:8px" onclick="oSwitch(\''+tab+'\')">Retry</button></div>';
+    console.error('Tab error ('+tab+'):',e);
   }
 };
 
@@ -515,7 +526,7 @@ async function renderDash(){
     <div><div style="font-weight:700;font-size:12px">${esc(d.name)}</div><div style="font-size:10px;color:var(--text2)">${STYPES[d.salType]} · ${t.days} days</div></div>
     <div style="text-align:right"><div style="font-weight:700;color:var(--green);font-family:monospace;font-size:12px">${f2(t.income)}</div>
     <div style="font-size:10px;color:${debt<0?'#34d399':'#fb923c'}">${debt<0?'Co.owes '+abs2(debt):'Drv.owes '+abs2(debt)}</div></div></div>
-    <div class="sdb"><div class="divl"></div>${t.days>0?rH('Income',f2(t.income))+rH('Gross Salary',f2(t.salary))+(t.rent>0?rH('Car Rent','-'+f2(t.rent),'red'):'')+rH('Net Salary',f2(t.netSal))+rH('Actual Cash',f2(t.actualCash))+rH('Balance',(debt<0?'Co.owes ':'Drv.owes ')+abs2(debt),(debt<0?'green':'orange')+' big'):'<div style="color:var(--text3);font-size:11px;padding:5px 0">No entries this month</div>'}
+    <div class="sdb"><div class="divl"></div>${t.days>0?rH('Income',f2(t.income))+rH('Gross Salary',f2(t.salary))+(t.rent>0?rH('Car Rent','-'+f2(t.rent),'red'):'')+rH('Net Salary',f2(t.netSal))+(t.totalInHand>0?rH('💵 Cash In Hand',f2(t.totalInHand)):'')+rH('Actual Cash',f2(t.actualCash))+(t.driverExp>0?rH('💸 Driver Expenses',f2(t.driverExp),'orange'):'')+rH('Balance',(debt<0?'Co.owes ':'Drv.owes ')+abs2(debt),(debt<0?'green':'orange')+' big'):'<div style="color:var(--text3);font-size:11px;padding:5px 0">No entries this month</div>'}
     <div style="display:flex;gap:5px;margin-top:8px"><button class="btn bs bsm" style="flex:1" onclick="showInv('${d.id}')">📄 Invoice</button><button class="btn bp bsm" style="flex:1" onclick="showDrvEdit('${d.id}')">⚙️ Edit</button></div></div></div>`).join('');
   el.innerHTML=`<div style="font-size:11px;color:var(--text2)">${MN[m-1]} ${y}</div><div style="font-size:15px;font-weight:700;margin-bottom:4px">Fleet Overview</div>
     <div class="sg"><div class="sc"><div class="sv" style="color:var(--green)">${f2(totInc)}</div><div class="sl">Month Income</div></div>
@@ -997,6 +1008,160 @@ async function renderDrvExps(){
   }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error: '+esc(e.message)+'</div>';console.error('renderDrvExps:',e);}
 }
 
+// ── OWNER HISTORY ──
+let oHistDrv=null,oHistY=nowY(),oHistM=nowM();
+async function renderOwnerHist(){
+  const el=document.getElementById('op-hist');
+  el.innerHTML='<div class="spin" style="margin:40px auto"></div>';
+  try{
+    const drivers=await getDrivers();
+    if(!drivers.length){el.innerHTML='<div class="empty"><div class="ei">👥</div><div class="et">No drivers yet</div></div>';return;}
+    if(!oHistDrv||!drivers.find(d=>d.id===oHistDrv))oHistDrv=drivers[0].id;
+    const selD=drivers.find(d=>d.id===oHistDrv);
+
+    const drvPills=drivers.map(d=>`<button onclick="oHistSelDrv('${d.id}')" style="padding:7px 15px;border-radius:20px;font-size:12px;font-weight:700;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0;${d.id===selD.id?'background:linear-gradient(135deg,var(--blue2),var(--blue));color:#fff':'background:var(--bg4);color:var(--text2);border:1px solid var(--border2)'}">${esc(d.name)}</button>`).join('');
+
+    const ym=`${oHistY}-${pad(oHistM)}`;
+    const q=query(collection(db,'entries'),where('driverId','==',selD.id),where('yearMonth','==',ym));
+    const s=await getDocs(q);
+    const entries=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.date.localeCompare(b.date));
+
+    const eq2=query(collection(db,'expenses'),where('driverId','==',selD.id),where('yearMonth','==',ym));
+    const es2=await getDocs(eq2);
+    const submittedExps=es2.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.date.localeCompare(b.date));
+    const submittedExpTotal=submittedExps.reduce((s,e)=>s+(+e.amount||0),0);
+
+    let mPaid=0,mCashT=0,mUber=0,mUberC=0,mCardC=0,mTip=0,mPhys=0,mActCash=0,mInHand=0,mEntryExp=0,mSal=0,mNetSal=0,mBal=0,mAdj=0,mKm=0;
+    entries.forEach(e=>{
+      const c=calcDay(e,selD.salType,selD.salParams);
+      mPaid+=c.pT;mCashT+=c.cT;mUber+=c.uA;mUberC+=c.uC;mCardC+=c.cC;mTip+=c.tip;mAdj+=c.adj;
+      mPhys+=c.phys;mActCash+=c.actualCash;mInHand+=c.totalInHand;
+      mEntryExp+=c.driverExp;mSal+=c.salary;mNetSal+=c.netSal;mBal+=c.bal;
+      mKm+= +e.km||0;
+    });
+    const mInc=mPaid+mCashT+mUber;
+    const mTotalExp=mEntryExp+submittedExpTotal;
+
+    const summaryHTML=entries.length?`
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:12px">
+        <div class="sc"><div class="sv" style="color:var(--green);font-size:14px">${f2(mInc)}</div><div class="sl">Income</div></div>
+        <div class="sc"><div class="sv" style="color:var(--blue);font-size:14px">${f2(mActCash)}</div><div class="sl">Actual Cash</div></div>
+        <div class="sc"><div class="sv" style="color:var(--gold);font-size:14px">${f2(mInHand)}</div><div class="sl">In Hand</div></div>
+        <div class="sc"><div class="sv" style="color:var(--purple);font-size:14px">${f2(mNetSal)}</div><div class="sl">Net Salary</div></div>
+        <div class="sc"><div class="sv" style="color:${mTotalExp>0?'var(--orange)':'var(--text3)'};font-size:14px">${f2(mTotalExp)}</div><div class="sl">Expenses</div></div>
+        <div class="sc"><div class="sv" style="color:var(--text2);font-size:14px">${entries.length}</div><div class="sl">Days</div></div>
+      </div>
+      <div style="font-size:10px;font-weight:700;color:#93c5fd;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">INCOME</div>
+      ${rH('Paid Transfers',f2(mPaid))}${rH('Cash Transfers',f2(mCashT))}${rH('Uber App',f2(mUber))}${rH('Total Income',f2(mInc),'green big')}
+      <div class="divl" style="margin:8px 0 6px"></div>
+      <div style="font-size:10px;font-weight:700;color:#34d399;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">CASH FLOW</div>
+      ${rH('Uber Cash',f2(mUberC))}${rH('Cash Transfers',f2(mCashT))}${rH('Physical Cash',f2(mPhys))}
+      ${mCardC>0?rH('Card Cash (to co.)','-'+f2(mCardC),'red'):''}${mTip>0?rH('Tips (kept)','+'+f2(mTip),'green'):''}
+      ${rH('Cash In Hand',f2(mInHand),'big')}${rH('Actual Cash',f2(mActCash),'big')}
+      <div class="divl" style="margin:8px 0 6px"></div>
+      <div style="font-size:10px;font-weight:700;color:#fb923c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">EXPENSES</div>
+      ${mEntryExp>0?rH('From Daily Entries',f2(mEntryExp),'orange'):''}
+      ${submittedExpTotal>0?rH('Submitted Separately',f2(submittedExpTotal),'orange'):''}
+      ${rH('Total Expenses',f2(mTotalExp),'orange big')}
+      <div class="divl" style="margin:8px 0 6px"></div>
+      <div style="font-size:10px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">SALARY</div>
+      ${rH('Gross Salary',f2(mSal))}${mTip>0?rH('+ Tips','+'+f2(mTip),'green'):''}
+      ${mEntryExp>0?rH('+ Exp. Return','+'+f2(mEntryExp),'orange'):''}
+      ${mAdj!==0?rH('Adjustment',mAdj>0?'-'+f2(mAdj):'+'+f2(Math.abs(mAdj)),'orange'):''}
+      ${rH('Net Salary',f2(mNetSal),'big')}
+      ${mKm>0?rH('Total KM',mKm+' km'):''}
+      <div class="bal ${mBal<0?'owe':'give'}" style="margin-top:10px">
+        <div><div class="bl2" style="color:${mBal<0?'#34d399':'#fb923c'}">${mBal<0?'✅ Company owes driver':'⚠️ Driver owes company'}</div><div class="bsub">Month balance · all days</div></div>
+        <div class="bamt" style="color:${mBal<0?'#34d399':'#fb923c'}">${abs2(mBal)}</div></div>`
+    :'<div style="color:var(--text3);font-size:11px;padding:6px 0">No entries this month</div>';
+
+    const expListHTML=submittedExps.length?`
+      <div class="card">
+        <div class="ch" style="color:var(--orange)">🧾 Submitted Expenses (${submittedExps.length}) · ${f2(submittedExpTotal)}</div>
+        <div class="cb">${submittedExps.map(e=>{
+          const ec=ECATS.find(c=>c.id===e.category)||{l:e.category||'Other',e:'📌'};
+          return`<div class="row"><div><div style="font-size:12px;font-weight:600">${ec.e} ${ec.l}</div><div style="font-size:9px;color:var(--text2)">${e.date}${e.notes?' · '+esc(e.notes):''}</div></div><span class="rv" style="color:var(--orange)">${f2(e.amount)}</span></div>`;
+        }).join('')}</div></div>`:'';
+
+    const dayCards=entries.map(e=>{
+      const c=calcDay(e,selD.salType,selD.salParams);
+      const parts=e.date.split('-');
+      const dayName=DOW[new Date(+parts[0],+parts[1]-1,+parts[2]).getDay()];
+      const sc=e.status==='approved'?'<span class="chip cg" style="font-size:9px">✅</span>':e.status==='pending'?'<span class="chip co" style="font-size:9px">⏳</span>':e.status==='rejected'?'<span class="chip cr" style="font-size:9px">❌</span>':'<span class="chip cgr" style="font-size:9px">💾</span>';
+      const uid='oh_'+selD.id.slice(-3)+'_'+parts[2];
+      const detail=`
+        <div style="height:1px;background:var(--border2);margin:0 0 10px"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+          <div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:9px;padding:8px 10px"><div style="font-size:10px;color:#34d399;font-weight:700">💰 Income</div><div style="font-size:17px;font-weight:800;font-family:monospace;color:var(--green)">${f2(c.income)}</div></div>
+          <div style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);border-radius:9px;padding:8px 10px"><div style="font-size:10px;color:#93c5fd;font-weight:700">💵 Cash</div><div style="font-size:17px;font-weight:800;font-family:monospace;color:#93c5fd">${f2(c.actualCash)}</div></div>
+          <div style="background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.25);border-radius:9px;padding:8px 10px"><div style="font-size:10px;color:#a78bfa;font-weight:700">🧾 Salary</div><div style="font-size:17px;font-weight:800;font-family:monospace;color:#a78bfa">${f2(c.netSal)}</div></div>
+          <div style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:9px;padding:8px 10px"><div style="font-size:10px;color:var(--gold);font-weight:700">✋ In Hand</div><div style="font-size:17px;font-weight:800;font-family:monospace;color:var(--gold)">${f2(c.totalInHand)}</div></div>
+        </div>
+        <div style="font-size:10px;font-weight:700;color:#93c5fd;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Income</div>
+        ${rH('Paid Transfers',f2(c.pT))}${rH('Cash Transfers',f2(c.cT))}${rH('Uber App',f2(c.uA))}${rH('Total',f2(c.income),'green big')}
+        <div style="height:1px;background:var(--border2);margin:8px 0 6px"></div>
+        <div style="font-size:10px;font-weight:700;color:#34d399;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Cash Flow</div>
+        ${rH('Uber Cash',f2(c.uC))}${rH('Cash Transfers',f2(c.cT))}${rH('Physical Cash',f2(c.phys))}
+        ${c.cC>0?rH('Card Cash (to co.)','-'+f2(c.cC),'red'):''}${c.tip>0?rH('Tip (kept)','+'+f2(c.tip),'green'):''}
+        ${rH('Cash In Hand',f2(c.totalInHand),'big')}${rH('Actual Cash',f2(c.actualCash),'big')}
+        ${c.driverExp>0?`<div style="height:1px;background:var(--border2);margin:8px 0 6px"></div>
+        <div style="font-size:10px;font-weight:700;color:#fb923c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Driver Expense</div>
+        ${rH('Amount Paid',f2(c.driverExp),'orange')}${e.driverExpCat?rH('Type',esc(e.driverExpCat)):''}${e.driverExpNote?rH('Note',esc(e.driverExpNote)):''}${rH('Owner Returns','+'+f2(c.driverExp),'orange')}`:''}
+        <div style="height:1px;background:var(--border2);margin:8px 0 6px"></div>
+        <div style="font-size:10px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Salary</div>
+        ${rH('Gross Salary',f2(c.salary))}${c.tip>0?rH('+ Tips','+'+f2(c.tip),'green'):''}
+        ${c.driverExp>0?rH('+ Exp. Return','+'+f2(c.driverExp),'orange'):''}
+        ${c.adj!==0?rH('Adjustment',c.adj>0?'-'+f2(c.adj):'+'+f2(Math.abs(c.adj)),'orange'):''}
+        ${rH('Net Salary',f2(c.netSal),'big')}
+        ${e.km?'<div style="height:1px;background:var(--border2);margin:8px 0 6px"></div>'+rH('KM Driven',e.km+' km'):''}
+        ${e.notes?`<div style="font-size:10px;color:var(--text2);margin-top:8px;padding:7px 10px;background:rgba(51,65,85,.3);border-radius:8px">📝 ${esc(e.notes)}</div>`:''}
+        <div class="bal ${c.bal<0?'owe':'give'}" style="margin-top:10px">
+          <div><div class="bl2" style="color:${c.bal<0?'#34d399':'#fb923c'}">${c.bal<0?'✅ Company owes':'⚠️ Driver owes'}</div>
+          <div class="bsub">Cash ${f2(c.actualCash)} vs Sal ${f2(c.netSal)}</div></div>
+          <div class="bamt" style="color:${c.bal<0?'#34d399':'#fb923c'}">${abs2(c.bal)}</div></div>`;
+      return`<div class="sd" style="border:1px solid var(--border);border-radius:13px;overflow:hidden;margin-bottom:6px">
+        <div class="sdh" style="padding:11px 13px" onclick="(function(b,a){b.classList.toggle('on');a.textContent=b.classList.contains('on')?'▲':'▼'})(document.getElementById('${uid}'),this.querySelector('.arr'))">
+          <div style="display:flex;align-items:center;gap:9px;flex:1;min-width:0">
+            <div style="background:linear-gradient(135deg,rgba(139,92,246,.25),rgba(59,130,246,.15));border:1px solid rgba(139,92,246,.4);color:#c4b5fd;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0">${parts[2]}</div>
+            <div style="min-width:0">
+              <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">${dayName} ${sc}${c.driverExp>0?`<span class="chip co" style="font-size:9px">💸${f2(c.driverExp)}</span>`:''}</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:2px">💰${f2(c.income)} · 💵${f2(c.actualCash)} · 🧾${f2(c.netSal)}</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0;margin-left:8px">
+            <span style="font-family:monospace;font-weight:800;font-size:13px;color:${c.bal<0?'#34d399':'#fb923c'}">${c.bal<0?'⬅'+abs2(c.bal):'➡'+abs2(c.bal)}</span>
+            <span class="arr" style="font-size:10px;color:var(--text3)">▼</span>
+          </div>
+        </div>
+        <div id="${uid}" class="sdb" style="padding:0 13px 13px">${detail}</div>
+      </div>`;
+    }).join('');
+
+    el.innerHTML=`
+      <div style="font-size:16px;font-weight:800;margin-bottom:10px">📋 Driver History</div>
+      <div style="font-size:10px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Select Driver</div>
+      <div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:8px">${drvPills}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg4);border-radius:11px;padding:8px 12px;margin-bottom:8px;border:1px solid var(--border)">
+        <button onclick="oHistChgM(-1)" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:5px 15px;font-size:18px;font-weight:700;cursor:pointer">‹</button>
+        <div style="text-align:center">
+          <div style="font-size:14px;font-weight:800">📅 ${MN[oHistM-1]} ${oHistY}</div>
+          <div style="font-size:11px;color:var(--text2)">👤 ${esc(selD.name)}</div>
+        </div>
+        <button onclick="oHistChgM(1)" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:5px 15px;font-size:18px;font-weight:700;cursor:pointer">›</button>
+      </div>
+      <div class="card"><div class="ch" style="color:var(--gold)">📊 ${MN[oHistM-1]} ${oHistY} — Full Month Total</div><div class="cb">${summaryHTML}</div></div>
+      ${expListHTML}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0 5px">
+        <div style="font-size:13px;font-weight:800">📆 Daily Entries</div>
+        <div style="font-size:11px;color:var(--text2)">${entries.length} day${entries.length!==1?'s':''} · tap to expand</div>
+      </div>
+      ${dayCards||'<div class="empty"><div class="ei">📋</div><div class="et">No entries</div><div class="es">'+esc(selD.name)+' has no data for '+MN[oHistM-1]+' '+oHistY+'</div></div>'}`;
+  }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error: '+esc(e.message)+'</div>';console.error('renderOwnerHist:',e);}
+}
+window.oHistSelDrv=did=>{oHistDrv=did;renderOwnerHist();};
+window.oHistChgM=delta=>{oHistM+=delta;if(oHistM>12){oHistM=1;oHistY++;}if(oHistM<1){oHistM=12;oHistY--;}renderOwnerHist();};
+
+
 function renderSets(){
   document.getElementById('op-sets').innerHTML=`<div style="font-size:15px;font-weight:700">Settings</div>
     <div class="card"><div class="cb">${rH('Owner Name',esc(UP.name))+rH('Email',esc(UP.email))}</div></div>
@@ -1184,12 +1349,28 @@ async function renderHist(){
   const q=query(collection(db,'entries'),where('driverId','==',CD.id));
   const s=await getDocs(q);
   const entries=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.date.localeCompare(a.date));
+  // Monthly totals
+  const months={};
+  entries.forEach(e=>{
+    const c=calcDay(e,CD.salType,CD.salParams);
+    const ym=e.yearMonth||e.date.slice(0,7);
+    if(!months[ym])months[ym]={income:0,cash:0,exp:0,netSal:0,days:0};
+    months[ym].income+=c.income;months[ym].cash+=c.totalInHand;months[ym].exp+=c.driverExp;months[ym].netSal+=c.netSal;months[ym].days++;
+  });
+  // Summary strip
+  let mStripH='';
+  Object.keys(months).sort((a,b)=>b.localeCompare(a)).slice(0,3).forEach(ym=>{
+    const [y,m]=ym.split('-');const mn=months[ym];
+    mStripH+=`<div class="sc" style="min-width:0"><div class="sv" style="color:var(--green);font-size:13px">${f2(mn.income)}</div><div class="sl">${MNS[+m-1]} ${y} (${mn.days}d)</div>${mn.exp>0?`<div style="font-size:10px;color:var(--orange)">💸 Exp: ${f2(mn.exp)}</div>`:''}</div>`;
+  });
   el.innerHTML=`<div style="font-size:15px;font-weight:700">My Entries (${entries.length})</div>`+
-    (entries.length?entries.map(e=>{
+    (mStripH?`<div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:3px">${mStripH}</div>`:'')
+    +(entries.length?entries.map(e=>{
       const c=calcDay(e,CD.salType,CD.salParams);const parts=e.date.split('-');const d=new Date(+parts[0],+parts[1]-1,+parts[2]);
       const sc=e.status==='approved'?'<span class="chip cg">✅</span>':e.status==='pending'?'<span class="chip co">⏳</span>':e.status==='rejected'?'<span class="chip cr">❌</span>':'';
+      const expBadge=c.driverExp>0?`<span class="chip co" style="font-size:9px">💸 ${f2(c.driverExp)}</span>`:'';
       return`<div class="di" onclick="selDate('${e.date}');dTab('entry')"><div class="dav" style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#93c5fd;font-size:12px;font-weight:700">${parts[2]}</div>
-      <div class="din"><div class="dn">${e.date} ${sc}</div><div class="dm">${DOW[d.getDay()]} · ${f2(c.totalInHand)} in hand</div></div>
+      <div class="din"><div class="dn">${e.date} ${sc}</div><div class="dm">${DOW[d.getDay()]} · 💵 ${f2(c.totalInHand)} in hand · 💳 ${f2(c.actualCash)} cash</div>${expBadge?`<div style="margin-top:2px">${expBadge}</div>`:''}</div>
       <div class="dst"><div class="v" style="color:var(--green)">${f2(c.income)}</div><div class="l" style="color:${c.bal<0?'#34d399':'#fb923c'}">${c.bal<0?'Co.'+abs2(c.bal):'Owe '+abs2(c.bal)}</div></div></div>`;
     }).join(''):'<div class="empty"><div class="ei">📋</div><div class="et">No entries yet</div><div class="es">Start adding your daily data</div></div>');
   }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error loading history: '+esc(e.message)+'</div>';console.error('renderHist:',e);}
@@ -1209,14 +1390,16 @@ async function renderSum(){
       <div class="sc"><div class="sv" style="color:var(--green)">${f2(t.income)}</div><div class="sl">Total Income</div></div>
       <div class="sc"><div class="sv" style="color:var(--blue)">${f2(t.netSal)}</div><div class="sl">Net Salary</div></div>
       <div class="sc"><div class="sv" style="color:var(--gold)">${t.days}</div><div class="sl">Working Days</div></div>
-      <div class="sc"><div class="sv" style="color:#14b8a6">${f2(t.days>0?t.income/t.days:0)}</div><div class="sl">Avg / Day</div></div></div>
+      <div class="sc"><div class="sv" style="color:#14b8a6">${f2(t.days>0?t.income/t.days:0)}</div><div class="sl">Avg / Day</div></div>
+      <div class="sc"><div class="sv" style="color:var(--gold)">${f2(t.totalInHand)}</div><div class="sl">💵 Cash In Hand</div></div>
+      <div class="sc"><div class="sv" style="color:${t.driverExp>0?'var(--orange)':'var(--text3)'}">${f2(t.driverExp)}</div><div class="sl">💸 My Expenses</div></div></div>
     <div class="card"><div class="cb"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
       <span style="font-size:11px;color:var(--text2)">🎯 Monthly Target: ${f2(target)}</span>
       <span style="font-size:11px;font-weight:700;color:${t.income>=target?'var(--green)':'var(--text2)'}">${Math.min(100,(t.income/target)*100).toFixed(0)}%</span></div>
       <div class="pt"><div class="pf" style="width:${Math.min(100,(t.income/target)*100)}%;background:${t.income>=target?'linear-gradient(90deg,var(--green2),var(--green))':'linear-gradient(90deg,var(--blue2),var(--blue))'}"></div></div>
       ${t.income>=target?'<div style="font-size:10px;color:var(--green);margin-top:3px;font-weight:700">🎉 Monthly target reached!</div>':''}</div></div>
     <div class="card"><div class="ch" style="color:#93c5fd">Income</div><div class="cb">${rH('Paid',f2(t.pT))+rH('Cash Trans',f2(t.cT))+rH('Uber App',f2(t.uA))+rH('Total',f2(t.income),'green big')}</div></div>
-    <div class="card"><div class="ch" style="color:#34d399">Cash Flow</div><div class="cb">${rH('Physical Cash',f2(t.phys))+rH('Less: Card Cash','-'+f2(t.cC),'red')+rH('Less: Expenses','-'+f2(t.ex),'red')+rH('Actual Cash',f2(t.actualCash),'big')}</div></div>
+    <div class="card"><div class="ch" style="color:#34d399">Cash Flow</div><div class="cb">${rH('Physical Cash',f2(t.phys))+rH('Less: Card Cash','-'+f2(t.cC),'red')+(t.driverExp>0?rH('💸 Driver Expenses','+'+f2(t.driverExp),'orange'):'')+rH('Actual Cash',f2(t.actualCash),'big')}</div></div>
     <div class="card"><div class="ch" style="color:#a78bfa">Salary Breakdown</div><div class="cb">${rH('Gross Salary',f2(t.salary))+(t.tip>0?rH('🎁 Tips','+'+f2(t.tip),'green'):'')+(t.driverExp>0?rH('💸 Expenses (return)','+'+f2(t.driverExp),'green'):'')+rH('Net Salary',f2(t.netSal),'big')}</div></div>
     <div class="bal ${mBal<0?'owe':'give'}"><div><div class="bl2" style="color:${mBal<0?'#34d399':'#fb923c'}">${mBal<0?'✅ Company owes you':'⚠️ You owe company'}</div><div class="bsub">Month balance</div></div><div class="bamt" style="color:${mBal<0?'#34d399':'#fb923c'}">${abs2(mBal)}</div></div>
     <button class="btn bg2 bfull" onclick="shareMonth()">📱 Share Monthly</button>`
