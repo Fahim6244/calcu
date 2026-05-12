@@ -1031,15 +1031,13 @@ async function renderOwnerHist(){
     const submittedExps=es2.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.date.localeCompare(b.date));
     const submittedExpTotal=submittedExps.reduce((s,e)=>s+(+e.amount||0),0);
 
-    let mPaid=0,mCashT=0,mUber=0,mUberC=0,mCardC=0,mTip=0,mPhys=0,mActCash=0,mInHand=0,mEntryExp=0,mSal=0,mNetSal=0,mBal=0,mAdj=0,mKm=0;
-    entries.forEach(e=>{
-      const c=calcDay(e,selD.salType,selD.salParams);
-      mPaid+=c.pT;mCashT+=c.cT;mUber+=c.uA;mUberC+=c.uC;mCardC+=c.cC;mTip+=c.tip;mAdj+=c.adj;
-      mPhys+=c.phys;mActCash+=c.actualCash;mInHand+=c.totalInHand;
-      mEntryExp+=c.driverExp;mSal+=c.salary;mNetSal+=c.netSal;mBal+=c.bal;
-      mKm+= +e.km||0;
-    });
-    const mInc=mPaid+mCashT+mUber;
+    // Use calcMonth for salary — it computes base_bonus ONCE on monthly total (not per day)
+    const mt=await calcMonth(selD,oHistY,oHistM);
+    const mPaid=mt.pT,mCashT=mt.cT,mUber=mt.uA,mUberC=mt.uC,mCardC=mt.cC,mTip=mt.tip;
+    const mPhys=mt.phys,mActCash=mt.actualCash,mInHand=mt.totalInHand;
+    const mEntryExp=mt.driverExp,mSal=mt.salary,mNetSal=mt.netSal,mBal=mt.bal,mAdj=mt.adj;
+    const mInc=mt.income;
+    const mKm=entries.reduce((s,e)=>s+(+e.km||0),0);
     const mTotalExp=mEntryExp+submittedExpTotal;
 
     const summaryHTML=entries.length?`
