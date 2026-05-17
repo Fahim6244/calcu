@@ -708,14 +708,14 @@ window.resendDrvWA=(name,email)=>{
 };
 
 window.showAdvModal=(did,dname)=>showModal(`<div class="mt">💸 Advance for ${esc(dname)}</div><div style="display:flex;flex-direction:column;gap:9px">
-  <div class="field"><label>Amount (€)</label><div class="fr"><span class="fpre">€</span><input type="number" id="aamt" inputmode="decimal" placeholder="0.00"></div></div>
+  <div class="field"><label>Amount (€)</label><div class="fr"><span class="fpre">€</span><input type="text" inputmode="decimal" id="aamt" placeholder="0.00"></div></div>
   <div class="field"><label>Note</label><input type="text" id="anote" placeholder="e.g. Cash advance"></div>
   <div class="field"><label>Date</label><input type="date" id="adate" value="${today()}"></div>
   <div class="alert aw">⚠️ This adds to the driver's running debt</div>
   <button class="btn bor bfull" onclick="giveAdv('${did}')">Record Advance</button></div>`);
 
 window.giveAdv=async did=>{
-  const amt=+document.getElementById('aamt').value;const note=(document.getElementById('anote').value||'').trim();const date=document.getElementById('adate').value;
+  const amt=+(document.getElementById('aamt').value||'').replace(',','.');const note=(document.getElementById('anote').value||'').trim();const date=document.getElementById('adate').value;
   if(!amt||amt<=0){showToast('Enter amount');return;}
   try{await addDoc(collection(db,'advances'),{driverId:did,ownerId:CU.uid,amount:amt,note,date,repaid:false,createdAt:new Date().toISOString()});closeModal();showToast('Advance '+f2(amt)+' recorded');renderDebt();}
   catch(e){showToast('Error: '+e.message);}
@@ -914,11 +914,11 @@ async function renderExps(){
 window.chgEm=d=>{eM+=d;if(eM>12){eM=1;eY++;}if(eM<1){eM=12;eY--;}renderExps();};
 window.showAddExp=()=>showModal(`<div class="mt">💸 Add Fleet Expense</div><div style="display:flex;flex-direction:column;gap:9px">
   <div class="field"><label>Category</label><select id="excat">${ECATS.map(c=>`<option value="${c.id}">${c.e} ${c.l}</option>`).join('')}</select></div>
-  <div class="field"><label>Amount (€)</label><div class="fr"><span class="fpre">€</span><input type="number" id="examt" inputmode="decimal" step="0.01" placeholder="0.00"></div></div>
+  <div class="field"><label>Amount (€)</label><div class="fr"><span class="fpre">€</span><input type="text" id="examt" inputmode="decimal" placeholder="0.00"></div></div>
   <div class="field"><label>Date</label><input type="date" id="exdate" value="${today()}"></div>
   <div class="field"><label>Notes</label><input type="text" id="exnotes" placeholder="Details..."></div>
   <button class="btn br2 bfull" onclick="addExp()">➕ Add Expense</button></div>`);
-window.addExp=async()=>{const cat=document.getElementById('excat').value;const amt=+document.getElementById('examt').value;const date=document.getElementById('exdate').value;const notes=(document.getElementById('exnotes').value||'').trim();const ym=date.slice(0,7);if(!amt||amt<=0){showToast('Enter amount');return;}try{await addDoc(collection(db,'expenses'),{category:cat,amount:amt,date,notes,yearMonth:ym,ownerId:CU.uid,addedBy:'owner',createdAt:new Date().toISOString()});closeModal();showToast('✅ Added!');renderExps();}catch(e){showToast('Error: '+e.message);}};
+window.addExp=async()=>{const cat=document.getElementById('excat').value;const amt=+(document.getElementById('examt').value||'').replace(',','.');const date=document.getElementById('exdate').value;const notes=(document.getElementById('exnotes').value||'').trim();const ym=date.slice(0,7);if(!amt||amt<=0){showToast('Enter amount');return;}try{await addDoc(collection(db,'expenses'),{category:cat,amount:amt,date,notes,yearMonth:ym,ownerId:CU.uid,addedBy:'owner',createdAt:new Date().toISOString()});closeModal();showToast('✅ Added!');renderExps();}catch(e){showToast('Error: '+e.message);}};
 window.delExp=async id=>{try{await deleteDoc(doc(db,'expenses',id));showToast('Deleted');renderExps();}catch(e){showToast('Error: '+e.message);}};
 
 // ── DRIVER EXPENSE FUNCTIONS ──
@@ -930,7 +930,7 @@ window.showDrvExpModal=()=>showModal(`<div class="mt">🧾 Add Other Expense</di
     <select id="dexcat" onchange="onDrvCatChange(this.value)">${ECATS_OTHER.map(c=>`<option value="${c.id}">${c.e} ${c.l}</option>`).join('')}</select></div>
 
   <div class="field"><label>Amount (€)</label><div class="fr"><span class="fpre">€</span>
-    <input type="number" id="dexamt" inputmode="decimal" step="0.01" placeholder="0.00"></div></div>
+    <input type="text" id="dexamt" inputmode="decimal" placeholder="0.00"></div></div>
   <div class="field"><label>Date</label><input type="date" id="dexdate" value="${today()}"></div>
   <div class="field"><label>Notes / Details</label><input type="text" id="dexnotes" placeholder="e.g. Filled at Shell station..."></div>
   <button class="btn br2 bfull" id="dex-submit-btn" onclick="submitDrvExp()">➕ Submit Expense</button></div>`);
@@ -940,7 +940,7 @@ window.onDrvCatChange=cat=>{}; // no special handling needed now
 
 window.submitDrvExp=async()=>{
   const cat=document.getElementById('dexcat').value;
-  const amt=+document.getElementById('dexamt').value;
+  const amt=+(document.getElementById('dexamt').value||'').replace(',','.');
   const date=document.getElementById('dexdate').value;
   const notes=(document.getElementById('dexnotes').value||'').trim();
   const ym=date.slice(0,7);
@@ -1256,7 +1256,7 @@ async function renderEnt(){
         </select>
       </div>
       <div class="field"><label>Amount I Paid (€)</label><div class="fr"><span class="fpre">€</span>
-        <input type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" value="${esc(dEntry.driverExp||'')}" onchange="dC('driverExp',this.value)">
+        <input type="text" inputmode="decimal" placeholder="0.00" value="${esc(dEntry.driverExp||'')}" oninput="dC('driverExp',this.value)">
       </div></div>
       <div class="field"><label>Note (optional)</label>
         <input type="text" placeholder="e.g. Shell station, NCP parking..." value="${esc(dEntry.driverExpNote||'')}" onchange="dC('driverExpNote',this.value)" style="background:var(--bg4);color:var(--text);border:1px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:14px;outline:none;width:100%">
@@ -1265,7 +1265,7 @@ async function renderEnt(){
     </div></div>`;
     html+=`<div class="fs"><div class="fsh" style="background:rgba(51,65,85,.5);color:var(--text2)">📝 Notes & KM</div><div class="fsb">
       <div class="field"><label>Notes</label><input type="text" value="${esc(dEntry.notes||'')}" onchange="dC('notes',this.value)" placeholder="Notes..."></div>
-      <div class="field"><label>KM Driven</label><div class="fr"><input type="number" inputmode="decimal" value="${esc(dEntry.km||'')}" onchange="dC('km',this.value)" placeholder="0"><span class="fsuf">km</span></div></div></div></div>`;
+      <div class="field"><label>KM Driven</label><div class="fr"><input type="text" inputmode="decimal" value="${esc(dEntry.km||'')}" oninput="dC('km',this.value)" placeholder="0"><span class="fsuf">km</span></div></div></div></div>`;
     html+=`<div class="fs"><div class="fsh" style="background:rgba(109,40,217,.2);color:#a78bfa">⚖️ Adjustment</div><div class="fsb">
       <p style="font-size:10px;color:var(--text2)">Advance taken = <span style="color:var(--red)">+positive</span>. Extra owed to you = <span style="color:var(--green)">-negative</span>.</p>
       ${dF('adjustment','Advance / Adjustment','⚖️',dEntry.adjustment||'')}</div></div>`;
@@ -1283,7 +1283,7 @@ window.chgCalM=d=>{
   renderEnt();
 };
 
-const dF=(id,label,emoji,val)=>`<div class="field"><label>${emoji} ${label}</label><div class="fr"><span class="fpre">€</span><input type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" value="${esc(val)}" onchange="dC('${id}',this.value)"></div></div>`;
+const dF=(id,label,emoji,val)=>`<div class="field"><label>${emoji} ${label}</label><div class="fr"><span class="fpre">€</span><input type="text" inputmode="decimal" placeholder="0.00" value="${esc(val)}" oninput="dC('${id}',this.value)"></div></div>`;
 
 // FIXED: c.rent not c.carRent — Car Rent now shows correctly in breakdown
 const dCalc=c=>{
