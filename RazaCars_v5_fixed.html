@@ -1303,6 +1303,8 @@ const dCalc=c=>{
 };
 
 window.dC=(field,val)=>{
+  // Allow comma as decimal separator (iPhone numeric pad has no dot)
+  if(typeof val==='string')val=val.replace(',','.');
   dEntry[field]=val;
   const c=calcDay(dEntry,CD.salType,CD.salParams);
   const el=document.getElementById('dcalc');if(el)el.innerHTML=dCalc(c);
