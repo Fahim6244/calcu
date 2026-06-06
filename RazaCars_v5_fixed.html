@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- v8 -->
+<!-- v12 — salary current month only, prev months net -->
 <script>
 // Force fresh load — kills browser cache on every visit
 (function(){
   const key='rc_ver';
-  const ver='v7';
+  const ver='v12';;
   if(sessionStorage.getItem(key)!==ver){
     sessionStorage.setItem(key,ver);
     // Add cache-busting param and reload if not already there
@@ -264,7 +264,7 @@ async function calcMonth(drv,y,m){
   return t;
 }
 
-async function getDebt(drv){
+async function getDebt(drv,salaryMode=false){
   // Get all distinct yearMonths this driver has entries for
   const eq=query(collection(db,'entries'),where('driverId','==',drv.id));
   const es=await getDocs(eq);
@@ -272,18 +272,109 @@ async function getDebt(drv){
   es.docs.forEach(d=>{const ym=d.data().yearMonth;if(ym)months.add(ym);});
   // Also derive from date if yearMonth missing
   es.docs.forEach(d=>{const dt=d.data().date;if(!d.data().yearMonth&&dt)months.add(dt.slice(0,7));});
-  // Sum balance across all months using calcMonth (correct salary per month)
+  // Months that have been settled (marked or confirmed) are considered paid — exclude from running balance
+  const settledMonths=new Set();
+  try{const sq=query(collection(db,'settlements'),where('driverId','==',drv.id));const ss=await getDocs(sq);ss.docs.forEach(d=>{const ym=d.data().yearMonth;if(ym)settledMonths.add(ym);});}catch(e){console.warn('getDebt settlements:',e.message);}
+  // Sum balance across UNSETTLED months only (correct salary per month)
+  const currentYM=`${nowY()}-${pad(nowM())}`;
   let total=0;
   for(const ym of months){
+    if(settledMonths.has(ym))continue;
     const [yStr,mStr]=ym.split('-');
     const t=await calcMonth(drv,+yStr,+mStr);
-    total+=t.bal;
+    // salaryMode: current month shows full salary owed (not net-of-cash).
+    // Previous unsettled months always carry their real net (actual balance).
+    if(salaryMode&&ym===currentYM&&t.bal<0&&t.actualCash<t.netSal){total+=-t.netSal;}
+    else{total+=t.bal;}
   }
   // Add unpaid advances
   const aq=query(collection(db,'advances'),where('driverId','==',drv.id),where('repaid','==',false));
   const as=await getDocs(aq);as.docs.forEach(d=>total+=+d.data().amount||0);
   return total;
 }
+
+/* ===== MONTH-END SETTLEMENT ENGINE =====
+   One settlement doc per driver per month, id = `${driverId}_${yearMonth}`.
+   Whoever taps first = initiator (status:'pending', balance shown immediately, no waiting).
+   The other side taps Confirm -> status:'confirmed'. Either side can Undo while pending;
+   only the owner can Reopen once confirmed. */
+const setId=(did,ym)=>`${did}_${ym}`;
+const sFmtD=t=>{if(!t)return'';const d=new Date(t);return `${MNS[d.getMonth()]} ${d.getDate()}`;};
+async function getSettlement(did,ym){try{const s=await getDoc(doc(db,'settlements',setId(did,ym)));return s.exists()?{id:s.id,...s.data()}:null;}catch(e){console.warn('getSettlement:',e.message);return null;}}
+// Fetch all settlements for one driver, keyed by yearMonth (single read, no index needed)
+async function getDriverSettlements(did){try{const q=query(collection(db,'settlements'),where('driverId','==',did));const s=await getDocs(q);const m={};s.docs.forEach(d=>m[d.data().yearMonth]={id:d.id,...d.data()});return m;}catch(e){console.warn('getDriverSettlements:',e.message);return{};}}
+
+// Shared renderer: returns the settlement zone HTML for a given month.
+// s = settlement doc (or null), bal = signed month balance (<0 company owes, >0 driver owes), viewer = 'driver'|'owner'
+function settleZoneHTML(s,did,ym,viewer,bal){
+  const other=viewer==='driver'?'owner':'driver';
+  const cap=r=>r==='owner'?'Owner':'Driver';
+  const emo=r=>r==='owner'?'🏢':'🚗';
+  const dirTxt=(dir,amt)=>`${dir==='company_owes'?'Company owed':'Driver owed'} ${f2(amt)}`;
+  const bsig=+bal||0;
+  // No settlement yet -> show "Mark as settled" button
+  if(!s){
+    return `<button class="btn bg2 bfull bsm" style="margin-top:8px" onclick="settleMonth('${did}','${ym}','${viewer}',${bsig.toFixed(2)})">🤝 Mark this month settled</button>
+      <div style="font-size:9px;color:var(--text3);text-align:center;margin-top:4px">Tap when ${viewer==='driver'?'your salary / balance has been paid out':'you have paid out the driver'} — the ${other} confirms</div>`;
+  }
+  // Confirmed -> locked badge (owner can reopen)
+  if(s.status==='confirmed'){
+    return `<div class="alert as2" style="margin-top:8px">✅ Settled &amp; confirmed by ${cap(s.confirmedBy)}${s.confirmedAt?' · '+sFmtD(s.confirmedAt):''} · <strong>${dirTxt(s.direction,s.amount)}</strong></div>
+      ${viewer==='owner'?`<button onclick="unsettleMonth('${did}','${ym}','owner')" style="width:100%;padding:5px;background:none;border:none;color:var(--text3);font-size:10px;cursor:pointer;margin-top:2px">↩ Reopen settlement</button>`:''}`;
+  }
+  // Pending, this viewer started it -> waiting on the other side
+  if(s.initiatedBy===viewer){
+    return `<div class="alert as2" style="margin-top:8px">✅ You marked this settled · ⏳ waiting for ${other} to confirm · <strong>${dirTxt(s.direction,s.amount)}</strong></div>
+      <button onclick="unsettleMonth('${did}','${ym}','${viewer}')" style="width:100%;padding:5px;background:none;border:none;color:var(--text3);font-size:10px;cursor:pointer;margin-top:2px">↩ Undo mark</button>`;
+  }
+  // Pending, the OTHER side started it -> this viewer must confirm
+  return `<div class="alert aw" style="margin-top:8px">${emo(s.initiatedBy)} ${cap(s.initiatedBy)} marked this month settled · <strong>${dirTxt(s.direction,s.amount)}</strong></div>
+    <button class="btn bg2 bfull bsm" style="margin-top:6px" onclick="confirmSettle('${did}','${ym}','${viewer}')">✓ Confirm settlement</button>`;
+}
+
+// Refresh whichever screen the actor is on after a settlement change
+function settleRefresh(viewer){if(viewer==='driver'){renderBal().catch(()=>{});}else{renderOwnerHist().catch(()=>{});renderDebt().catch(()=>{});}}
+
+window.settleMonth=async(did,ym,viewer,bal)=>{
+  try{
+    const ownerId=viewer==='owner'?CU.uid:(CD&&CD.ownerId)||'';
+    const driverId=viewer==='driver'?CD.id:did;
+    const b=+bal||0;const amount=Math.abs(b);const direction=b<0?'company_owes':'driver_owes';
+    await setDoc(doc(db,'settlements',setId(driverId,ym)),{driverId,ownerId,yearMonth:ym,amount,direction,initiatedBy:viewer,initiatedAt:new Date().toISOString(),confirmedBy:null,confirmedAt:null,status:'pending'});
+    showToast(viewer==='driver'?'Marked settled — owner will confirm':'Marked settled — driver will confirm');
+    settleRefresh(viewer);
+  }catch(e){showToast('Error: '+e.message);console.error('settleMonth:',e);}
+};
+
+window.confirmSettle=async(did,ym,viewer)=>{
+  try{
+    const driverId=viewer==='driver'?CD.id:did;
+    const ref=doc(db,'settlements',setId(driverId,ym));
+    const snap=await getDoc(ref);
+    if(!snap.exists()){showToast('Settlement no longer exists');settleRefresh(viewer);return;}
+    const s=snap.data();
+    if(s.status==='confirmed'){showToast('Already confirmed');settleRefresh(viewer);return;}
+    if(s.initiatedBy===viewer){showToast('You started this — the other side confirms it');return;}
+    await updateDoc(ref,{confirmedBy:viewer,confirmedAt:new Date().toISOString(),status:'confirmed'});
+    showToast('✅ Settlement confirmed');
+    settleRefresh(viewer);
+  }catch(e){showToast('Error: '+e.message);console.error('confirmSettle:',e);}
+};
+
+window.unsettleMonth=async(did,ym,viewer)=>{
+  try{
+    const driverId=viewer==='driver'?CD.id:did;
+    const ref=doc(db,'settlements',setId(driverId,ym));
+    const snap=await getDoc(ref);
+    if(!snap.exists()){settleRefresh(viewer);return;}
+    const s=snap.data();
+    if(s.status==='confirmed'&&viewer!=='owner'){showToast('Already confirmed — ask owner to reopen');return;}
+    if(!confirm(s.status==='confirmed'?'Reopen this confirmed settlement?':'Undo this settlement mark?'))return;
+    await deleteDoc(ref);
+    showToast(s.status==='confirmed'?'Settlement reopened':'Settlement mark removed');
+    settleRefresh(viewer);
+  }catch(e){showToast('Error: '+e.message);console.error('unsettleMonth:',e);}
+};
 
 let _tt;
 const showToast=(msg,ms=2500)=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),ms);};
@@ -761,9 +852,27 @@ async function renderDebt(){
       <button onclick="markRepaid('${a.id}')" style="background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.3);color:#34d399;border-radius:5px;padding:1px 6px;font-size:9px;cursor:pointer">Repaid</button></div></div>`).join('')}
       <button class="btn bor bsm bfull" style="margin-top:7px" onclick="showAdvModal('${d.id}','${esc(d.name)}')">+ Give Advance</button></div>`;
   }
+  // Pending settlement handshakes (single-field query, filtered client-side — no composite index needed)
+  let pendSetts=[];
+  try{const sq=query(collection(db,'settlements'),where('ownerId','==',CU.uid));const ss=await getDocs(sq);pendSetts=ss.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.status==='pending');}catch(se){console.warn('settlements load:',se.message);}
+  const _nm=id=>{const d=drivers.find(x=>x.id===id);return d?d.name:'Driver';};
+  const _yl=ym=>{const p=(ym||'').split('-');return p.length===2?`${MNS[+p[1]-1]} ${p[0]}`:ym;};
+  const _need=pendSetts.filter(s=>s.initiatedBy==='driver');
+  const _await=pendSetts.filter(s=>s.initiatedBy==='owner');
+  const settBlock=(_need.length||_await.length)?`<div class="card" style="border-color:rgba(245,158,11,.4)"><div class="ch" style="color:var(--gold)">🤝 Settlement Requests${_need.length?' · '+_need.length+' to confirm':''}</div><div class="cb" style="gap:8px">
+    ${_need.map(s=>`<div style="background:var(--bg4);border:1px solid rgba(245,158,11,.35);border-radius:10px;padding:9px 11px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;font-weight:700">🚗 ${esc(_nm(s.driverId))}</span><span style="font-size:10px;color:var(--text2)">${_yl(s.yearMonth)}</span></div>
+      <div style="font-size:11px;color:var(--text2);margin:3px 0 6px">${s.direction==='company_owes'?'Company owed':'Driver owed'} <strong style="color:${s.direction==='company_owes'?'#34d399':'#fb923c'}">${f2(s.amount)}</strong> · driver marked it settled</div>
+      <div style="display:flex;gap:6px"><button class="btn bg2 bsm" style="flex:1" onclick="confirmSettle('${s.driverId}','${s.yearMonth}','owner')">✓ Confirm</button><button class="btn bs bsm" onclick="unsettleMonth('${s.driverId}','${s.yearMonth}','owner')">Undo</button></div></div>`).join('')}
+    ${_await.map(s=>`<div style="background:var(--bg4);border:1px solid var(--border);border-radius:10px;padding:9px 11px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;font-weight:700">🚗 ${esc(_nm(s.driverId))}</span><span style="font-size:10px;color:var(--text2)">${_yl(s.yearMonth)}</span></div>
+      <div style="font-size:11px;color:var(--text2);margin-top:3px">⏳ You marked ${s.direction==='company_owes'?'Company owed':'Driver owed'} <strong>${f2(s.amount)}</strong> settled · waiting for driver to confirm</div>
+      <button onclick="unsettleMonth('${s.driverId}','${s.yearMonth}','owner')" style="width:100%;padding:4px;background:none;border:none;color:var(--text3);font-size:10px;cursor:pointer;margin-top:3px">↩ Undo mark</button></div>`).join('')}
+  </div></div>`:'';
   el.innerHTML=`<div style="font-size:15px;font-weight:700">Debt & Balance</div>
     <div class="sg"><div class="sc"><div class="sv" style="color:var(--green)">${f2(totCo)}</div><div class="sl">Company Owes Drivers</div></div>
     <div class="sc"><div class="sv" style="color:var(--orange)">${f2(totDrv)}</div><div class="sl">Drivers Owe Company</div></div></div>
+    ${settBlock}
     <div class="alert ai">💡 Cumulative balance — all months + advances</div>${html||'<div class="empty"><div class="ei">💰</div><div class="et">No drivers yet</div></div>'}`;
   }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error loading debt: '+esc(e.message)+'</div>';console.error('renderDebt:',e);}
 }
@@ -1033,6 +1142,7 @@ async function renderOwnerHist(){
 
     // Use calcMonth for salary — it computes base_bonus ONCE on monthly total (not per day)
     const mt=await calcMonth(selD,oHistY,oHistM);
+    const sett=await getSettlement(selD.id,ym);
     const mPaid=mt.pT,mCashT=mt.cT,mUber=mt.uA,mUberC=mt.uC,mCardC=mt.cC,mTip=mt.tip;
     const mPhys=mt.phys,mActCash=mt.actualCash,mInHand=mt.totalInHand;
     const mEntryExp=mt.driverExp,mSal=mt.salary,mNetSal=mt.netSal,mBal=mt.bal,mAdj=mt.adj;
@@ -1070,7 +1180,8 @@ async function renderOwnerHist(){
       ${mKm>0?rH('Total KM',mKm+' km'):''}
       <div class="bal ${mBal<0?'owe':'give'}" style="margin-top:10px">
         <div><div class="bl2" style="color:${mBal<0?'#34d399':'#fb923c'}">${mBal<0?'✅ Company owes driver':'⚠️ Driver owes company'}</div><div class="bsub">Month balance · all days</div></div>
-        <div class="bamt" style="color:${mBal<0?'#34d399':'#fb923c'}">${abs2(mBal)}</div></div>`
+        <div class="bamt" style="color:${mBal<0?'#34d399':'#fb923c'}">${abs2(mBal)}</div></div>
+      ${settleZoneHTML(sett,selD.id,ym,'owner',mBal)}`
     :'<div style="color:var(--text3);font-size:11px;padding:6px 0">No entries this month</div>';
 
     const expListHTML=submittedExps.length?`
@@ -1371,7 +1482,7 @@ async function renderHist(){
       const expBadge=c.driverExp>0?`<span class="chip co" style="font-size:9px">💸 ${f2(c.driverExp)}</span>`:'';
       return`<div class="di" onclick="selDate('${e.date}');dTab('entry')"><div class="dav" style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#93c5fd;font-size:12px;font-weight:700">${parts[2]}</div>
       <div class="din"><div class="dn">${e.date} ${sc}</div><div class="dm">${DOW[d.getDay()]} · 💵 ${f2(c.totalInHand)} in hand · 💳 ${f2(c.actualCash)} cash</div>${expBadge?`<div style="margin-top:2px">${expBadge}</div>`:''}</div>
-      <div class="dst"><div class="v" style="color:var(--green)">${f2(c.income)}</div><div class="l" style="color:${c.bal<0?'#34d399':'#fb923c'}">${c.bal<0?'Co.'+abs2(c.bal):'Owe '+abs2(c.bal)}</div></div></div>`;
+      <div class="dst"><div class="v" style="color:var(--green)">${f2(c.income)}</div><div class="l" style="color:var(--text2)">Tr ${f2(c.transfers)}</div></div></div>`;
     }).join(''):'<div class="empty"><div class="ei">📋</div><div class="et">No entries yet</div><div class="es">Start adding your daily data</div></div>');
   }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error loading history: '+esc(e.message)+'</div>';console.error('renderHist:',e);}
 }
@@ -1402,7 +1513,8 @@ async function renderSum(){
     <div class="card"><div class="ch" style="color:#34d399">Cash Flow</div><div class="cb">${rH('Physical Cash',f2(t.phys))+rH('Less: Card Cash','-'+f2(t.cC),'red')+(t.driverExp>0?rH('💸 Driver Expenses','+'+f2(t.driverExp),'orange'):'')+rH('Actual Cash',f2(t.actualCash),'big')}</div></div>
     <div class="card"><div class="ch" style="color:#a78bfa">Salary Breakdown</div><div class="cb">${rH('Gross Salary',f2(t.salary))+(t.tip>0?rH('🎁 Tips','+'+f2(t.tip),'green'):'')+(t.driverExp>0?rH('💸 Expenses (return)','+'+f2(t.driverExp),'green'):'')+rH('Net Salary',f2(t.netSal),'big')}</div></div>
     <div class="bal ${mBal<0?'owe':'give'}"><div><div class="bl2" style="color:${mBal<0?'#34d399':'#fb923c'}">${mBal<0?'✅ Company owes you':'⚠️ You owe company'}</div><div class="bsub">Month balance</div></div><div class="bamt" style="color:${mBal<0?'#34d399':'#fb923c'}">${abs2(mBal)}</div></div>
-    <button class="btn bg2 bfull" onclick="shareMonth()">📱 Share Monthly</button>`
+    <button class="btn bg2 bfull" onclick="shareMonth()">📱 Share Monthly</button>
+    <button class="btn bp bfull" style="margin-top:6px" onclick="sendMonthToOwner()">📨 Send full month to owner</button>`
     :'<div class="empty"><div class="ei">📊</div><div class="et">No data this month</div></div>');
   }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error loading summary: '+esc(e.message)+'</div>';console.error('renderSum:',e);}
 }
@@ -1413,18 +1525,51 @@ window.shareMonth=async()=>{
   window.open('https://wa.me/?text='+encodeURIComponent(msg));
 };
 
+// Compile EVERY day of the selected month into one detailed message for the owner
+window.sendMonthToOwner=async()=>{
+  try{
+    const ym=`${svY}-${pad(svM)}`;
+    const q=query(collection(db,'entries'),where('driverId','==',CD.id),where('yearMonth','==',ym));
+    const s=await getDocs(q);
+    const entries=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.date.localeCompare(b.date));
+    if(!entries.length){showToast('No entries to send this month');return;}
+    const n2=x=>Number(x||0).toFixed(2);
+    let TpT=0,TcT=0,TuA=0,TuC=0,TcC=0,Ttip=0,Texp=0,Tinc=0,Tcash=0;
+    let body='';
+    entries.forEach(e=>{
+      const c=calcDay(e,CD.salType,CD.salParams);
+      const p=e.date.split('-');
+      const dn=DOW[new Date(+p[0],+p[1]-1,+p[2]).getDay()];
+      TpT+=c.pT;TcT+=c.cT;TuA+=c.uA;TuC+=c.uC;TcC+=c.cC;Ttip+=c.tip;Texp+=c.driverExp;Tinc+=c.income;Tcash+=c.actualCash;
+      body+=`\n📅 ${p[2]}/${p[1]} ${dn} — Total ${n2(c.income)}\n`;
+      body+=`P ${n2(c.pT)} · CT ${n2(c.cT)} · U ${n2(c.uA)} | UC ${n2(c.uC)} · CC ${n2(c.cC)}`;
+      if(c.tip>0)body+=` · Tip ${n2(c.tip)}`;
+      if(c.driverExp>0)body+=` · 💸Ex ${n2(c.driverExp)}`;
+      body+=`\n`;
+    });
+    const msg=`📋 *${MN[svM-1]} ${svY} — Full Breakdown*\n🚗 Raza Cars · ${CD.name||'Driver'}\n💶 All amounts in EUR (€)\nKey: P=Paid transfer · CT=Cash transfer · U=Uber · UC=Uber cash · CC=Card cash · Ex=Expense\n━━━━━━━━━━━━━━${body}━━━━━━━━━━━━━━\n📊 *MONTH TOTALS — ${entries.length} day${entries.length!==1?'s':''}*\nPaid Transfer: ${n2(TpT)}\nCash Transfer: ${n2(TcT)}\nTransfers (P+CT): ${n2(TpT+TcT)}\nUber App: ${n2(TuA)}\nUber Cash: ${n2(TuC)}\nCard Cash: ${n2(TcC)}${Ttip>0?'\nTips: '+n2(Ttip):''}${Texp>0?'\nExpenses: '+n2(Texp):''}\n*TOTAL INCOME: ${n2(Tinc)}*\nActual Cash: ${n2(Tcash)}`;
+    try{await navigator.clipboard.writeText(msg);showToast('📋 Copied — opening WhatsApp (paste if needed)',3500);}catch(e){showToast('Opening WhatsApp…');}
+    window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+  }catch(e){showToast('Error: '+e.message);console.error('sendMonthToOwner:',e);}
+};
+
 async function renderBal(){
   const el=document.getElementById('dp-balance');el.innerHTML='<div class="spin" style="margin:40px auto"></div>';
   try{
-  const debt=await getDebt(CD);
+  const debt=await getDebt(CD,true);
   const aq=query(collection(db,'advances'),where('driverId','==',CD.id));
   const as=await getDocs(aq);const myAdv=as.docs.map(d=>({id:d.id,...d.data()}));
-  const y=nowY(),m=nowM();const monthRows=[];
-  for(let i=0;i<6;i++){let mm=m-i,yy=y;if(mm<1){mm+=12;yy--;}const t=await calcMonth(CD,yy,mm);if(t&&t.days>0)monthRows.push({label:`${MNS[mm-1]} ${yy}`,bal:t.bal,days:t.days,inc:t.income});}
+  const setts=await getDriverSettlements(CD.id);
+  const y=nowY(),m=nowM();const currentYM=`${y}-${pad(m)}`;const monthRows=[];
+  for(let i=0;i<6;i++){let mm=m-i,yy=y;if(mm<1){mm+=12;yy--;}const t=await calcMonth(CD,yy,mm);if(t&&t.days>0)monthRows.push({label:`${MNS[mm-1]} ${yy}`,ym:`${yy}-${pad(mm)}`,bal:t.bal,days:t.days,inc:t.income,netSal:t.netSal,actualCash:t.actualCash});}
   el.innerHTML=`<div style="font-size:15px;font-weight:700">My Balance</div>
     <div class="bal ${debt<0?'owe':'give'}"><div><div class="bl2" style="color:${debt<0?'#34d399':'#fb923c'};font-size:14px">${debt<0?'✅ Company owes you':'⚠️ You owe company'}</div><div class="bsub">All months + advances</div></div><div class="bamt" style="color:${debt<0?'#34d399':'#fb923c'};font-size:24px">${abs2(debt)}</div></div>
     ${myAdv.length?`<div class="card"><div class="ch" style="color:var(--orange)">💸 Advances</div><div class="cb">${myAdv.map(a=>`<div class="row"><div><div style="font-size:11px">${esc(a.note||'Advance')}</div><div style="font-size:9px;color:var(--text2)">${a.date}</div></div><div><span class="rv" style="color:${a.repaid?'var(--text3)':'var(--orange)'}">${f2(a.amount)}</span> ${a.repaid?'<span class="chip cg">Repaid</span>':'<span class="chip co">Owed</span>'}</div></div>`).join('')}</div></div>`:''}
-    <div class="card"><div class="ch" style="color:var(--blue)">📅 Month by Month</div><div class="cb">${monthRows.length?monthRows.map(r=>`<div class="row"><span class="rl">${r.label} (${r.days}d)</span><div style="text-align:right"><div class="rv" style="color:var(--green)">${f2(r.inc)}</div><div style="font-size:9px;color:${r.bal<0?'#34d399':'#fb923c'}">${r.bal<0?'Co.owes '+abs2(r.bal):'You owe '+abs2(r.bal)}</div></div></div>`).join(''):'<div style="color:var(--text3);font-size:11px">No data yet</div>'}</div></div>`;
+    <div class="card"><div class="ch" style="color:var(--blue)">📅 Month by Month · End-of-Month Settlement</div><div class="cb" style="gap:8px">${monthRows.length?monthRows.map(r=>`<div style="background:var(--bg4);border:1px solid var(--border);border-radius:11px;padding:10px 12px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">${r.label}</span><span style="font-size:10px;color:var(--text2)">${r.days} day${r.days!==1?'s':''}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px"><span style="font-size:10px;color:var(--text2)">Income ${f2(r.inc)}</span><span style="font-family:monospace;font-weight:800;font-size:14px;color:${r.bal<0?'#34d399':'#fb923c'}">${r.bal<0?'Co.owes '+f2(r.ym===currentYM&&r.actualCash<r.netSal?r.netSal:Math.abs(r.bal)):'You owe '+abs2(r.bal)}</span></div>
+      ${settleZoneHTML(setts[r.ym],CD.id,r.ym,'driver',r.bal)}
+    </div>`).join(''):'<div style="color:var(--text3);font-size:11px">No data yet</div>'}</div></div>`;
   }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error loading balance: '+esc(e.message)+'</div>';console.error('renderBal:',e);}
 }
 </script>
