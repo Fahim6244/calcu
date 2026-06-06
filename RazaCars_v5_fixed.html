@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- v12 — salary current month only, prev months net -->
+<!-- v13 — 3-box balance, WA fix, settlement log -->
 <script>
 // Force fresh load — kills browser cache on every visit
 (function(){
   const key='rc_ver';
-  const ver='v12';;
+  const ver='v13';;
   if(sessionStorage.getItem(key)!==ver){
     sessionStorage.setItem(key,ver);
     // Add cache-busting param and reload if not already there
@@ -530,7 +530,7 @@ window.resetDrvPass=async(email,name)=>{
     setTimeout(()=>{
       const appUrl='https://fahim6244.github.io/calcu/RazaCars_v5.html';
       const msg=`🔑 *Raza Cars — Password Reset*\n\nHi ${name}! Your manager has sent you a password reset link.\n\n📧 Check your email: ${email}\n\nAfter resetting, login at:\n${appUrl}\n\nSelect *🚗 Driver* and use your new password.`;
-      if(confirm('Send WhatsApp notification to driver?'))window.open('https://wa.me/?text='+encodeURIComponent(msg));
+      if(confirm('Send WhatsApp notification to driver?'))window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
     },500);
   }catch(e){showToast('Error: '+e.message);}
 };
@@ -788,14 +788,14 @@ window.addDrv=async()=>{
 window.sendDrvWA=(name,email,pass)=>{
   const appUrl='https://fahim6244.github.io/calcu/RazaCars_v5.html';
   const msg=`🚗 *Raza Cars — Your Login Details*\n\nHi ${name}! Your driver account is ready.\n\n📧 *Email:* ${email}\n🔑 *Password:* ${pass}\n\n*How to login:*\n1. Open: ${appUrl}\n2. Tap *🚗 Driver*\n3. Enter your email & password\n\n💡 Keep these details — you use the same login every time.\n\n🚗 Drive safe!`;
-  window.open('https://wa.me/?text='+encodeURIComponent(msg));
+  window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
 };
 
 window.resendDrvWA=(name,email)=>{
   if(!email){showToast('No email on file for this driver');return;}
   const appUrl='https://fahim6244.github.io/calcu/RazaCars_v5.html';
   const msg=`🚗 *Raza Cars — Login Reminder*\n\nHi ${name}!\n\nYour Raza Cars login:\n📧 *Email:* ${email}\n🔑 *Password:* your password (contact manager if forgotten)\n\n*To login:*\n1. Open: ${appUrl}\n2. Tap *🚗 Driver*\n3. Enter email & password\n\n🔑 Forgot password? Open the app, select Driver, tap *Forgot password?* and check your email.\n\n🚗 Drive safe!`;
-  window.open('https://wa.me/?text='+encodeURIComponent(msg));
+  window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
 };
 
 window.showAdvModal=(did,dname)=>showModal(`<div class="mt">💸 Advance for ${esc(dname)}</div><div style="display:flex;flex-direction:column;gap:9px">
@@ -904,7 +904,7 @@ window.chgRm=d=>{rM+=d;if(rM>12){rM=1;rY++;}if(rM<1){rM=12;rY--;}renderRpts();};
 window.shareReport=async()=>{
   const drivers=await getDrivers();let msg=`📊 FLEET REPORT — ${MN[rM-1]} ${rY}\n🚗 Raza Cars\n━━━━━━━━━━━━\n`;let total=0;
   for(const d of drivers){const t=await calcMonth(d,rY,rM);if(t.days>0){msg+=`👤 ${d.name}: ${f2(t.income)} (${t.days} days)\n`;total+=t.income;}}
-  msg+=`━━━━━━━━━━━━\n🏁 TOTAL: ${f2(total)}`;window.open('https://wa.me/?text='+encodeURIComponent(msg));
+  msg+=`━━━━━━━━━━━━\n🏁 TOTAL: ${f2(total)}`;window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
 };
 window.exportCSV=async()=>{
   const drivers=await getDrivers();let csv='Driver,Date,Paid,Cash,Uber,Total Income,Expenses,Gross Salary,Car Rent,Net Salary,Balance,Status\n';
@@ -946,7 +946,7 @@ window.shareInv=async did=>{
   const d={id:did,...snap.data()};const y=nowY(),m=nowM();
   const t=await calcMonth(d,y,m);const debt=await getDebt(d);
   const msg=`📄 SALARY INVOICE\n🚗 Raza Cars\n━━━━━━━━━━━━\n👤 ${d.name}\n📅 ${MN[m-1]} ${y}\n────────────\nTotal Income: ${f2(t.income)}\nGross Salary: ${f2(t.salary)}${t.rent>0?'\nCar Rent: -'+f2(t.rent):''}\nNet Salary: ${f2(t.netSal)}\nDays: ${t.days}\n━━━━━━━━━━━━\n${debt<0?'✅ Company owes: '+abs2(debt):'⚠️ Driver owes: '+abs2(debt)}`;
-  window.open('https://wa.me/?text='+encodeURIComponent(msg));
+  window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
 };
 
 async function renderCars(){
@@ -1451,7 +1451,7 @@ window.clearEnt=async()=>{
 window.shareDay=()=>{
   const c=calcDay(dEntry,CD.salType,CD.salParams);
   const msg=`📊 DAILY — ${dSel}\n────────────\nPaid: ${f2(c.pT)}\nCash: ${f2(c.cT)}\nUber: ${f2(c.uA)}\nTOTAL: ${f2(c.income)}\n────\nUber Cash: ${f2(c.uC)}\nCard Cash: ${f2(c.cC)}\nTip: ${f2(c.tip)}\nIn Pocket: ${f2(c.totalInHand)}${c.driverExp>0?'\n💸 My Expenses: '+f2(c.driverExp):''}\n────\nGross Salary: ${f2(c.salary)}${c.driverExp>0?'\n💸 Expense Return: +'+f2(c.driverExp):''}\nNet Salary: ${f2(c.netSal)}\n${c.bal<0?'✅ Co. owes: '+abs2(c.bal):'⚠️ Give Co.: '+abs2(c.bal)}`;
-  window.open('https://wa.me/?text='+encodeURIComponent(msg));
+  window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
 };
 
 async function renderHist(){
@@ -1522,7 +1522,7 @@ window.chgSvm=d=>{svM+=d;if(svM>12){svM=1;svY++;}if(svM<1){svM=12;svY--;}renderS
 window.shareMonth=async()=>{
   const t=await calcMonth(CD,svY,svM);if(!t)return;const debt=await getDebt(CD);
   const msg=`📊 MONTHLY — ${MN[svM-1]} ${svY}\n🚗 Raza Cars\n━━━━━━━━━━━━\nTotal Income: ${f2(t.income)}\nGross Salary: ${f2(t.salary)}${t.tip>0?'\n🎁 Tips: +'+f2(t.tip):''}${t.driverExp>0?'\n💸 Expenses (return): +'+f2(t.driverExp):''}\nNet Salary: ${f2(t.netSal)}\nActual Cash: ${f2(t.actualCash)}\nDays: ${t.days} · Avg: ${f2(t.days>0?t.income/t.days:0)}\n━━━━━━━━━━━━\n${debt<0?'✅ Co.owes: '+abs2(debt):'⚠️ You owe: '+abs2(debt)}`;
-  window.open('https://wa.me/?text='+encodeURIComponent(msg));
+  window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
 };
 
 // Compile EVERY day of the selected month into one detailed message for the owner
@@ -1549,28 +1549,57 @@ window.sendMonthToOwner=async()=>{
     });
     const msg=`📋 *${MN[svM-1]} ${svY} — Full Breakdown*\n🚗 Raza Cars · ${CD.name||'Driver'}\n💶 All amounts in EUR (€)\nKey: P=Paid transfer · CT=Cash transfer · U=Uber · UC=Uber cash · CC=Card cash · Ex=Expense\n━━━━━━━━━━━━━━${body}━━━━━━━━━━━━━━\n📊 *MONTH TOTALS — ${entries.length} day${entries.length!==1?'s':''}*\nPaid Transfer: ${n2(TpT)}\nCash Transfer: ${n2(TcT)}\nTransfers (P+CT): ${n2(TpT+TcT)}\nUber App: ${n2(TuA)}\nUber Cash: ${n2(TuC)}\nCard Cash: ${n2(TcC)}${Ttip>0?'\nTips: '+n2(Ttip):''}${Texp>0?'\nExpenses: '+n2(Texp):''}\n*TOTAL INCOME: ${n2(Tinc)}*\nActual Cash: ${n2(Tcash)}`;
     try{await navigator.clipboard.writeText(msg);showToast('📋 Copied — opening WhatsApp (paste if needed)',3500);}catch(e){showToast('Opening WhatsApp…');}
-    window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+    window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
   }catch(e){showToast('Error: '+e.message);console.error('sendMonthToOwner:',e);}
 };
 
 async function renderBal(){
   const el=document.getElementById('dp-balance');el.innerHTML='<div class="spin" style="margin:40px auto"></div>';
   try{
-  const debt=await getDebt(CD,true);
-  const aq=query(collection(db,'advances'),where('driverId','==',CD.id));
-  const as=await getDocs(aq);const myAdv=as.docs.map(d=>({id:d.id,...d.data()}));
-  const setts=await getDriverSettlements(CD.id);
-  const y=nowY(),m=nowM();const currentYM=`${y}-${pad(m)}`;const monthRows=[];
-  for(let i=0;i<6;i++){let mm=m-i,yy=y;if(mm<1){mm+=12;yy--;}const t=await calcMonth(CD,yy,mm);if(t&&t.days>0)monthRows.push({label:`${MNS[mm-1]} ${yy}`,ym:`${yy}-${pad(mm)}`,bal:t.bal,days:t.days,inc:t.income,netSal:t.netSal,actualCash:t.actualCash});}
-  el.innerHTML=`<div style="font-size:15px;font-weight:700">My Balance</div>
-    <div class="bal ${debt<0?'owe':'give'}"><div><div class="bl2" style="color:${debt<0?'#34d399':'#fb923c'};font-size:14px">${debt<0?'✅ Company owes you':'⚠️ You owe company'}</div><div class="bsub">All months + advances</div></div><div class="bamt" style="color:${debt<0?'#34d399':'#fb923c'};font-size:24px">${abs2(debt)}</div></div>
-    ${myAdv.length?`<div class="card"><div class="ch" style="color:var(--orange)">💸 Advances</div><div class="cb">${myAdv.map(a=>`<div class="row"><div><div style="font-size:11px">${esc(a.note||'Advance')}</div><div style="font-size:9px;color:var(--text2)">${a.date}</div></div><div><span class="rv" style="color:${a.repaid?'var(--text3)':'var(--orange)'}">${f2(a.amount)}</span> ${a.repaid?'<span class="chip cg">Repaid</span>':'<span class="chip co">Owed</span>'}</div></div>`).join('')}</div></div>`:''}
-    <div class="card"><div class="ch" style="color:var(--blue)">📅 Month by Month · End-of-Month Settlement</div><div class="cb" style="gap:8px">${monthRows.length?monthRows.map(r=>`<div style="background:var(--bg4);border:1px solid var(--border);border-radius:11px;padding:10px 12px">
-      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">${r.label}</span><span style="font-size:10px;color:var(--text2)">${r.days} day${r.days!==1?'s':''}</span></div>
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px"><span style="font-size:10px;color:var(--text2)">Income ${f2(r.inc)}</span><span style="font-family:monospace;font-weight:800;font-size:14px;color:${r.bal<0?'#34d399':'#fb923c'}">${r.bal<0?'Co.owes '+f2(r.ym===currentYM&&r.actualCash<r.netSal?r.netSal:Math.abs(r.bal)):'You owe '+abs2(r.bal)}</span></div>
-      ${settleZoneHTML(setts[r.ym],CD.id,r.ym,'driver',r.bal)}
-    </div>`).join(''):'<div style="color:var(--text3);font-size:11px">No data yet</div>'}</div></div>`;
-  }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error loading balance: '+esc(e.message)+'</div>';console.error('renderBal:',e);}
+    const y=nowY(),m=nowM(),currentYM=`${y}-${pad(m)}`;
+    const setts=await getDriverSettlements(CD.id);
+    const settledSet=new Set(Object.keys(setts));
+    const isCurrentSettled=settledSet.has(currentYM);
+    const aq=query(collection(db,'advances'),where('driverId','==',CD.id));
+    const as=await getDocs(aq);const myAdv=as.docs.map(d=>({id:d.id,...d.data()}));
+    const advDebt=myAdv.filter(a=>!a.repaid).reduce((s,a)=>s+(+a.amount||0),0);
+    const totalDebt=await getDebt(CD);
+    const monthsTotal=totalDebt-advDebt;
+    const curT=await calcMonth(CD,y,m);
+    const currentBal=(!isCurrentSettled&&curT&&curT.days>0)?curT.bal:0;
+    const prevBal=monthsTotal-currentBal;
+    const monthRows=[];
+    for(let i=0;i<6;i++){let mm=m-i,yy=y;if(mm<1){mm+=12;yy--;}const t=await calcMonth(CD,yy,mm);if(t&&t.days>0)monthRows.push({label:`${MNS[mm-1]} ${yy}`,ym:`${yy}-${pad(mm)}`,bal:t.bal,days:t.days,inc:t.income});}
+    const settleLog=Object.values(setts).sort((a,b)=>(b.initiatedAt||'').localeCompare(a.initiatedAt||''));
+    const bCol=v=>v<0?'#34d399':'#fb923c';
+    const bLbl=v=>v<0?'Co.owes':'You owe';
+    const roleName=r=>r==='owner'?'Owner':'Driver';
+    const yl=ym=>{const p=(ym||'').split('-');return p.length===2?`${MNS[+p[1]-1]} ${p[0]}`:ym;};
+    el.innerHTML=`<div style="font-size:15px;font-weight:700">My Balance</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 8px">
+        <div style="background:var(--bg3);border:1.5px solid ${currentBal===0?'var(--border)':bCol(currentBal)+'55'};border-radius:13px;padding:12px">
+          <div style="font-size:10px;color:var(--text2);margin-bottom:5px">📅 This Month</div>
+          <div style="font-size:20px;font-weight:800;font-family:monospace;color:${currentBal===0?'var(--text3)':bCol(currentBal)}">${abs2(currentBal)}</div>
+          <div style="font-size:9px;color:${currentBal===0?'var(--text3)':bCol(currentBal)};margin-top:3px">${currentBal===0?'Settled':bLbl(currentBal)}</div>
+        </div>
+        <div style="background:var(--bg3);border:1.5px solid ${prevBal===0?'var(--border)':bCol(prevBal)+'55'};border-radius:13px;padding:12px">
+          <div style="font-size:10px;color:var(--text2);margin-bottom:5px">📆 Previous</div>
+          <div style="font-size:20px;font-weight:800;font-family:monospace;color:${prevBal===0?'var(--text3)':bCol(prevBal)}">${abs2(prevBal)}</div>
+          <div style="font-size:9px;color:${prevBal===0?'var(--text3)':bCol(prevBal)};margin-top:3px">${prevBal===0?'All settled':bLbl(prevBal)}</div>
+        </div>
+      </div>
+      <div class="bal ${totalDebt<0?'owe':'give'}" style="margin-bottom:10px">
+        <div><div class="bl2" style="color:${bCol(totalDebt)};font-size:14px">${totalDebt<0?'✅ Company owes you':'⚠️ You owe company'}</div><div class="bsub">Total${advDebt>0?' · advances '+f2(advDebt):''}</div></div>
+        <div class="bamt" style="color:${bCol(totalDebt)};font-size:24px">${abs2(totalDebt)}</div>
+      </div>
+      ${myAdv.length?`<div class="card"><div class="ch" style="color:var(--orange)">💸 Advances</div><div class="cb">${myAdv.map(a=>`<div class="row"><div><div style="font-size:11px">${esc(a.note||'Advance')}</div><div style="font-size:9px;color:var(--text2)">${a.date}</div></div><div><span class="rv" style="color:${a.repaid?'var(--text3)':'var(--orange)'}">${f2(a.amount)}</span> ${a.repaid?'<span class="chip cg">Repaid</span>':'<span class="chip co">Owed</span>'}</div></div>`).join('')}</div></div>`:''}
+      <div class="card"><div class="ch" style="color:var(--blue)">📅 Month by Month · Settlement</div><div class="cb" style="gap:8px">${monthRows.length?monthRows.map(r=>`<div style="background:var(--bg4);border:1px solid var(--border);border-radius:11px;padding:10px 12px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">${r.label}</span><span style="font-size:10px;color:var(--text2)">${r.days} day${r.days!==1?'s':''}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px"><span style="font-size:10px;color:var(--text2)">Income ${f2(r.inc)}</span><span style="font-family:monospace;font-weight:800;font-size:14px;color:${bCol(r.bal)}">${bLbl(r.bal)} ${abs2(r.bal)}</span></div>
+        ${settleZoneHTML(setts[r.ym],CD.id,r.ym,'driver',r.bal)}
+      </div>`).join(''):'<div style="color:var(--text3);font-size:11px">No data yet</div>'}</div></div>
+      ${settleLog.length?`<div class="card" style="border-color:rgba(245,158,11,.3)"><div class="ch" style="color:var(--gold)">📋 Settlement Log</div><div class="cb" style="gap:6px">${settleLog.map(s=>`<div class="row"><div><div style="font-size:12px;font-weight:700">${yl(s.yearMonth)}</div><div style="font-size:10px;color:var(--text2)">${s.direction==='company_owes'?'Co.owed':'Drv.owed'} ${f2(s.amount)}${s.initiatedAt?' · '+sFmtD(s.initiatedAt):''}</div><div style="font-size:9px;color:var(--text3)">${roleName(s.initiatedBy)} initiated${s.confirmedBy?' · '+roleName(s.confirmedBy)+' confirmed':''}</div></div><div>${s.status==='confirmed'?'<span class="chip cg">✅ Done</span>':'<span class="chip co">⏳ Pending</span>'}</div></div>`).join('')}</div></div>`:''}`;
+  }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error: '+esc(e.message)+'</div>';console.error('renderBal:',e);}
 }
 </script>
 </body>
