@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- v19 — simple dCalc, uncaught error fixes, array bug fix -->
+<!-- v21 — dCalc mirrors share format, no salary/balance -->
 <script>
 // Force fresh load — kills browser cache on every visit
 (function(){
   const key='rc_ver';
-  const ver='v19';;
+  const ver='v21';;
   if(sessionStorage.getItem(key)!==ver){
     sessionStorage.setItem(key,ver);
     // Add cache-busting param and reload if not already there
@@ -1422,26 +1422,22 @@ const dF=(id,label,emoji,val)=>`<div class="field"><label>${emoji} ${label}</lab
 
 // FIXED: c.rent not c.carRent — Car Rent now shows correctly in breakdown
 const dCalc=c=>{
-  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-    <div style="background:var(--bg4);border-radius:11px;padding:11px;border:1px solid var(--border)">
-      <div style="font-size:10px;color:var(--text2);margin-bottom:4px">💵 Total Income</div>
-      <div style="font-size:20px;font-weight:800;color:var(--green);font-family:monospace">${f2(c.income)}</div>
-      ${c.pT>0?`<div style="font-size:9px;color:var(--text2);margin-top:2px">Paid ${f2(c.pT)}</div>`:''}
-      ${c.cT>0?`<div style="font-size:9px;color:var(--text2)">Cash ${f2(c.cT)}</div>`:''}
-      ${c.uA>0?`<div style="font-size:9px;color:var(--text2)">Uber ${f2(c.uA)}</div>`:''}
-    </div>
-    <div style="background:var(--bg4);border-radius:11px;padding:11px;border:1px solid var(--border)">
-      <div style="font-size:10px;color:var(--text2);margin-bottom:4px">💶 Cash in Hand</div>
-      <div style="font-size:20px;font-weight:800;font-family:monospace">${f2(c.actualCash)}</div>
-      ${c.uC>0?`<div style="font-size:9px;color:var(--text2);margin-top:2px">Uber cash ${f2(c.uC)}</div>`:''}
-      ${c.cC>0?`<div style="font-size:9px;color:#f87171">Card -${f2(c.cC)}</div>`:''}
-    </div>
-  </div>
-  ${c.tip>0||c.driverExp>0?`<div style="display:flex;gap:8px;margin-top:8px">
-    ${c.tip>0?`<div style="flex:1;background:var(--bg4);border-radius:11px;padding:10px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text2)">🎁 Tips</div><div style="font-size:17px;font-weight:700;color:var(--green)">${f2(c.tip)}</div></div>`:''}
-    ${c.driverExp>0?`<div style="flex:1;background:var(--bg4);border-radius:11px;padding:10px;border:1px solid rgba(239,68,68,.3)"><div style="font-size:10px;color:var(--text2)">💸 Expenses</div><div style="font-size:17px;font-weight:700;color:var(--orange)">${f2(c.driverExp)}</div></div>`:''}
-  </div>`:''}
-  ${c.adj!==0?`<div style="margin-top:8px;background:var(--bg4);border-radius:11px;padding:10px;border:1px solid rgba(167,139,250,.3);font-size:12px;color:var(--text2)">⚖️ Adjustment: <strong>${c.adj>0?'+':''}</strong>${f2(Math.abs(c.adj))}</div>`:''}`;
+  const trs=dEntry.transfers||[];
+  const trTotal=trs.length?trs.reduce((s,t)=>s+(+t.amount||0),0):(c.pT+c.cT);
+  const fA=x=>{const v=+x||0;return v%1===0?`${Math.round(v)}`:`${v.toFixed(2)}`;};
+  const row=(label,val,col)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text2)">${label}</span><span style="font-size:13px;font-weight:700;font-family:monospace;color:${col||'var(--text)'}">${val}</span></div>`;
+  const trLines=trs.length?trs.map(t=>`${row('↳ '+t.label+' @ €'+fA(t.amount),t.payment==='cash'?'💵 cash':'💳 paid','var(--text2)')}`).join(''):'';
+  return `<div style="background:var(--bg4);border-radius:11px;padding:10px 13px;border:1px solid var(--border)">
+    ${trs.length||c.pT>0||c.cT>0?row(`🚖 Transfers`,'€'+fA(trTotal),'#93c5fd')+trLines:''}
+    ${row('🚗 Uber App','€'+fA(c.uA),'#93c5fd')}
+    ${row('📊 Total Income','€'+fA(c.income),'var(--green)')}
+    <div style="height:4px"></div>
+    ${row('💳 Card cash',fA(c.cC)+'€ 🫵🏻💰','#f87171')}
+    ${row('💶 Uber cash',fA(c.uC)+' €','var(--text)')}
+    ${c.tip>0?row('🎁 Tip',fA(c.tip)+' €','var(--green)'):''}
+    ${c.driverExp>0?row('💸 Expense',fA(c.driverExp)+'€ 🫵🏻💰','var(--orange)'):''}
+    ${c.adj!==0?row('⚖️ Adjustment',(c.adj>0?'+':'')+f2(c.adj),'var(--purple)'):''}
+  </div>`;
 };
 
 window.dC=(field,val)=>{
@@ -1525,7 +1521,7 @@ window.shareDay=()=>{
   const trs=dEntry.transfers||[];
   const p=dSel.split('-');
   const dateStr=`${p[2]}.${p[1]}.${p[0]}`;
-  // fS = "272.90 €" (space before €), fN = "51.09€" (no space, used for card/petrol)
+  // fS = "272.90 €" (space before €), fN = "51.09€" (no space, used for card/expense)
   const fA=x=>{const v=+x||0;return v%1===0?`${Math.round(v)}`:`${v.toFixed(2)}`;};
   const fS=x=>`${fA(x)} €`;
   const fN=x=>`${fA(x)}€`;
@@ -1533,7 +1529,7 @@ window.shareDay=()=>{
   const trLines=trs.length
     ?trs.map(t=>`Transfer 1 ${t.label} @ ${fN(t.amount)} (${t.payment==='cash'?'cash 💵':'paid'})`).join('\n')
     :(c.pT>0||c.cT>0?`${c.pT>0?'Transfer paid: '+fN(c.pT):''}${c.cT>0?(c.pT>0?'\n':'')+'Transfer cash: '+fN(c.cT):''}` :'');
-  const msg=`${dateStr}${trLines?'\n'+trLines:''}\nUber : ${fS(c.uA)} ( ${fN(trTotal)})\nTotal: ${fS(c.income)}\nCard cash : ${fN(c.cC)} 🫵🏻💰\nPetrol : ${fN(c.driverExp)} 🫵🏻💰\nUber cash: ${fS(c.uC)}\nTip: ${fS(c.tip)}`;
+  const msg=`${dateStr}${trLines?'\n'+trLines:''}\nUber : ${fS(c.uA)} ( ${fN(trTotal)})\nTotal: ${fS(c.income)}\nCard cash : ${fN(c.cC)} 🫵🏻💰\nExpense : ${fN(c.driverExp)} 🫵🏻💰\nUber cash: ${fS(c.uC)}\nTip: ${fS(c.tip)}`;
   try{navigator.clipboard.writeText(msg);}catch(e){}
   window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
 };
@@ -1558,7 +1554,7 @@ window.shareAll=async()=>{
         :(c.pT>0||c.cT>0?`${c.pT>0?'Transfer paid: '+fN(c.pT):''}${c.cT>0?(c.pT>0?'\n':'')+'Transfer cash: '+fN(c.cT):''}` :'');
       body+=`${p[2]}.${p[1]}.${p[0]}\n`;
       if(trLines)body+=trLines+'\n';
-      body+=`Uber : ${fS(c.uA)} ( ${fN(trTotal)})\nTotal: ${fS(c.income)}\nCard cash : ${fN(c.cC)} 🫵🏻💰\nPetrol : ${fN(c.driverExp)} 🫵🏻💰\nUber cash: ${fS(c.uC)}\nTip: ${fS(c.tip)}\n\n`;
+      body+=`Uber : ${fS(c.uA)} ( ${fN(trTotal)})\nTotal: ${fS(c.income)}\nCard cash : ${fN(c.cC)} 🫵🏻💰\nExpense : ${fN(c.driverExp)} 🫵🏻💰\nUber cash: ${fS(c.uC)}\nTip: ${fS(c.tip)}\n\n`;
     });
     const msg=`📋 ${MN[dCalM-1]} ${dCalY} · ${CD.name||'Driver'} · ${entries.length} day${entries.length!==1?'s':''}\n━━━━━━━━━━━━━━\n${body.trimEnd()}`;
     try{await navigator.clipboard.writeText(msg);}catch(e){}
@@ -1659,9 +1655,9 @@ window.sendMonthToOwner=async()=>{
         :(c.pT>0||c.cT>0?`${c.pT>0?'Transfer paid: '+fN(c.pT):''}${c.cT>0?(c.pT>0?'\n':'')+'Transfer cash: '+fN(c.cT):''}` :'');
       body+=`\n${p[2]}.${p[1]}.${p[0]}\n`;
       if(trLines)body+=trLines+'\n';
-      body+=`Uber : ${fS(c.uA)} ( ${fN(trTotal)})\nTotal: ${fS(c.income)}\nCard cash : ${fN(c.cC)} 🫵🏻💰\nPetrol : ${fN(c.driverExp)} 🫵🏻💰\nUber cash: ${fS(c.uC)}\nTip: ${fS(c.tip)}\n`;
+      body+=`Uber : ${fS(c.uA)} ( ${fN(trTotal)})\nTotal: ${fS(c.income)}\nCard cash : ${fN(c.cC)} 🫵🏻💰\nExpense : ${fN(c.driverExp)} 🫵🏻💰\nUber cash: ${fS(c.uC)}\nTip: ${fS(c.tip)}\n`;
     });
-    const msg=`📋 *${MN[svM-1]} ${svY} — Full Month*\n🚗 Raza Cars · ${CD.name||'Driver'}\n━━━━━━━━━━━━━━${body}━━━━━━━━━━━━━━\n📊 *TOTALS — ${entries.length} day${entries.length!==1?'s':''}*\nTransfers: ${fS(TpT+TcT)} (paid: ${fN(TpT)} · cash: ${fN(TcT)})\nUber App: ${fS(TuA)}\nUber Cash: ${fS(TuC)}\nCard Cash: ${fN(TcC)}\nPetrol: ${fN(Texp)}${Ttip>0?'\nTips: '+fS(Ttip):''}\n*TOTAL INCOME: ${fS(Tinc)}*\nActual Cash: ${fS(Tcash)}`;
+    const msg=`📋 *${MN[svM-1]} ${svY} — Full Month*\n🚗 Raza Cars · ${CD.name||'Driver'}\n━━━━━━━━━━━━━━${body}━━━━━━━━━━━━━━\n📊 *TOTALS — ${entries.length} day${entries.length!==1?'s':''}*\nTransfers: ${fS(TpT+TcT)} (paid: ${fN(TpT)} · cash: ${fN(TcT)})\nUber App: ${fS(TuA)}\nUber Cash: ${fS(TuC)}\nCard Cash: ${fN(TcC)}\nExpense: ${fN(Texp)}${Ttip>0?'\nTips: '+fS(Ttip):''}\n*TOTAL INCOME: ${fS(Tinc)}*\nActual Cash: ${fS(Tcash)}`;
     try{await navigator.clipboard.writeText(msg);showToast('📋 Copied — opening WhatsApp (paste if needed)',3500);}catch(e){showToast('Opening WhatsApp…');}
     window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
   }catch(e){showToast('Error: '+e.message);console.error('sendMonthToOwner:',e);}
