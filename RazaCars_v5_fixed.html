@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- v17 — clean dCalc, Share All button -->
+<!-- v19 — simple dCalc, uncaught error fixes, array bug fix -->
 <script>
 // Force fresh load — kills browser cache on every visit
 (function(){
   const key='rc_ver';
-  const ver='v17';;
+  const ver='v19';;
   if(sessionStorage.getItem(key)!==ver){
     sessionStorage.setItem(key,ver);
     // Add cache-busting param and reload if not already there
@@ -1306,8 +1306,8 @@ async function renderEnt(){
   try{
   const eq=query(collection(db,'entries'),where('driverId','==',CD.id),where('date','==',dSel));
   const es=await getDocs(eq);
-  if(!es.empty){dEntryId=es.docs[0].id;const e=es.docs[0].data();dEntryStatus=e.status||'';Object.keys(BLANK).forEach(k=>dEntry[k]=e[k]!==undefined?e[k]:BLANK[k]);}
-  else{dEntryId=null;dEntryStatus='';Object.keys(BLANK).forEach(k=>dEntry[k]=BLANK[k]);}
+  if(!es.empty){dEntryId=es.docs[0].id;const e=es.docs[0].data();dEntryStatus=e.status||'';Object.keys(BLANK).forEach(k=>{if(Array.isArray(BLANK[k]))dEntry[k]=Array.isArray(e[k])?[...e[k]]:[];else dEntry[k]=e[k]!==undefined?e[k]:BLANK[k];});}
+  else{dEntryId=null;dEntryStatus='';Object.keys(BLANK).forEach(k=>{if(Array.isArray(BLANK[k]))dEntry[k]=[];else dEntry[k]=BLANK[k];});}
   const c=calcDay(dEntry,CD.salType,CD.salParams);
   const parts=dSel.split('-');const sY=+parts[0],sM=+parts[1],sD=+parts[2];
   const locked=isLocked(dSel,CD.lockDays);const isOff=isDayOff(dSel,CD.dayOff);
@@ -1422,30 +1422,26 @@ const dF=(id,label,emoji,val)=>`<div class="field"><label>${emoji} ${label}</lab
 
 // FIXED: c.rent not c.carRent — Car Rent now shows correctly in breakdown
 const dCalc=c=>{
-  const isPos=c.bal<0;const bCol=isPos?'#34d399':'#fb923c';
-  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
     <div style="background:var(--bg4);border-radius:11px;padding:11px;border:1px solid var(--border)">
-      <div style="font-size:10px;color:var(--text2);margin-bottom:4px">💵 Income</div>
-      <div style="font-size:19px;font-weight:800;color:var(--green);font-family:monospace">${f2(c.income)}</div>
+      <div style="font-size:10px;color:var(--text2);margin-bottom:4px">💵 Total Income</div>
+      <div style="font-size:20px;font-weight:800;color:var(--green);font-family:monospace">${f2(c.income)}</div>
+      ${c.pT>0?`<div style="font-size:9px;color:var(--text2);margin-top:2px">Paid ${f2(c.pT)}</div>`:''}
+      ${c.cT>0?`<div style="font-size:9px;color:var(--text2)">Cash ${f2(c.cT)}</div>`:''}
+      ${c.uA>0?`<div style="font-size:9px;color:var(--text2)">Uber ${f2(c.uA)}</div>`:''}
     </div>
     <div style="background:var(--bg4);border-radius:11px;padding:11px;border:1px solid var(--border)">
-      <div style="font-size:10px;color:var(--text2);margin-bottom:4px">🏦 Net Salary</div>
-      <div style="font-size:19px;font-weight:800;color:#93c5fd;font-family:monospace">${f2(c.netSal)}</div>
-      ${c.tip>0?`<div style="font-size:9px;color:var(--green);margin-top:2px">+Tip ${f2(c.tip)}</div>`:''}${c.driverExp>0?`<div style="font-size:9px;color:var(--green);margin-top:1px">+Exp ${f2(c.driverExp)}</div>`:''}
+      <div style="font-size:10px;color:var(--text2);margin-bottom:4px">💶 Cash in Hand</div>
+      <div style="font-size:20px;font-weight:800;font-family:monospace">${f2(c.actualCash)}</div>
+      ${c.uC>0?`<div style="font-size:9px;color:var(--text2);margin-top:2px">Uber cash ${f2(c.uC)}</div>`:''}
+      ${c.cC>0?`<div style="font-size:9px;color:#f87171">Card -${f2(c.cC)}</div>`:''}
     </div>
   </div>
-  <div style="background:var(--bg4);border-radius:11px;padding:11px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-    <div><div style="font-size:10px;color:var(--text2);margin-bottom:4px">💶 Cash in Hand</div>
-    <div style="font-size:19px;font-weight:800;font-family:monospace">${f2(c.actualCash)}</div>
-    ${c.cC>0?`<div style="font-size:9px;color:var(--text3)">card cash -${f2(c.cC)}</div>`:''}
-    </div>
-  </div>
-  <div class="bal ${isPos?'owe':'give'}">
-    <div><div class="bl2" style="color:${bCol};font-size:14px">${isPos?'✅ Company owes you':'⚠️ You owe company'}</div>
-    <div class="bsub">${f2(c.netSal)} salary − ${f2(c.actualCash)} cash</div></div>
-    <div class="bamt" style="color:${bCol};font-size:22px">${abs2(c.bal)}</div>
-  </div>
-  ${c.adj!==0?`<div style="margin-top:6px;font-size:11px;color:var(--text2);text-align:center">⚖️ Adjustment: ${c.adj>0?'+':''+ f2(c.adj)}</div>`:''}`;
+  ${c.tip>0||c.driverExp>0?`<div style="display:flex;gap:8px;margin-top:8px">
+    ${c.tip>0?`<div style="flex:1;background:var(--bg4);border-radius:11px;padding:10px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text2)">🎁 Tips</div><div style="font-size:17px;font-weight:700;color:var(--green)">${f2(c.tip)}</div></div>`:''}
+    ${c.driverExp>0?`<div style="flex:1;background:var(--bg4);border-radius:11px;padding:10px;border:1px solid rgba(239,68,68,.3)"><div style="font-size:10px;color:var(--text2)">💸 Expenses</div><div style="font-size:17px;font-weight:700;color:var(--orange)">${f2(c.driverExp)}</div></div>`:''}
+  </div>`:''}
+  ${c.adj!==0?`<div style="margin-top:8px;background:var(--bg4);border-radius:11px;padding:10px;border:1px solid rgba(167,139,250,.3);font-size:12px;color:var(--text2)">⚖️ Adjustment: <strong>${c.adj>0?'+':''}</strong>${f2(Math.abs(c.adj))}</div>`:''}`;
 };
 
 window.dC=(field,val)=>{
@@ -1487,7 +1483,7 @@ function trTotals(){
   dEntry.cashTrans=trs.filter(t=>t.payment==='cash').reduce((s,t)=>s+(+t.amount||0),0)||'';
 }
 window.qTr=(label,amount,payment)=>{
-  if(!Array.isArray(dEntry.transfers))dEntry.transfers=[];
+  dEntry.transfers=[...Array.isArray(dEntry.transfers)?dEntry.transfers:[]];
   dEntry.transfers.push({label,amount:+amount,payment});
   trTotals();trRefresh();
 };
@@ -1514,14 +1510,14 @@ window.saveEnt=async()=>{
     if(dEntryId)await updateDoc(doc(db,'entries',dEntryId),data);
     else{const r=await addDoc(collection(db,'entries'),data);dEntryId=r.id;}
     dEntryStatus=status;
-    showToast(CD.reqApproval?'Saved — waiting approval':'Saved!');renderDHdr().catch(()=>{});renderEnt();
+    showToast(CD.reqApproval?'Saved — waiting approval':'Saved!');renderDHdr().catch(()=>{});renderEnt().catch(()=>{});
   }catch(e){showToast('Error: '+e.message);}
 };
 
 window.clearEnt=async()=>{
   if(isLocked(dSel,CD.lockDays)){showToast('Entry locked');return;}
   if(dEntryId){try{await deleteDoc(doc(db,'entries',dEntryId));}catch(e){}}
-  dEntryId=null;dEntryStatus='';Object.keys(BLANK).forEach(k=>dEntry[k]=BLANK[k]);showToast('Cleared');renderEnt();
+  dEntryId=null;dEntryStatus='';Object.keys(BLANK).forEach(k=>{if(Array.isArray(BLANK[k]))dEntry[k]=[];else dEntry[k]=BLANK[k];});showToast('Cleared');renderEnt().catch(()=>{});
 };
 
 window.shareDay=()=>{
