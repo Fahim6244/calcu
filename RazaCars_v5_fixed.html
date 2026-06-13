@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- v14 — tips removed from Cash In Hand (go to company Uber account) -->
+<!-- v16 — exact share format, saveEnt fix, transfers section -->
 <script>
 // Force fresh load — kills browser cache on every visit
 (function(){
   const key='rc_ver';
-  const ver='v14';;
+  const ver='v16';;
   if(sessionStorage.getItem(key)!==ver){
     sessionStorage.setItem(key,ver);
     // Add cache-busting param and reload if not already there
@@ -1296,7 +1296,7 @@ async function renderDHdr(){
 }
 
 let dCurTab='entry',dSel=today(),dCalY=nowY(),dCalM=nowM();
-const BLANK={paidTrans:'',cashTrans:'',uberApp:'',uberCash:'',cardCash:'',tip:'',adjustment:'',km:'',notes:'',driverExp:'',driverExpCat:'',driverExpNote:''};
+const BLANK={paidTrans:'',cashTrans:'',uberApp:'',uberCash:'',cardCash:'',tip:'',adjustment:'',km:'',notes:'',driverExp:'',driverExpCat:'',driverExpNote:'',transfers:[]};
 let dEntry={...BLANK},dEntryId=null,dEntryStatus='';
 window.dTab=tab=>{dCurTab=tab;document.querySelectorAll('#screen-driver .tab').forEach((b,i)=>b.classList.toggle('on',['entry','history','summary','balance','drvexps'][i]===tab));['entry','history','summary','balance','drvexps'].forEach(t=>document.getElementById('dp-'+t).classList.toggle('on',t===tab));dRender(tab);};
 async function dRender(tab){try{if(tab==='entry')await renderEnt();else if(tab==='history')await renderHist();else if(tab==='summary')await renderSum();else if(tab==='balance')await renderBal();else if(tab==='drvexps')await renderDrvExps();}catch(e){console.error('dRender error:',e);}}
@@ -1352,9 +1352,30 @@ async function renderEnt(){
       <span style="font-size:11px;font-weight:700;color:${c.income>=target?'var(--green)':'var(--text2)'}">${f2(c.income)} / ${f2(target)}</span></div>
       <div class="pt"><div class="pf" style="width:${prog}%;background:${prog>=100?'linear-gradient(90deg,var(--green2),var(--green))':'linear-gradient(90deg,var(--blue2),var(--blue))'}"></div></div>
       ${c.income>=target?'<div style="font-size:10px;color:var(--green);margin-top:3px;font-weight:700">🎉 Daily target reached!</div>':''}</div></div>`;
-    html+=`<div class="fs"><div class="fsh" style="background:rgba(37,99,235,.2);color:#93c5fd">💵 Income</div><div class="fsb">
-      ${dF('paidTrans','Paid Transfers','🏢',dEntry.paidTrans)}${dF('cashTrans','Cash Transfers','💵',dEntry.cashTrans)}${dF('uberApp','Uber App','🚗',dEntry.uberApp)}
-      ${c.income>0?`<div style="background:rgba(15,23,42,.5);border-radius:9px;padding:9px;border:1px solid var(--border)"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#60a5fa;margin-bottom:5px">Breakdown</div>${c.pT>0?rH('Paid',f2(c.pT)):''}${c.cT>0?rH('Cash',f2(c.cT)):''}${c.uA>0?rH('Uber',f2(c.uA)):''}${rH('Total',f2(c.income),'green big')}</div>`:''}</div></div>`;
+    html+=`<div class="fs" style="border:1px solid rgba(59,130,246,.3)"><div class="fsh" style="background:rgba(59,130,246,.2);color:#93c5fd">🚖 Transfers</div><div class="fsb">
+      <div id="trlist">${renderTrList()}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px">
+        <button class="btn bs bsm" onclick="qTr('city',25,'paid')">🏙 City €25 💳</button>
+        <button class="btn bs bsm" onclick="qTr('city',25,'cash')">🏙 City €25 💵</button>
+        <button class="btn bs bsm" onclick="qTr('city comfort',40,'paid')">⭐ Comfort €40 💳</button>
+        <button class="btn bs bsm" onclick="qTr('city comfort',40,'cash')">⭐ Comfort €40 💵</button>
+      </div>
+      <div style="margin-top:8px;background:var(--bg4);border-radius:10px;padding:10px;border:1px solid var(--border)">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:6px">✏️ Custom transfer</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <input id="tr-dest" type="text" placeholder="Destination (e.g. Martorell)" style="flex:1;min-width:110px;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:8px 10px;font-size:13px;outline:none">
+          <div style="display:flex;align-items:center;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;overflow:hidden">
+            <span style="padding:0 6px;color:var(--text3);font-size:13px">€</span>
+            <input id="tr-amt" type="text" inputmode="decimal" placeholder="0" style="width:65px;background:none;color:var(--text);border:none;padding:8px 6px 8px 0;font-size:13px;outline:none">
+          </div>
+          <button class="btn bs bsm" onclick="cTr('paid')">💳 Paid</button>
+          <button class="btn bs bsm" onclick="cTr('cash')">💵 Cash</button>
+        </div>
+      </div>
+    </div></div>`;
+    html+=`<div class="fs"><div class="fsh" style="background:rgba(37,99,235,.2);color:#93c5fd">💵 Uber & Income</div><div class="fsb">
+      ${dF('uberApp','Uber App','🚗',dEntry.uberApp)}
+      ${(c.income>0)?`<div style="background:rgba(15,23,42,.5);border-radius:9px;padding:9px;border:1px solid var(--border)"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#60a5fa;margin-bottom:5px">Breakdown</div>${(c.pT>0)?rH('Paid transfers',f2(c.pT)):''}${(c.cT>0)?rH('Cash transfers',f2(c.cT)):''}${c.uA>0?rH('Uber',f2(c.uA)):''}${rH('Total',f2(c.income),'green big')}</div>`:''}</div></div>`;
     html+=`<div class="fs"><div class="fsh" style="background:rgba(16,185,129,.2);color:#34d399">💰 Cash & Tips</div><div class="fsb">
       ${dF('uberCash','Uber Cash (in hand)','💶',dEntry.uberCash)}
       ${dF('cardCash','Card Cash (to Company)','💳',dEntry.cardCash)}
@@ -1433,7 +1454,48 @@ window.dC=(field,val)=>{
 
 window.selDate=date=>{dSel=date;const p=date.split('-');dCalY=+p[0];dCalM=+p[1];renderEnt();};
 
+// ---- Transfer management ----
+function renderTrList(){
+  const trs=dEntry.transfers||[];
+  if(!trs.length)return '<div style="color:var(--text3);font-size:11px;padding:4px 0">No transfers added yet</div>';
+  const tot=trs.reduce((s,t)=>s+(+t.amount||0),0);
+  return trs.map((t,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+    <div><span style="font-size:12px;font-weight:700">${esc(t.label)}</span><span style="font-size:12px;color:var(--green)"> @ €${+t.amount%1===0?+t.amount:(+t.amount).toFixed(2)}</span> <span class="chip ${t.payment==='cash'?'co':'cb2'}" style="font-size:9px">${t.payment==='cash'?'💵 Cash':'💳 Paid'}</span></div>
+    <button onclick="rmTr(${i})" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0 4px">×</button>
+  </div>`).join('')+`<div style="text-align:right;font-size:12px;font-weight:700;color:var(--green);padding-top:6px">Total transfers: €${tot%1===0?tot:tot.toFixed(2)}</div>`;
+}
+function trRefresh(){
+  const el=document.getElementById('trlist');if(el)el.innerHTML=renderTrList();
+  const c=calcDay(dEntry,CD.salType,CD.salParams);
+  const el2=document.getElementById('dcalc');if(el2)el2.innerHTML=dCalc(c);
+}
+function trTotals(){
+  const trs=dEntry.transfers||[];
+  dEntry.paidTrans=trs.filter(t=>t.payment==='paid').reduce((s,t)=>s+(+t.amount||0),0)||'';
+  dEntry.cashTrans=trs.filter(t=>t.payment==='cash').reduce((s,t)=>s+(+t.amount||0),0)||'';
+}
+window.qTr=(label,amount,payment)=>{
+  if(!Array.isArray(dEntry.transfers))dEntry.transfers=[];
+  dEntry.transfers.push({label,amount:+amount,payment});
+  trTotals();trRefresh();
+};
+window.cTr=(payment)=>{
+  const dest=(document.getElementById('tr-dest')||{}).value?.trim();
+  const amt=parseFloat((document.getElementById('tr-amt')||{}).value)||0;
+  if(!dest||!amt){showToast('Enter destination and amount');return;}
+  if(!Array.isArray(dEntry.transfers))dEntry.transfers=[];
+  dEntry.transfers.push({label:dest,amount:amt,payment});
+  const di=document.getElementById('tr-dest');const ai=document.getElementById('tr-amt');
+  if(di)di.value='';if(ai)ai.value='';
+  trTotals();trRefresh();
+};
+window.rmTr=(idx)=>{
+  if(!Array.isArray(dEntry.transfers))return;
+  dEntry.transfers.splice(idx,1);trTotals();trRefresh();
+};
+
 window.saveEnt=async()=>{
+  trTotals();
   const status=CD.reqApproval?'pending':'approved';const ym=dSel.slice(0,7);
   const data={...dEntry,driverId:CD.id,ownerId:CD.ownerId,date:dSel,yearMonth:ym,status,savedAt:new Date().toISOString()};
   try{
@@ -1452,7 +1514,19 @@ window.clearEnt=async()=>{
 
 window.shareDay=()=>{
   const c=calcDay(dEntry,CD.salType,CD.salParams);
-  const msg=`📊 DAILY — ${dSel}\n────────────\nPaid: ${f2(c.pT)}\nCash: ${f2(c.cT)}\nUber: ${f2(c.uA)}\nTOTAL: ${f2(c.income)}\n────\nUber Cash: ${f2(c.uC)}\nCard Cash: ${f2(c.cC)}\nTip: ${f2(c.tip)}\nIn Pocket: ${f2(c.totalInHand)}${c.driverExp>0?'\n💸 My Expenses: '+f2(c.driverExp):''}\n────\nGross Salary: ${f2(c.salary)}${c.driverExp>0?'\n💸 Expense Return: +'+f2(c.driverExp):''}\nNet Salary: ${f2(c.netSal)}\n${c.bal<0?'✅ Co. owes: '+abs2(c.bal):'⚠️ Give Co.: '+abs2(c.bal)}`;
+  const trs=dEntry.transfers||[];
+  const p=dSel.split('-');
+  const dateStr=`${p[2]}.${p[1]}.${p[0]}`;
+  // fS = "272.90 €" (space before €), fN = "51.09€" (no space, used for card/petrol)
+  const fA=x=>{const v=+x||0;return v%1===0?`${Math.round(v)}`:`${v.toFixed(2)}`;};
+  const fS=x=>`${fA(x)} €`;
+  const fN=x=>`${fA(x)}€`;
+  const trTotal=trs.length?trs.reduce((s,t)=>s+(+t.amount||0),0):(c.pT+c.cT);
+  const trLines=trs.length
+    ?trs.map(t=>`Transfer 1 ${t.label} @ ${fN(t.amount)} (${t.payment==='cash'?'cash 💵':'paid'})`).join('\n')
+    :(c.pT>0||c.cT>0?`${c.pT>0?'Transfer paid: '+fN(c.pT):''}${c.cT>0?(c.pT>0?'\n':'')+'Transfer cash: '+fN(c.cT):''}` :'');
+  const msg=`${dateStr}${trLines?'\n'+trLines:''}\nUber : ${fS(c.uA)} ( ${fN(trTotal)})\nTotal: ${fS(c.income)}\nCard cash : ${fN(c.cC)} 🫵🏻💰\nPetrol : ${fN(c.driverExp)} 🫵🏻💰\nUber cash: ${fS(c.uC)}\nTip: ${fS(c.tip)}`;
+  try{navigator.clipboard.writeText(msg);}catch(e){}
   window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
 };
 
@@ -1535,21 +1609,23 @@ window.sendMonthToOwner=async()=>{
     const s=await getDocs(q);
     const entries=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.date.localeCompare(b.date));
     if(!entries.length){showToast('No entries to send this month');return;}
-    const n2=x=>Number(x||0).toFixed(2);
+    const fA=x=>{const v=+x||0;return v%1===0?`${Math.round(v)}`:`${v.toFixed(2)}`;};
+    const fS=x=>`${fA(x)} €`;const fN=x=>`${fA(x)}€`;
     let TpT=0,TcT=0,TuA=0,TuC=0,TcC=0,Ttip=0,Texp=0,Tinc=0,Tcash=0;
     let body='';
     entries.forEach(e=>{
       const c=calcDay(e,CD.salType,CD.salParams);
       const p=e.date.split('-');
-      const dn=DOW[new Date(+p[0],+p[1]-1,+p[2]).getDay()];
       TpT+=c.pT;TcT+=c.cT;TuA+=c.uA;TuC+=c.uC;TcC+=c.cC;Ttip+=c.tip;Texp+=c.driverExp;Tinc+=c.income;Tcash+=c.actualCash;
-      body+=`\n📅 ${p[2]}/${p[1]} ${dn} — Total ${n2(c.income)}\n`;
-      body+=`P ${n2(c.pT)} · CT ${n2(c.cT)} · U ${n2(c.uA)} | UC ${n2(c.uC)} · CC ${n2(c.cC)}`;
-      if(c.tip>0)body+=` · Tip ${n2(c.tip)}`;
-      if(c.driverExp>0)body+=` · 💸Ex ${n2(c.driverExp)}`;
-      body+=`\n`;
+      const trs=e.transfers||[];
+      const trTotal=trs.length?trs.reduce((s,t)=>s+(+t.amount||0),0):c.pT+c.cT;
+      const trLines=trs.length?trs.map(t=>`Transfer 1 ${t.label} @ ${fN(t.amount)} (${t.payment==='cash'?'cash 💵':'paid'})`).join('\n')
+        :(c.pT>0||c.cT>0?`${c.pT>0?'Transfer paid: '+fN(c.pT):''}${c.cT>0?(c.pT>0?'\n':'')+'Transfer cash: '+fN(c.cT):''}` :'');
+      body+=`\n${p[2]}.${p[1]}.${p[0]}\n`;
+      if(trLines)body+=trLines+'\n';
+      body+=`Uber : ${fS(c.uA)} ( ${fN(trTotal)})\nTotal: ${fS(c.income)}\nCard cash : ${fN(c.cC)} 🫵🏻💰\nPetrol : ${fN(c.driverExp)} 🫵🏻💰\nUber cash: ${fS(c.uC)}\nTip: ${fS(c.tip)}\n`;
     });
-    const msg=`📋 *${MN[svM-1]} ${svY} — Full Breakdown*\n🚗 Raza Cars · ${CD.name||'Driver'}\n💶 All amounts in EUR (€)\nKey: P=Paid transfer · CT=Cash transfer · U=Uber · UC=Uber cash · CC=Card cash · Ex=Expense\n━━━━━━━━━━━━━━${body}━━━━━━━━━━━━━━\n📊 *MONTH TOTALS — ${entries.length} day${entries.length!==1?'s':''}*\nPaid Transfer: ${n2(TpT)}\nCash Transfer: ${n2(TcT)}\nTransfers (P+CT): ${n2(TpT+TcT)}\nUber App: ${n2(TuA)}\nUber Cash: ${n2(TuC)}\nCard Cash: ${n2(TcC)}${Ttip>0?'\nTips: '+n2(Ttip):''}${Texp>0?'\nExpenses: '+n2(Texp):''}\n*TOTAL INCOME: ${n2(Tinc)}*\nActual Cash: ${n2(Tcash)}`;
+    const msg=`📋 *${MN[svM-1]} ${svY} — Full Month*\n🚗 Raza Cars · ${CD.name||'Driver'}\n━━━━━━━━━━━━━━${body}━━━━━━━━━━━━━━\n📊 *TOTALS — ${entries.length} day${entries.length!==1?'s':''}*\nTransfers: ${fS(TpT+TcT)} (paid: ${fN(TpT)} · cash: ${fN(TcT)})\nUber App: ${fS(TuA)}\nUber Cash: ${fS(TuC)}\nCard Cash: ${fN(TcC)}\nPetrol: ${fN(Texp)}${Ttip>0?'\nTips: '+fS(Ttip):''}\n*TOTAL INCOME: ${fS(Tinc)}*\nActual Cash: ${fS(Tcash)}`;
     try{await navigator.clipboard.writeText(msg);showToast('📋 Copied — opening WhatsApp (paste if needed)',3500);}catch(e){showToast('Opening WhatsApp…');}
     window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
   }catch(e){showToast('Error: '+e.message);console.error('sendMonthToOwner:',e);}
