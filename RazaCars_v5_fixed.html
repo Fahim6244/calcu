@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- v16 — exact share format, saveEnt fix, transfers section -->
+<!-- v17 — clean dCalc, Share All button -->
 <script>
 // Force fresh load — kills browser cache on every visit
 (function(){
   const key='rc_ver';
-  const ver='v16';;
+  const ver='v17';;
   if(sessionStorage.getItem(key)!==ver){
     sessionStorage.setItem(key,ver);
     // Add cache-busting param and reload if not already there
@@ -1405,6 +1405,7 @@ async function renderEnt(){
       ${dF('adjustment','Advance / Adjustment','⚖️',dEntry.adjustment||'')}</div></div>`;
     html+=`<div class="fs"><div class="fsh" style="background:rgba(67,56,202,.3);color:#c7d2fe">📊 Calculated</div><div class="fsb" id="dcalc">${dCalc(c)}</div></div>`;
     html+=`<div class="brow"><button class="btn bb" onclick="saveEnt()">💾 Save</button><button class="btn bg2" onclick="shareDay()">📱 Share</button></div>`;
+    html+=`<button class="btn bp bfull" style="margin-top:6px" onclick="shareAll()">📨 Share All — ${MN[dCalM-1]} ${dCalY}</button>`;
     html+=`<button onclick="clearEnt()" style="width:100%;padding:5px;background:none;border:none;color:var(--text3);font-size:10px;cursor:pointer">🗑 Clear this day</button>`;
   }
   el.innerHTML=html;
@@ -1421,19 +1422,30 @@ const dF=(id,label,emoji,val)=>`<div class="field"><label>${emoji} ${label}</lab
 
 // FIXED: c.rent not c.carRent — Car Rent now shows correctly in breakdown
 const dCalc=c=>{
-  const isPos=c.bal<0;
-  return rH('Total Income',f2(c.income),'green big')
-    +rH('Gross Salary',f2(c.salary))
-    +(c.tip>0?rH('🎁 Tips','+'+f2(c.tip),'green'):'')
-    +(c.driverExp>0?rH('💸 Expenses (owner returns)','+'+f2(c.driverExp),'green'):'')
-    +rH('Net Salary',f2(c.netSal),'big')
-    +'<div class="divl"></div>'
-    +rH('Uber Cash in Hand',f2(c.uC))
-    +rH('Cash Transfers',f2(c.cT))
-    +(c.cC>0?rH('Card Cash (to company)','-'+f2(c.cC),'red'):'')
-    +rH('Actual Cash',f2(c.actualCash),'big')
-    +(c.adj!==0?rH(c.adj>0?'Less: Advance':'Plus: Extra',c.adj>0?'-'+f2(c.adj):'+'+f2(Math.abs(c.adj)),'orange'):'')
-    +`<div class="bal ${isPos?'owe':'give'}" style="margin-top:9px"><div><div class="bl2" style="color:${isPos?'#34d399':'#fb923c'}">${isPos?'✅ Company owes you':'⚠️ You owe company'}</div><div class="bsub">Cash ${f2(c.actualCash)} vs Net Salary ${f2(c.netSal)}</div></div><div class="bamt" style="color:${isPos?'#34d399':'#fb923c'}">${abs2(c.bal)}</div></div>`;
+  const isPos=c.bal<0;const bCol=isPos?'#34d399':'#fb923c';
+  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+    <div style="background:var(--bg4);border-radius:11px;padding:11px;border:1px solid var(--border)">
+      <div style="font-size:10px;color:var(--text2);margin-bottom:4px">💵 Income</div>
+      <div style="font-size:19px;font-weight:800;color:var(--green);font-family:monospace">${f2(c.income)}</div>
+    </div>
+    <div style="background:var(--bg4);border-radius:11px;padding:11px;border:1px solid var(--border)">
+      <div style="font-size:10px;color:var(--text2);margin-bottom:4px">🏦 Net Salary</div>
+      <div style="font-size:19px;font-weight:800;color:#93c5fd;font-family:monospace">${f2(c.netSal)}</div>
+      ${c.tip>0?`<div style="font-size:9px;color:var(--green);margin-top:2px">+Tip ${f2(c.tip)}</div>`:''}${c.driverExp>0?`<div style="font-size:9px;color:var(--green);margin-top:1px">+Exp ${f2(c.driverExp)}</div>`:''}
+    </div>
+  </div>
+  <div style="background:var(--bg4);border-radius:11px;padding:11px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div><div style="font-size:10px;color:var(--text2);margin-bottom:4px">💶 Cash in Hand</div>
+    <div style="font-size:19px;font-weight:800;font-family:monospace">${f2(c.actualCash)}</div>
+    ${c.cC>0?`<div style="font-size:9px;color:var(--text3)">card cash -${f2(c.cC)}</div>`:''}
+    </div>
+  </div>
+  <div class="bal ${isPos?'owe':'give'}">
+    <div><div class="bl2" style="color:${bCol};font-size:14px">${isPos?'✅ Company owes you':'⚠️ You owe company'}</div>
+    <div class="bsub">${f2(c.netSal)} salary − ${f2(c.actualCash)} cash</div></div>
+    <div class="bamt" style="color:${bCol};font-size:22px">${abs2(c.bal)}</div>
+  </div>
+  ${c.adj!==0?`<div style="margin-top:6px;font-size:11px;color:var(--text2);text-align:center">⚖️ Adjustment: ${c.adj>0?'+':''+ f2(c.adj)}</div>`:''}`;
 };
 
 window.dC=(field,val)=>{
@@ -1528,6 +1540,34 @@ window.shareDay=()=>{
   const msg=`${dateStr}${trLines?'\n'+trLines:''}\nUber : ${fS(c.uA)} ( ${fN(trTotal)})\nTotal: ${fS(c.income)}\nCard cash : ${fN(c.cC)} 🫵🏻💰\nPetrol : ${fN(c.driverExp)} 🫵🏻💰\nUber cash: ${fS(c.uC)}\nTip: ${fS(c.tip)}`;
   try{navigator.clipboard.writeText(msg);}catch(e){}
   window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
+};
+
+window.shareAll=async()=>{
+  showToast('Building month…');
+  try{
+    const ym=`${dCalY}-${pad(dCalM)}`;
+    const q=query(collection(db,'entries'),where('driverId','==',CD.id),where('yearMonth','==',ym));
+    const s=await getDocs(q);
+    const entries=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.date.localeCompare(b.date));
+    if(!entries.length){showToast('No entries for '+MN[dCalM-1]);return;}
+    const fA=x=>{const v=+x||0;return v%1===0?`${Math.round(v)}`:`${v.toFixed(2)}`;};
+    const fS=x=>`${fA(x)} €`;const fN=x=>`${fA(x)}€`;
+    let body='';
+    entries.forEach(e=>{
+      const c=calcDay(e,CD.salType,CD.salParams);
+      const p=e.date.split('-');
+      const trs=e.transfers||[];
+      const trTotal=trs.length?trs.reduce((s,t)=>s+(+t.amount||0),0):c.pT+c.cT;
+      const trLines=trs.length?trs.map(t=>`Transfer 1 ${t.label} @ ${fN(t.amount)} (${t.payment==='cash'?'cash 💵':'paid'})`).join('\n')
+        :(c.pT>0||c.cT>0?`${c.pT>0?'Transfer paid: '+fN(c.pT):''}${c.cT>0?(c.pT>0?'\n':'')+'Transfer cash: '+fN(c.cT):''}` :'');
+      body+=`${p[2]}.${p[1]}.${p[0]}\n`;
+      if(trLines)body+=trLines+'\n';
+      body+=`Uber : ${fS(c.uA)} ( ${fN(trTotal)})\nTotal: ${fS(c.income)}\nCard cash : ${fN(c.cC)} 🫵🏻💰\nPetrol : ${fN(c.driverExp)} 🫵🏻💰\nUber cash: ${fS(c.uC)}\nTip: ${fS(c.tip)}\n\n`;
+    });
+    const msg=`📋 ${MN[dCalM-1]} ${dCalY} · ${CD.name||'Driver'} · ${entries.length} day${entries.length!==1?'s':''}\n━━━━━━━━━━━━━━\n${body.trimEnd()}`;
+    try{await navigator.clipboard.writeText(msg);}catch(e){}
+    window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
+  }catch(e){showToast('Error: '+e.message);console.error('shareAll:',e);}
 };
 
 async function renderHist(){
