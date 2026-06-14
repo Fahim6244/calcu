@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- v21 — dCalc mirrors share format, no salary/balance -->
+<!-- v23 — removed Notes&KM, polished section gradients -->
 <script>
 // Force fresh load — kills browser cache on every visit
 (function(){
   const key='rc_ver';
-  const ver='v21';;
+  const ver='v23';;
   if(sessionStorage.getItem(key)!==ver){
     sessionStorage.setItem(key,ver);
     // Add cache-busting param and reload if not already there
@@ -1298,6 +1298,7 @@ async function renderDHdr(){
 let dCurTab='entry',dSel=today(),dCalY=nowY(),dCalM=nowM();
 const BLANK={paidTrans:'',cashTrans:'',uberApp:'',uberCash:'',cardCash:'',tip:'',adjustment:'',km:'',notes:'',driverExp:'',driverExpCat:'',driverExpNote:'',transfers:[]};
 let dEntry={...BLANK},dEntryId=null,dEntryStatus='';
+let twiz={step:0,dest:'',price:0,qty:1,needsDest:false,needsPrice:false};
 window.dTab=tab=>{dCurTab=tab;document.querySelectorAll('#screen-driver .tab').forEach((b,i)=>b.classList.toggle('on',['entry','history','summary','balance','drvexps'][i]===tab));['entry','history','summary','balance','drvexps'].forEach(t=>document.getElementById('dp-'+t).classList.toggle('on',t===tab));dRender(tab);};
 async function dRender(tab){try{if(tab==='entry')await renderEnt();else if(tab==='history')await renderHist();else if(tab==='summary')await renderSum();else if(tab==='balance')await renderBal();else if(tab==='drvexps')await renderDrvExps();}catch(e){console.error('dRender error:',e);}}
 
@@ -1352,36 +1353,18 @@ async function renderEnt(){
       <span style="font-size:11px;font-weight:700;color:${c.income>=target?'var(--green)':'var(--text2)'}">${f2(c.income)} / ${f2(target)}</span></div>
       <div class="pt"><div class="pf" style="width:${prog}%;background:${prog>=100?'linear-gradient(90deg,var(--green2),var(--green))':'linear-gradient(90deg,var(--blue2),var(--blue))'}"></div></div>
       ${c.income>=target?'<div style="font-size:10px;color:var(--green);margin-top:3px;font-weight:700">🎉 Daily target reached!</div>':''}</div></div>`;
-    html+=`<div class="fs" style="border:1px solid rgba(59,130,246,.3)"><div class="fsh" style="background:rgba(59,130,246,.2);color:#93c5fd">🚖 Transfers</div><div class="fsb">
+    html+=`<div class="fs" style="border:1px solid rgba(59,130,246,.35)"><div class="fsh" style="background:linear-gradient(135deg,rgba(59,130,246,.25),rgba(99,102,241,.2));color:#93c5fd">🚖 Transfers</div><div class="fsb">
       <div id="trlist">${renderTrList()}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px">
-        <button class="btn bs bsm" onclick="qTr('city',25,'paid')">🏙 City €25 💳</button>
-        <button class="btn bs bsm" onclick="qTr('city',25,'cash')">🏙 City €25 💵</button>
-        <button class="btn bs bsm" onclick="qTr('city comfort',40,'paid')">⭐ Comfort €40 💳</button>
-        <button class="btn bs bsm" onclick="qTr('city comfort',40,'cash')">⭐ Comfort €40 💵</button>
-      </div>
-      <div style="margin-top:8px;background:var(--bg4);border-radius:10px;padding:10px;border:1px solid var(--border)">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:6px">✏️ Custom transfer</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <input id="tr-dest" type="text" placeholder="Destination (e.g. Martorell)" style="flex:1;min-width:110px;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:8px 10px;font-size:13px;outline:none">
-          <div style="display:flex;align-items:center;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;overflow:hidden">
-            <span style="padding:0 6px;color:var(--text3);font-size:13px">€</span>
-            <input id="tr-amt" type="text" inputmode="decimal" placeholder="0" style="width:65px;background:none;color:var(--text);border:none;padding:8px 6px 8px 0;font-size:13px;outline:none">
-          </div>
-          <button class="btn bs bsm" onclick="cTr('paid')">💳 Paid</button>
-          <button class="btn bs bsm" onclick="cTr('cash')">💵 Cash</button>
-        </div>
-      </div>
+      <div id="tw-wizard" style="margin-top:8px">${renderWizard()}</div>
     </div></div>`;
-    html+=`<div class="fs"><div class="fsh" style="background:rgba(37,99,235,.2);color:#93c5fd">💵 Uber & Income</div><div class="fsb">
+    html+=`<div class="fs" style="border:1px solid rgba(37,99,235,.3)"><div class="fsh" style="background:linear-gradient(135deg,rgba(37,99,235,.25),rgba(59,130,246,.15));color:#93c5fd">🚗 Uber & Income</div><div class="fsb">
       ${dF('uberApp','Uber App','🚗',dEntry.uberApp)}
       ${(c.income>0)?`<div style="background:rgba(15,23,42,.5);border-radius:9px;padding:9px;border:1px solid var(--border)"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#60a5fa;margin-bottom:5px">Breakdown</div>${(c.pT>0)?rH('Paid transfers',f2(c.pT)):''}${(c.cT>0)?rH('Cash transfers',f2(c.cT)):''}${c.uA>0?rH('Uber',f2(c.uA)):''}${rH('Total',f2(c.income),'green big')}</div>`:''}</div></div>`;
-    html+=`<div class="fs"><div class="fsh" style="background:rgba(16,185,129,.2);color:#34d399">💰 Cash & Tips</div><div class="fsb">
+    html+=`<div class="fs" style="border:1px solid rgba(16,185,129,.3)"><div class="fsh" style="background:linear-gradient(135deg,rgba(16,185,129,.2),rgba(5,150,105,.15));color:#34d399">💰 Cash & Tips</div><div class="fsb">
       ${dF('uberCash','Uber Cash (in hand)','💶',dEntry.uberCash)}
       ${dF('cardCash','Card Cash (to Company)','💳',dEntry.cardCash)}
       ${dF('tip','Tip (yours to keep)','🎁',dEntry.tip||'')}</div></div>`;
-    // Expenses — anything driver paid = owner returns at end of month
-    html+=`<div class="fs" style="border:1px solid rgba(239,68,68,.25)"><div class="fsh" style="background:rgba(239,68,68,.15);color:#f87171">💸 My Expenses <span style="font-size:9px;font-weight:400;color:var(--text2)">— owner returns at month end</span></div><div class="fsb">
+    html+=`<div class="fs" style="border:1px solid rgba(239,68,68,.25)"><div class="fsh" style="background:linear-gradient(135deg,rgba(239,68,68,.15),rgba(220,38,38,.1));color:#f87171">💸 My Expenses <span style="font-size:9px;font-weight:400;color:var(--text3)">— owner returns</span></div><div class="fsb">
       <div class="alert as2" style="font-size:11px;margin-bottom:4px">✅ Only fill if YOU paid from your pocket. Owner will return it all.</div>
       <div class="field"><label>Type</label>
         <select id="dexpcat-sel" onchange="dC('driverExpCat',this.value)" style="background:var(--bg4);color:var(--text);border:1px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:14px;outline:none;width:100%">
@@ -1397,13 +1380,9 @@ async function renderEnt(){
       </div>
       <div id="exp-return-hint">${+dEntry.driverExp>0?`<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:8px 10px;font-size:11px;color:#34d399">✅ €${(+dEntry.driverExp).toFixed(2)} will be added to what owner owes you</div>`:''}</div>
     </div></div>`;
-    html+=`<div class="fs"><div class="fsh" style="background:rgba(51,65,85,.5);color:var(--text2)">📝 Notes & KM</div><div class="fsb">
-      <div class="field"><label>Notes</label><input type="text" value="${esc(dEntry.notes||'')}" onchange="dC('notes',this.value)" placeholder="Notes..."></div>
-      <div class="field"><label>KM Driven</label><div class="fr"><input type="text" inputmode="decimal" value="${esc(dEntry.km||'')}" oninput="dC('km',this.value)" placeholder="0"><span class="fsuf">km</span></div></div></div></div>`;
-    html+=`<div class="fs"><div class="fsh" style="background:rgba(109,40,217,.2);color:#a78bfa">⚖️ Adjustment</div><div class="fsb">
-      <p style="font-size:10px;color:var(--text2)">Advance taken = <span style="color:var(--red)">+positive</span>. Extra owed to you = <span style="color:var(--green)">-negative</span>.</p>
+    html+=`<div class="fs" style="border:1px solid rgba(109,40,217,.25)"><div class="fsh" style="background:rgba(109,40,217,.2);color:#c4b5fd">⚖️ Adjustment <span style="font-size:9px;font-weight:400;color:var(--text3)">advance taken = +positive</span></div><div class="fsb">
       ${dF('adjustment','Advance / Adjustment','⚖️',dEntry.adjustment||'')}</div></div>`;
-    html+=`<div class="fs"><div class="fsh" style="background:rgba(67,56,202,.3);color:#c7d2fe">📊 Calculated</div><div class="fsb" id="dcalc">${dCalc(c)}</div></div>`;
+    html+=`<div class="fs" style="border:1px solid rgba(99,102,241,.3)"><div class="fsh" style="background:linear-gradient(135deg,rgba(67,56,202,.35),rgba(109,40,217,.2));color:#c7d2fe">📊 Calculated</div><div class="fsb" id="dcalc">${dCalc(c)}</div></div>`;
     html+=`<div class="brow"><button class="btn bb" onclick="saveEnt()">💾 Save</button><button class="btn bg2" onclick="shareDay()">📱 Share</button></div>`;
     html+=`<button class="btn bp bfull" style="margin-top:6px" onclick="shareAll()">📨 Share All — ${MN[dCalM-1]} ${dCalY}</button>`;
     html+=`<button onclick="clearEnt()" style="width:100%;padding:5px;background:none;border:none;color:var(--text3);font-size:10px;cursor:pointer">🗑 Clear this day</button>`;
@@ -1468,6 +1447,71 @@ function renderTrList(){
     <button onclick="rmTr(${i})" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0 4px">×</button>
   </div>`).join('')+`<div style="text-align:right;font-size:12px;font-weight:700;color:var(--green);padding-top:6px">Total transfers: €${tot%1===0?tot:tot.toFixed(2)}</div>`;
 }
+
+function renderWizard(){
+  const iBtn=(label,fn,accent)=>`<button onclick="${fn}" style="flex:1;padding:10px 6px;background:${accent||'var(--bg3)'};border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer">${label}</button>`;
+  const inp=(id,ph,mode)=>`<input id="${id}" type="text" inputmode="${mode||'text'}" placeholder="${ph}" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:9px;padding:9px 12px;font-size:14px;outline:none">`;
+  const bc=[twiz.dest?`📍 ${twiz.dest==='city'?'Barcelona':twiz.dest}`:'',twiz.price?`€${twiz.price}`:'',twiz.qty>1?`×${twiz.qty}`:''].filter(Boolean).join(' · ');
+  const cancelBtn=`<button onclick="twReset()" style="width:100%;padding:4px;background:none;border:none;color:var(--text3);font-size:10px;cursor:pointer;margin-top:8px">✕ Cancel</button>`;
+
+  if(twiz.step===0) return `<button onclick="twStep(1)" style="width:100%;padding:10px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;color:#93c5fd;font-size:14px;font-weight:600;cursor:pointer">➕ Add Transfer</button>`;
+
+  let body='';
+  const header=bc?`<div style="font-size:10px;color:var(--text2);margin-bottom:8px;padding:5px 8px;background:var(--bg4);border-radius:7px">${bc}</div>`:'';
+
+  if(twiz.step===1){
+    body=`<div style="font-size:11px;color:var(--text2);margin-bottom:8px;font-weight:600">📍 Where?</div>
+      <div style="display:flex;gap:6px">${iBtn('🏙 Barcelona',"twPick('dest','city',2)")}${iBtn('🛣 Outside',"twPick('dest','outside',1)")}</div>`;
+  } else if(twiz.step===1.5){
+    body=`<div style="font-size:11px;color:var(--text2);margin-bottom:8px;font-weight:600">📍 Enter destination</div>
+      <div style="display:flex;gap:6px">${inp('tw-dest','e.g. Martorell, Airport...')}
+      <button onclick="twConfirmDest()" style="padding:9px 14px;background:var(--blue);border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Next →</button></div>`;
+  } else if(twiz.step===2){
+    body=`<div style="font-size:11px;color:var(--text2);margin-bottom:8px;font-weight:600">💶 Price?</div>
+      <div style="display:flex;gap:6px;margin-bottom:${twiz.needsPrice?8:0}px">${iBtn('€25',"twPick('price',25,3)")}${iBtn('€40',"twPick('price',40,3)")}${iBtn('✏️ Other',"twShowCustomPrice()")}</div>
+      ${twiz.needsPrice?`<div style="display:flex;gap:6px">${inp('tw-price','0','decimal')}
+      <button onclick="twConfirmPrice()" style="padding:9px 14px;background:var(--blue);border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Next →</button></div>`:''}`;
+  } else if(twiz.step===3){
+    body=`<div style="font-size:11px;color:var(--text2);margin-bottom:8px;font-weight:600">🔢 How many?</div>
+      <div style="display:flex;gap:6px">${[1,2,3,4,5].map(n=>iBtn(n,`twPick('qty',${n},4)`)).join('')}</div>`;
+  } else if(twiz.step===4){
+    body=`<div style="font-size:11px;color:var(--text2);margin-bottom:8px;font-weight:600">💳 Cash or Paid?</div>
+      <div style="display:flex;gap:6px">${iBtn('💵 Cash',"twFinish('cash')","rgba(245,158,11,.2)")}${iBtn('💳 Paid',"twFinish('paid')","rgba(59,130,246,.2)")}</div>`;
+  }
+  return `<div style="background:var(--bg4);border-radius:11px;padding:11px;border:1px solid var(--border2)">${header}${body}${cancelBtn}</div>`;
+}
+
+function twRefreshWizard(){const el=document.getElementById('tw-wizard');if(el)el.innerHTML=renderWizard();}
+window.twStep=s=>{twiz.step=s;twRefreshWizard();};
+window.twReset=()=>{twiz={step:0,dest:'',price:0,qty:1,needsDest:false,needsPrice:false};twRefreshWizard();};
+window.twPick=(field,val,next)=>{
+  twiz[field]=val;
+  if(field==='dest'&&val==='outside'){twiz.step=1.5;twRefreshWizard();return;}
+  twiz.step=next;twiz.needsDest=false;twiz.needsPrice=false;twRefreshWizard();
+};
+window.twShowCustomPrice=()=>{twiz.needsPrice=true;twRefreshWizard();};
+window.twConfirmDest=()=>{
+  const el=document.getElementById('tw-dest');
+  const v=(el&&el.value||'').trim();
+  if(!v){showToast('Enter destination');return;}
+  twiz.dest=v;twiz.step=2;twRefreshWizard();
+};
+window.twConfirmPrice=()=>{
+  const el=document.getElementById('tw-price');
+  const v=parseFloat((el&&el.value)||'');
+  if(!v||v<=0){showToast('Enter price');return;}
+  twiz.price=v;twiz.needsPrice=false;twiz.step=3;twRefreshWizard();
+};
+window.twFinish=(payment)=>{
+  dEntry.transfers=[...Array.isArray(dEntry.transfers)?dEntry.transfers:[]];
+  for(let i=0;i<twiz.qty;i++) dEntry.transfers.push({label:twiz.dest,amount:twiz.price,payment});
+  trTotals();
+  twiz={step:0,dest:'',price:0,qty:1,needsDest:false,needsPrice:false};
+  const el=document.getElementById('trlist');if(el)el.innerHTML=renderTrList();
+  twRefreshWizard();
+  const c=calcDay(dEntry,CD.salType,CD.salParams);
+  const el2=document.getElementById('dcalc');if(el2)el2.innerHTML=dCalc(c);
+};
 function trRefresh(){
   const el=document.getElementById('trlist');if(el)el.innerHTML=renderTrList();
   const c=calcDay(dEntry,CD.salType,CD.salParams);
