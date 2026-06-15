@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- v23 — removed Notes&KM, polished section gradients -->
+<!-- v24 — daily share excludes Uber cash + Tip -->
 <script>
 // Force fresh load — kills browser cache on every visit
 (function(){
   const key='rc_ver';
-  const ver='v23';;
+  const ver='v24';;
   if(sessionStorage.getItem(key)!==ver){
     sessionStorage.setItem(key,ver);
     // Add cache-busting param and reload if not already there
@@ -1573,7 +1573,7 @@ window.shareDay=()=>{
   const trLines=trs.length
     ?trs.map(t=>`Transfer 1 ${t.label} @ ${fN(t.amount)} (${t.payment==='cash'?'cash 💵':'paid'})`).join('\n')
     :(c.pT>0||c.cT>0?`${c.pT>0?'Transfer paid: '+fN(c.pT):''}${c.cT>0?(c.pT>0?'\n':'')+'Transfer cash: '+fN(c.cT):''}` :'');
-  const msg=`${dateStr}${trLines?'\n'+trLines:''}\nUber : ${fS(c.uA)} ( ${fN(trTotal)})\nTotal: ${fS(c.income)}\nCard cash : ${fN(c.cC)} 🫵🏻💰\nExpense : ${fN(c.driverExp)} 🫵🏻💰\nUber cash: ${fS(c.uC)}\nTip: ${fS(c.tip)}`;
+  const msg=`${dateStr}${trLines?'\n'+trLines:''}\nUber : ${fS(c.uA)} ( ${fN(trTotal)})\nTotal: ${fS(c.income)}\nCard cash : ${fN(c.cC)} 🫵🏻💰\nExpense : ${fN(c.driverExp)} 🫵🏻💰`;
   try{navigator.clipboard.writeText(msg);}catch(e){}
   window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
 };
