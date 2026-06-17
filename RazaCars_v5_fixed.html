@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- v24 — daily share excludes Uber cash + Tip -->
+<!-- v25 — no duplicate entries per day -->
 <script>
 // Force fresh load — kills browser cache on every visit
 (function(){
   const key='rc_ver';
-  const ver='v24';;
+  const ver='v25';;
   if(sessionStorage.getItem(key)!==ver){
     sessionStorage.setItem(key,ver);
     // Add cache-busting param and reload if not already there
@@ -1307,7 +1307,11 @@ async function renderEnt(){
   try{
   const eq=query(collection(db,'entries'),where('driverId','==',CD.id),where('date','==',dSel));
   const es=await getDocs(eq);
-  if(!es.empty){dEntryId=es.docs[0].id;const e=es.docs[0].data();dEntryStatus=e.status||'';Object.keys(BLANK).forEach(k=>{if(Array.isArray(BLANK[k]))dEntry[k]=Array.isArray(e[k])?[...e[k]]:[];else dEntry[k]=e[k]!==undefined?e[k]:BLANK[k];});}
+  if(!es.empty){
+    dEntryId=es.docs[0].id;const e=es.docs[0].data();dEntryStatus=e.status||'';
+    Object.keys(BLANK).forEach(k=>{if(Array.isArray(BLANK[k]))dEntry[k]=Array.isArray(e[k])?[...e[k]]:[];else dEntry[k]=e[k]!==undefined?e[k]:BLANK[k];});
+    if(es.docs.length>1)es.docs.slice(1).forEach(d=>deleteDoc(doc(db,'entries',d.id)).catch(()=>{}));
+  }
   else{dEntryId=null;dEntryStatus='';Object.keys(BLANK).forEach(k=>{if(Array.isArray(BLANK[k]))dEntry[k]=[];else dEntry[k]=BLANK[k];});}
   const c=calcDay(dEntry,CD.salType,CD.salParams);
   const parts=dSel.split('-');const sY=+parts[0],sM=+parts[1],sD=+parts[2];
@@ -1547,8 +1551,14 @@ window.saveEnt=async()=>{
   const status=CD.reqApproval?'pending':'approved';const ym=dSel.slice(0,7);
   const data={...dEntry,driverId:CD.id,ownerId:CD.ownerId,date:dSel,yearMonth:ym,status,savedAt:new Date().toISOString()};
   try{
-    if(dEntryId)await updateDoc(doc(db,'entries',dEntryId),data);
-    else{const r=await addDoc(collection(db,'entries'),data);dEntryId=r.id;}
+    if(dEntryId){
+      await updateDoc(doc(db,'entries',dEntryId),data);
+    }else{
+      // Always check Firestore before creating — prevents duplicates on same day
+      const chk=await getDocs(query(collection(db,'entries'),where('driverId','==',CD.id),where('date','==',dSel)));
+      if(!chk.empty){dEntryId=chk.docs[0].id;await updateDoc(doc(db,'entries',dEntryId),data);}
+      else{const r=await addDoc(collection(db,'entries'),data);dEntryId=r.id;}
+    }
     dEntryStatus=status;
     showToast(CD.reqApproval?'Saved — waiting approval':'Saved!');renderDHdr().catch(()=>{});renderEnt().catch(()=>{});
   }catch(e){showToast('Error: '+e.message);}
