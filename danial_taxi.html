@@ -39,7 +39,6 @@
             color: #999;
             font-size: 12px;
             margin-bottom: 30px;
-            letter-spacing: 0.5px;
         }
         .driver-select {
             display: grid;
@@ -198,7 +197,7 @@
             gap: 8px;
             margin-bottom: 16px;
             background: #1a1a1a;
-            padding: 8px;
+            padding: 10px;
             border-radius: 10px;
             border: 1px solid #3d3d3d;
         }
@@ -217,11 +216,10 @@
         .tab-btn.active {
             background: #d4af37;
             color: #000;
-            box-shadow: 0 2px 8px rgba(212,175,55,0.3);
         }
 
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
 
         /* Calendar */
         .calendar-section {
@@ -239,35 +237,18 @@
             display: flex;
             gap: 6px;
         }
-        .calendar-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 14px;
-        }
-        .calendar-nav button {
-            background: transparent;
-            border: 1px solid #3d3d3d;
-            color: #d4af37;
-            cursor: pointer;
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            transition: all 0.2s;
-        }
-        .calendar-nav button:hover {
-            border-color: #d4af37;
-            background: #2d2d2d;
-        }
-        .calendar-month {
-            font-size: 14px;
+        .calendar-month-name {
+            text-align: center;
+            font-size: 12px;
             font-weight: 600;
-            color: #fff;
+            color: #ccc;
+            margin-bottom: 12px;
         }
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             gap: 8px;
+            margin-bottom: 12px;
         }
         .calendar-header {
             text-align: center;
@@ -299,7 +280,7 @@
             color: #fff;
             border-color: #3b82f6;
         }
-        .calendar-day.saved {
+        .calendar-day.has-entry {
             background: #059669;
             color: #fff;
             border-color: #059669;
@@ -314,10 +295,12 @@
             color: #fca5a5;
             border-color: #991b1b;
         }
+        .calendar-day.selected {
+            box-shadow: 0 0 0 2px #d4af37;
+        }
         .calendar-legend {
             display: flex;
             gap: 12px;
-            margin-top: 12px;
             font-size: 11px;
             flex-wrap: wrap;
             padding-top: 12px;
@@ -327,6 +310,7 @@
             display: flex;
             gap: 4px;
             align-items: center;
+            color: #999;
         }
         .legend-dot {
             width: 8px;
@@ -376,47 +360,6 @@
         .form-select:focus {
             outline: none;
             border-color: #d4af37;
-        }
-
-        .entry-item {
-            background: #2d2d2d;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            border-left: 3px solid #d4af37;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
-        }
-
-        .btn-add {
-            width: 100%;
-            padding: 12px;
-            background: #d4af37;
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 13px;
-            cursor: pointer;
-            margin-bottom: 14px;
-            transition: all 0.2s;
-        }
-        .btn-add:hover {
-            background: #f59e0b;
-            transform: translateY(-1px);
-        }
-
-        .info-msg {
-            background: #2d2d2d;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #3d3d3d;
-            font-size: 12px;
-            color: #999;
-            margin-bottom: 14px;
-            line-height: 1.5;
         }
 
         .calculated {
@@ -491,6 +434,23 @@
         }
         .btn-share-all:hover {
             opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        .btn-add {
+            width: 100%;
+            padding: 12px;
+            background: #d4af37;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            margin-bottom: 14px;
+            transition: all 0.2s;
+        }
+        .btn-add:hover {
+            background: #f59e0b;
             transform: translateY(-1px);
         }
         .btn-clear {
@@ -573,44 +533,42 @@
             </div>
 
             <!-- ENTRY TAB -->
-            <div id="entryTab" class="tab-content active">
+            <div id="entryTab" class="tab-panel active">
                 <!-- Calendar -->
                 <div class="calendar-section">
                     <div class="section-title">📅 Calendar</div>
-                    <div class="calendar-nav">
-                        <button onclick="prevMonth()">‹</button>
-                        <div class="calendar-month" id="monthName">June 2026</div>
-                        <button onclick="nextMonth()">›</button>
-                    </div>
+                    <div class="calendar-month-name" id="monthName">June 2026</div>
                     <div class="calendar-grid" id="calendarGrid"></div>
                     <div class="calendar-legend">
                         <div class="legend-item">
                             <div class="legend-dot" style="background: #059669;"></div>
-                            <span style="color: #999;">Saved</span>
+                            <span>Saved</span>
                         </div>
                         <div class="legend-item">
                             <div class="legend-dot" style="background: #d4af37;"></div>
-                            <span style="color: #999;">Pending</span>
+                            <span>Pending</span>
                         </div>
                         <div class="legend-item">
                             <div class="legend-dot" style="background: #7f2626;"></div>
-                            <span style="color: #999;">Day Off</span>
+                            <span>Day Off</span>
                         </div>
                         <div class="legend-item">
                             <div class="legend-dot" style="background: #3b82f6;"></div>
-                            <span style="color: #999;">Today</span>
+                            <span>Today</span>
                         </div>
                     </div>
+                </div>
+
+                <!-- Date Display -->
+                <div class="section">
+                    <div style="font-size: 16px; font-weight: 700; color: #d4af37; margin-bottom: 4px;" id="selectedDate">Today</div>
+                    <div style="font-size: 12px; color: #999;" id="selectedDateMeta">Fri • Today</div>
                 </div>
 
                 <!-- Transfers -->
                 <div class="section">
                     <div class="section-title">🚗 Transfers (Barcelona Outside)</div>
                     <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Date</label>
-                            <input type="date" id="tDate" class="form-input">
-                        </div>
                         <div class="form-group">
                             <label class="form-label">Amount (€)</label>
                             <input type="number" id="tAmount" class="form-input" placeholder="0.00" step="0.01">
@@ -728,17 +686,17 @@
             </div>
 
             <!-- HISTORY TAB -->
-            <div id="historyTab" class="tab-content">
+            <div id="historyTab" class="tab-panel">
                 <div class="empty-state">📋 History coming soon...</div>
             </div>
 
             <!-- SUMMARY TAB -->
-            <div id="summaryTab" class="tab-content">
+            <div id="summaryTab" class="tab-panel">
                 <div class="empty-state">📊 Summary coming soon...</div>
             </div>
 
             <!-- SETTLEMENT TAB -->
-            <div id="settlementTab" class="tab-content">
+            <div id="settlementTab" class="tab-panel">
                 <div class="empty-state">💰 Settlement coming soon...</div>
             </div>
         </div>
@@ -748,6 +706,7 @@
         let currentDriver = 'driver1';
         let currentUser = null;
         let auth, db;
+        let selectedDate = new Date();
 
         const firebaseConfig = {
             apiKey: "AIzaSyBlwF6FfIOXsxBHGF3U_Njp0mVYiOvMMD8",
@@ -822,22 +781,20 @@
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('dashboard').classList.add('active');
             document.getElementById('headerMeta').textContent = `${currentDriver === 'driver1' ? 'Driver 1' : 'Driver 2'} • June 2026`;
-            document.getElementById('tDate').valueAsDate = new Date();
+            selectedDate = new Date();
             generateCalendar();
+            updateDateDisplay();
         }
-
-        let calendarMonth = new Date().getMonth();
-        let calendarYear = new Date().getFullYear();
 
         function generateCalendar() {
             const grid = document.getElementById('calendarGrid');
             const monthName = document.getElementById('monthName');
             const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
             
-            monthName.textContent = `${months[calendarMonth]} ${calendarYear}`;
+            monthName.textContent = `${months[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
             grid.innerHTML = '';
             
-            // Header
+            // Headers
             const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
             days.forEach(d => {
                 const el = document.createElement('div');
@@ -846,8 +803,8 @@
                 grid.appendChild(el);
             });
             
-            const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
-            const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+            const firstDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1).getDay();
+            const daysInMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate();
             const today = new Date();
             
             // Empty cells
@@ -862,47 +819,58 @@
                 dayEl.className = 'calendar-day';
                 dayEl.textContent = d;
                 
-                const isToday = d === today.getDate() && calendarMonth === today.getMonth() && calendarYear === today.getFullYear();
+                const isToday = d === today.getDate() && selectedDate.getMonth() === today.getMonth() && selectedDate.getFullYear() === today.getFullYear();
+                const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const isSelected = selectedDate.getDate() === d && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear();
                 
-                if (isToday) {
-                    dayEl.classList.add('today');
-                } else if (d % 2 === 0) {
-                    dayEl.classList.add('saved');
-                } else if (d % 5 === 0) {
-                    dayEl.classList.add('pending');
-                } else if (d % 7 === 0) {
-                    dayEl.classList.add('dayoff');
-                }
+                if (isToday) dayEl.classList.add('today');
+                if (isSelected) dayEl.classList.add('selected');
                 
+                // Color based on data (random for demo)
+                if (d % 3 === 0) dayEl.classList.add('has-entry');
+                else if (d % 5 === 0) dayEl.classList.add('pending');
+                else if (d % 7 === 0) dayEl.classList.add('dayoff');
+                
+                dayEl.addEventListener('click', () => selectDate(d));
                 grid.appendChild(dayEl);
             }
         }
 
-        function prevMonth() {
-            if (calendarMonth === 0) {
-                calendarMonth = 11;
-                calendarYear--;
-            } else {
-                calendarMonth--;
-            }
+        function selectDate(day) {
+            selectedDate.setDate(day);
             generateCalendar();
+            updateDateDisplay();
+            clearFields();
         }
 
-        function nextMonth() {
-            if (calendarMonth === 11) {
-                calendarMonth = 0;
-                calendarYear++;
-            } else {
-                calendarMonth++;
-            }
-            generateCalendar();
+        function updateDateDisplay() {
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const dayName = days[selectedDate.getDay()];
+            const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
+            const isToday = selectedDate.toDateString() === new Date().toDateString();
+            
+            document.getElementById('selectedDate').textContent = dateStr;
+            document.getElementById('selectedDateMeta').textContent = `${dayName} • ${isToday ? 'Today' : months[selectedDate.getMonth()] + ' ' + selectedDate.getDate()}`;
+        }
+
+        function clearFields() {
+            document.getElementById('uberVal').value = '';
+            document.getElementById('cashVal').value = '';
+            document.getElementById('cardVal').value = '';
+            document.getElementById('tipsVal').value = '';
+            document.getElementById('adjVal').value = '';
+            calc();
         }
 
         window.addTransfer = function() {
-            const date = document.getElementById('tDate').value;
             const amount = parseFloat(document.getElementById('tAmount').value) || 0;
             if (amount <= 0) { alert('Enter valid amount'); return; }
-            db.collection(`drivers/${currentDriver}/transfers`).add({ date, amount, ts: new Date() });
+            db.collection(`drivers/${currentDriver}/transfers`).add({ 
+                date: selectedDate.toISOString(), 
+                amount, 
+                ts: new Date() 
+            });
             document.getElementById('tAmount').value = '';
         };
 
@@ -936,12 +904,7 @@
         window.shareAll = function() { alert('📤 Share All — June 2026'); };
         window.clearDay = function() {
             if (confirm('Clear today?')) {
-                document.getElementById('uberVal').value = '';
-                document.getElementById('cashVal').value = '';
-                document.getElementById('cardVal').value = '';
-                document.getElementById('tipsVal').value = '';
-                document.getElementById('adjVal').value = '';
-                calc();
+                clearFields();
             }
         };
 
@@ -952,7 +915,7 @@
         document.getElementById('tabSettlement').addEventListener('click', () => switchTab('settlement'));
 
         function switchTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(e => e.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
             
             if (tab === 'entry') {
