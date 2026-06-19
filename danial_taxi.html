@@ -869,33 +869,17 @@
 
     <script>
         let firebaseConfig = {
-            apiKey: "AIzaSyBlwF6FfIOXsxBHGF3U_Njp0mVYiOvMMD8",
-            authDomain: "danial-taxi.firebaseapp.com",
-            projectId: "danial-taxi",
-            storageBucket: "danial-taxi.firebasestorage.app",
-            messagingSenderId: "785280554352",
-            appId: "1:785280554352:web:e5ff30d25488bc4d926bb5",
-            measurementId: "G-E8Q1W2EYNL"
+            apiKey: "AIzaSyBp-4m0xJRj3J9TH5KLmPqRvWxYzAbCdFE",
+            authDomain: "razacars-a3b2c.firebaseapp.com",
+            projectId: "razacars-a3b2c",
+            storageBucket: "razacars-a3b2c.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
         };
 
-        try {
-            firebase.initializeApp(firebaseConfig);
-            console.log('Firebase initialized successfully');
-        } catch (error) {
-            console.error('Firebase init error:', error);
-        }
-
+        firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        
-        // Enable offline persistence
-        db.enablePersistence().catch((err) => {
-            if (err.code == 'failed-precondition') {
-                console.log('Multiple tabs open, persistence disabled');
-            } else if (err.code == 'unimplemented') {
-                console.log('Browser does not support persistence');
-            }
-        });
 
         let currentUser = null;
         let currentDriver = 'driver1';
@@ -928,31 +912,13 @@
                 return;
             }
 
-            console.log('Attempting login with:', email);
-            
             auth.signInWithEmailAndPassword(email, password)
                 .then(user => {
-                    console.log('Login successful:', user.user.uid);
                     currentUser = user.user;
                     loadDashboard();
                 })
                 .catch(error => {
-                    console.error('Login error:', error.code, error.message);
-                    let errorMsg = error.message;
-                    
-                    if (error.code === 'auth/user-not-found') {
-                        errorMsg = 'No account with this email. Create one first.';
-                    } else if (error.code === 'auth/wrong-password') {
-                        errorMsg = 'Wrong password. Try again.';
-                    } else if (error.code === 'auth/invalid-email') {
-                        errorMsg = 'Invalid email format.';
-                    } else if (error.code === 'auth/user-disabled') {
-                        errorMsg = 'Account has been disabled.';
-                    } else if (error.code === 'auth/too-many-requests') {
-                        errorMsg = 'Too many login attempts. Try again later.';
-                    }
-                    
-                    showMessage('authError', errorMsg, true);
+                    showMessage('authError', error.message, true);
                 });
         }
 
@@ -965,44 +931,18 @@
                 return;
             }
 
-            if (password.length < 6) {
-                showMessage('authError', 'Password must be at least 6 characters', true);
-                return;
-            }
-
-            console.log('Attempting signup with:', email, 'as', currentDriver);
-            
             auth.createUserWithEmailAndPassword(email, password)
                 .then(user => {
-                    console.log('Signup successful:', user.user.uid);
                     currentUser = user.user;
-                    
-                    // Save user info to Firestore
-                    return db.collection('users').doc(currentUser.uid).set({
+                    db.collection('users').doc(currentUser.uid).set({
                         email: email,
                         driver: currentDriver,
-                        created: new Date(),
-                        lastLogin: new Date()
-                    }).then(() => {
-                        console.log('User data saved to Firestore');
-                        loadDashboard();
+                        created: new Date()
                     });
+                    loadDashboard();
                 })
                 .catch(error => {
-                    console.error('Signup error:', error.code, error.message);
-                    let errorMsg = error.message;
-                    
-                    if (error.code === 'auth/email-already-in-use') {
-                        errorMsg = 'This email is already registered. Try logging in.';
-                    } else if (error.code === 'auth/invalid-email') {
-                        errorMsg = 'Invalid email format.';
-                    } else if (error.code === 'auth/weak-password') {
-                        errorMsg = 'Password is too weak. Use at least 6 characters.';
-                    } else if (error.code === 'auth/operation-not-allowed') {
-                        errorMsg = 'Email/password signup is not enabled. Contact admin.';
-                    }
-                    
-                    showMessage('authError', errorMsg, true);
+                    showMessage('authError', error.message, true);
                 });
         }
 
@@ -1275,19 +1215,13 @@
 
         // Auth state listener
         auth.onAuthStateChanged(user => {
-            console.log('Auth state changed:', user ? user.uid : 'logged out');
             if (user) {
                 currentUser = user;
-                console.log('User authenticated:', user.email);
                 loadDashboard();
             } else {
-                console.log('User not authenticated');
                 document.querySelector('.auth-container').style.display = 'flex';
                 document.getElementById('dashboard').classList.remove('active');
             }
-        }, (error) => {
-            console.error('Auth state error:', error);
-            showMessage('authError', 'Firebase connection error. Check your internet.', true);
         });
     </script>
 </body>
