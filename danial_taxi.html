@@ -3,1224 +3,329 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danial Taxi – Dual Driver Income Management</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <title>Danial Taxi</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --color-primary: #1a1a1a;
-            --color-secondary: #d4af37;
-            --color-accent: #f59e0b;
-            --color-surface: #ffffff;
-            --color-surface-alt: #f9fafb;
-            --color-border: #e5e7eb;
-            --color-text: #1f2937;
-            --color-text-light: #6b7280;
-            --color-error: #dc2626;
-            --color-success: #10b981;
-            --color-warning: #f59e0b;
-            
-            --font-display: 'Merriweather', serif;
-            --font-body: 'Inter', -apple-system, sans-serif;
-            
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            
-            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: var(--font-body);
-            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-            color: var(--color-text);
-            line-height: 1.6;
-            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
         }
-
-        /* ===== AUTHENTICATION SCREEN ===== */
-        .auth-container {
+        .auth-screen {
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             padding: 20px;
-            background: linear-gradient(135deg, var(--color-primary) 0%, #2d2d2d 100%);
         }
-
-        .auth-screen {
-            background: var(--color-surface);
+        .auth-box {
+            background: white;
+            padding: 40px;
             border-radius: 16px;
-            padding: 48px 40px;
-            max-width: 500px;
             width: 100%;
-            box-shadow: var(--shadow-xl);
-            animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-width: 480px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .auth-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .auth-logo {
-            font-family: var(--font-display);
-            font-size: 32px;
+        .auth-title {
+            font-size: 28px;
             font-weight: 700;
-            color: var(--color-primary);
+            text-align: center;
             margin-bottom: 8px;
-            letter-spacing: -0.5px;
+            color: #000;
         }
-
-        .auth-tagline {
-            font-size: 14px;
-            color: var(--color-text-light);
-            font-weight: 500;
-            letter-spacing: 0.5px;
+        .auth-subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 32px;
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
-
-        .driver-selector {
+        .driver-select {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
         }
-
-        .driver-option {
-            padding: 16px;
-            border: 2px solid var(--color-border);
+        .driver-btn {
+            padding: 14px;
+            border: 2px solid #ddd;
             border-radius: 8px;
-            background: var(--color-surface-alt);
+            background: white;
             cursor: pointer;
-            font-size: 15px;
             font-weight: 600;
-            color: var(--color-text-light);
-            transition: var(--transition);
-            position: relative;
-            overflow: hidden;
+            font-size: 15px;
+            transition: all 0.2s ease;
         }
-
-        .driver-option::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, var(--color-secondary), var(--color-accent));
-            opacity: 0;
-            transition: var(--transition);
-        }
-
-        .driver-option:hover {
-            border-color: var(--color-secondary);
-            transform: translateY(-2px);
-        }
-
-        .driver-option.active {
-            border-color: var(--color-secondary);
-            background: linear-gradient(135deg, var(--color-secondary), var(--color-accent));
+        .driver-btn:active {
+            background: #d4af37;
             color: white;
-            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+            border-color: #d4af37;
         }
-
-        .driver-option span {
-            position: relative;
-            z-index: 1;
+        .driver-btn.active {
+            background: #d4af37;
+            color: white;
+            border-color: #d4af37;
         }
-
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
-
         .form-label {
             display: block;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
-            color: var(--color-text);
-            margin-bottom: 8px;
+            color: #333;
+            margin-bottom: 6px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
-
         .form-input {
             width: 100%;
-            padding: 12px 16px;
-            border: 1px solid var(--color-border);
+            padding: 12px;
+            border: 1px solid #ddd;
             border-radius: 8px;
-            font-family: var(--font-body);
             font-size: 15px;
-            color: var(--color-text);
-            transition: var(--transition);
-            background: var(--color-surface);
+            font-family: inherit;
         }
-
         .form-input:focus {
             outline: none;
-            border-color: var(--color-secondary);
-            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+            border-color: #d4af37;
+            box-shadow: 0 0 0 3px rgba(212,175,55,0.1);
         }
-
-        .auth-buttons {
+        .button-group {
             display: grid;
-            gap: 12px;
+            gap: 10px;
+            margin-bottom: 16px;
         }
-
         .btn {
-            padding: 12px 24px;
+            padding: 12px;
             border: none;
             border-radius: 8px;
-            font-family: var(--font-body);
-            font-size: 15px;
             font-weight: 600;
+            font-size: 15px;
             cursor: pointer;
-            transition: var(--transition);
-            position: relative;
-            overflow: hidden;
+            transition: all 0.2s;
+            font-family: inherit;
         }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--color-secondary), var(--color-accent));
-            color: var(--color-primary);
-            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+        .btn-login {
+            background: linear-gradient(135deg, #d4af37, #f59e0b);
+            color: #000;
+            width: 100%;
         }
-
-        .btn-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
+        .btn-login:active {
+            transform: scale(0.98);
         }
-
-        .btn-secondary {
-            background: var(--color-surface-alt);
-            color: var(--color-text);
-            border: 1px solid var(--color-border);
+        .btn-signup {
+            background: #f5f5f5;
+            color: #333;
+            border: 1px solid #d4af37;
+            width: 100%;
         }
-
-        .btn-secondary:hover:not(:disabled) {
-            background: var(--color-surface);
-            border-color: var(--color-secondary);
-            color: var(--color-secondary);
+        .btn-signup:active {
+            background: #efefef;
         }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .auth-message {
-            margin-top: 12px;
-            padding: 12px 16px;
+        .error-msg {
+            background: rgba(220,38,38,0.1);
+            color: #dc2626;
+            padding: 12px;
             border-radius: 8px;
+            border-left: 3px solid #dc2626;
+            margin-bottom: 16px;
+            display: none;
             font-size: 14px;
-            animation: slideDown 0.3s ease;
         }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .success-msg {
+            background: rgba(16,185,129,0.1);
+            color: #059669;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid #059669;
+            margin-bottom: 16px;
+            display: none;
+            font-size: 14px;
         }
-
-        .message-error {
-            background: rgba(220, 38, 38, 0.1);
-            color: var(--color-error);
-            border-left: 3px solid var(--color-error);
-        }
-
-        .message-success {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--color-success);
-            border-left: 3px solid var(--color-success);
-        }
-
-        /* ===== DASHBOARD ===== */
         .dashboard {
             display: none;
-            min-height: 100vh;
-            padding: 40px 20px;
+            padding: 20px;
         }
-
         .dashboard.active {
             display: block;
-        }
-
-        .dashboard-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .dashboard-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 40px;
-            padding: 32px;
-            background: var(--color-surface);
-            border-radius: 16px;
-            box-shadow: var(--shadow-md);
-        }
-
-        .header-content h1 {
-            font-family: var(--font-display);
-            font-size: 36px;
-            color: var(--color-primary);
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
-        }
-
-        .header-content p {
-            font-size: 14px;
-            color: var(--color-text-light);
-            font-weight: 500;
-        }
-
-        .btn-logout {
-            padding: 10px 20px;
-            background: var(--color-error);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .btn-logout:hover {
-            background: #b91c1c;
-            transform: translateY(-2px);
-        }
-
-        /* ===== TABS ===== */
-        .tabs-container {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 32px;
-            background: var(--color-surface);
-            padding: 12px;
-            border-radius: 12px;
-            box-shadow: var(--shadow-sm);
-            overflow-x: auto;
-        }
-
-        .tab-button {
-            padding: 12px 24px;
-            border: none;
-            background: transparent;
-            color: var(--color-text-light);
-            font-family: var(--font-body);
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            transition: var(--transition);
-            position: relative;
-            white-space: nowrap;
-        }
-
-        .tab-button:hover {
-            color: var(--color-secondary);
-        }
-
-        .tab-button.active {
-            color: var(--color-secondary);
-        }
-
-        .tab-button.active::after {
-            content: '';
-            position: absolute;
-            bottom: -12px;
-            left: 24px;
-            right: 24px;
-            height: 2px;
-            background: linear-gradient(90deg, var(--color-secondary), var(--color-accent));
-            border-radius: 1px;
-        }
-
-        /* ===== TAB CONTENT ===== */
-        .tab-panel {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-
-        .tab-panel.active {
-            display: block;
-        }
-
-        /* ===== FORMS ===== */
-        .form-section {
-            background: var(--color-surface);
-            padding: 32px;
-            border-radius: 16px;
-            box-shadow: var(--shadow-md);
-            margin-bottom: 32px;
-        }
-
-        .form-section h2 {
-            font-family: var(--font-display);
-            font-size: 24px;
-            color: var(--color-primary);
-            margin-bottom: 24px;
-            letter-spacing: -0.5px;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 24px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .form-full-width {
-            grid-column: 1 / -1;
-        }
-
-        .form-input,
-        .form-select {
-            padding: 12px 16px;
-            border: 1px solid var(--color-border);
-            border-radius: 8px;
-            font-family: var(--font-body);
-            font-size: 15px;
-            color: var(--color-text);
-            transition: var(--transition);
-            background: var(--color-surface);
-        }
-
-        .form-select {
-            cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231a1a1a' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            padding-right: 36px;
-        }
-
-        .form-input:focus,
-        .form-select:focus {
-            outline: none;
-            border-color: var(--color-secondary);
-            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
-        }
-
-        /* ===== STATS CARDS ===== */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-
-        .stat-card {
-            background: var(--color-surface);
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: var(--shadow-md);
-            border-left: 4px solid var(--color-secondary);
-            transition: var(--transition);
-        }
-
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .stat-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--color-text-light);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 12px;
-        }
-
-        .stat-value {
-            font-family: 'Courier New', monospace;
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--color-primary);
-            letter-spacing: -0.5px;
-        }
-
-        /* ===== ENTRIES & EXPENSES LIST ===== */
-        .entry-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .entry-item {
-            background: var(--color-surface-alt);
-            padding: 16px;
-            border-radius: 12px;
-            border-left: 4px solid var(--color-secondary);
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            transition: var(--transition);
-            border: 1px solid var(--color-border);
-        }
-
-        .entry-item:hover {
-            background: var(--color-surface);
-            box-shadow: var(--shadow-md);
-        }
-
-        .entry-content {
-            flex: 1;
-        }
-
-        .entry-title {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--color-primary);
-            margin-bottom: 4px;
-        }
-
-        .entry-meta {
-            font-size: 13px;
-            color: var(--color-text-light);
-            line-height: 1.5;
-        }
-
-        .entry-actions {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .entry-amount {
-            font-family: 'Courier New', monospace;
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--color-secondary);
-            min-width: 100px;
-            text-align: right;
-        }
-
-        .btn-delete {
-            padding: 6px 12px;
-            background: var(--color-error);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .btn-delete:hover {
-            background: #b91c1c;
-            transform: scale(1.05);
-        }
-
-        /* ===== SETTLEMENT SECTION ===== */
-        .settlement-card {
-            background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-alt) 100%);
-            border: 1px solid var(--color-border);
-            padding: 32px;
-            border-radius: 16px;
-            box-shadow: var(--shadow-md);
-            margin-bottom: 24px;
-        }
-
-        .settlement-card h3 {
-            font-family: var(--font-display);
-            font-size: 18px;
-            color: var(--color-primary);
-            margin-bottom: 20px;
-            letter-spacing: -0.3px;
-        }
-
-        .settlement-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--color-border);
-            font-size: 15px;
-        }
-
-        .settlement-row:last-child {
-            border-bottom: none;
-        }
-
-        .settlement-label {
-            color: var(--color-text-light);
-            font-weight: 500;
-        }
-
-        .settlement-value {
-            font-family: 'Courier New', monospace;
-            font-weight: 700;
-            color: var(--color-primary);
-        }
-
-        .settlement-total {
-            padding: 16px 0;
-            margin-top: 16px;
-            border-top: 2px solid var(--color-secondary);
-            border-bottom: none;
-            font-size: 16px;
-        }
-
-        .settlement-share {
-            padding: 20px;
-            margin-top: 20px;
-            background: linear-gradient(135deg, var(--color-secondary), var(--color-accent));
-            border-radius: 12px;
-            color: white;
-            font-weight: 700;
-            font-size: 18px;
-        }
-
-        .share-label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            opacity: 0.9;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* ===== EMPTY STATE ===== */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--color-text-light);
-        }
-
-        .empty-state p {
-            font-size: 16px;
-            margin-top: 12px;
-        }
-
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 768px) {
-            .auth-screen {
-                padding: 32px 24px;
-            }
-
-            .dashboard-header {
-                flex-direction: column;
-                gap: 20px;
-            }
-
-            .header-content h1 {
-                font-size: 28px;
-            }
-
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .entry-item {
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            .entry-actions {
-                width: 100%;
-                justify-content: space-between;
-            }
-
-            .settlement-row {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 8px;
-            }
-
-            .settlement-value {
-                align-self: flex-end;
-            }
-
-            @media (prefers-reduced-motion: reduce) {
-                * {
-                    animation-duration: 0.01ms !important;
-                    animation-iteration-count: 1 !important;
-                    transition-duration: 0.01ms !important;
-                }
-            }
         }
     </style>
 </head>
 <body>
-    <!-- AUTH SCREEN -->
-    <div class="auth-container">
-        <div id="authScreen" class="auth-screen">
-            <div class="auth-header">
-                <div class="auth-logo">🚕 Danial Taxi</div>
-                <div class="auth-tagline">Professional Income Tracker</div>
-            </div>
+    <div class="auth-screen" id="authScreen">
+        <div class="auth-box">
+            <div class="auth-title">🚕 Danial Taxi</div>
+            <div class="auth-subtitle">Professional Income Tracker</div>
 
-            <div class="driver-selector">
-                <button class="driver-option active" onclick="selectDriver('driver1')">
-                    <span>Driver 1</span>
-                </button>
-                <button class="driver-option" onclick="selectDriver('driver2')">
-                    <span>Driver 2</span>
-                </button>
+            <div id="errorMsg" class="error-msg"></div>
+            <div id="successMsg" class="success-msg"></div>
+
+            <div class="driver-select">
+                <button class="driver-btn active" id="driver1Btn">Driver 1</button>
+                <button class="driver-btn" id="driver2Btn">Driver 2</button>
             </div>
 
             <div class="form-group">
                 <label class="form-label">Email Address</label>
-                <input type="email" id="email" class="form-input" placeholder="your@email.com" autocomplete="email">
+                <input type="email" id="email" class="form-input" placeholder="your@email.com">
             </div>
 
             <div class="form-group">
                 <label class="form-label">Password</label>
-                <input type="password" id="password" class="form-input" placeholder="••••••••" autocomplete="current-password">
+                <input type="password" id="password" class="form-input" placeholder="••••••••">
             </div>
 
-            <div class="auth-buttons">
-                <button class="btn btn-primary" onclick="login()">Sign In</button>
-                <button class="btn btn-secondary" onclick="signup()">Create Account</button>
+            <div class="button-group">
+                <button class="btn btn-login" id="loginBtn">Sign In</button>
+                <button class="btn btn-signup" id="signupBtn">Create Account</button>
             </div>
-
-            <div id="authError" class="auth-message" style="display: none;"></div>
         </div>
     </div>
 
-    <!-- DASHBOARD -->
-    <div id="dashboard" class="dashboard">
-        <div class="dashboard-container">
-            <div class="dashboard-header">
-                <div class="header-content">
-                    <h1>Danial Taxi</h1>
-                    <p id="currentDriver">Logged in as Driver 1</p>
-                </div>
-                <button class="btn-logout" onclick="logout()">Sign Out</button>
-            </div>
-
-            <div class="tabs-container">
-                <button class="tab-button active" onclick="switchTab('entries')">Daily Income</button>
-                <button class="tab-button" onclick="switchTab('expenses')">Expenses</button>
-                <button class="tab-button" onclick="switchTab('settlement')">Settlement</button>
-            </div>
-
-            <!-- ENTRIES TAB -->
-            <div id="entriesTab" class="tab-panel active">
-                <div class="form-section">
-                    <h2>Record Income</h2>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Date</label>
-                            <input type="date" id="entryDate" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Time</label>
-                            <input type="time" id="entryTime" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Cash (€)</label>
-                            <input type="number" id="cashAmount" class="form-input" placeholder="0.00" step="0.01">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Card (€)</label>
-                            <input type="number" id="cardAmount" class="form-input" placeholder="0.00" step="0.01">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Tips (€)</label>
-                            <input type="number" id="tipsAmount" class="form-input" placeholder="0.00" step="0.01">
-                        </div>
-                        <div class="form-group form-full-width">
-                            <label class="form-label">Notes (Optional)</label>
-                            <input type="text" id="entryNotes" class="form-input" placeholder="e.g., Airport run, VIP passenger...">
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" onclick="addEntry()" style="width: 100%;">Add Entry</button>
-                    <div id="entryMsg" class="auth-message" style="display: none; margin-top: 16px;"></div>
-                </div>
-
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">Total Cash</div>
-                        <div class="stat-value">€<span id="totalCash">0.00</span></div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Total Card</div>
-                        <div class="stat-value">€<span id="totalCard">0.00</span></div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Total Tips</div>
-                        <div class="stat-value">€<span id="totalTips">0.00</span></div>
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <div id="entryList" class="entry-list"></div>
-                    <div id="entryEmpty" class="empty-state" style="display: none;">
-                        <p>No entries yet. Start recording your income above.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- EXPENSES TAB -->
-            <div id="expensesTab" class="tab-panel">
-                <div class="form-section">
-                    <h2>Record Expenses</h2>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Date</label>
-                            <input type="date" id="expenseDate" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Category</label>
-                            <select id="expenseCategory" class="form-select">
-                                <option value="Petrol">Petrol</option>
-                                <option value="Washing">Washing</option>
-                                <option value="Maintenance">Maintenance</option>
-                                <option value="Insurance">Insurance</option>
-                                <option value="Toll">Toll</option>
-                                <option value="Parking">Parking</option>
-                                <option value="Other">Other</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Amount (€)</label>
-                            <input type="number" id="expenseAmount" class="form-input" placeholder="0.00" step="0.01">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Paid By</label>
-                            <select id="expensePaidBy" class="form-select">
-                                <option value="both">Both (Shared)</option>
-                                <option value="driver1">Driver 1</option>
-                                <option value="driver2">Driver 2</option>
-                            </select>
-                        </div>
-                        <div class="form-group form-full-width">
-                            <label class="form-label">Notes (Optional)</label>
-                            <input type="text" id="expenseNotes" class="form-input" placeholder="e.g., Q1 insurance payment...">
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" onclick="addExpense()" style="width: 100%;">Add Expense</button>
-                    <div id="expenseMsg" class="auth-message" style="display: none; margin-top: 16px;"></div>
-                </div>
-
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">Total Expenses</div>
-                        <div class="stat-value">€<span id="totalExpenses">0.00</span></div>
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <div id="expenseList" class="entry-list"></div>
-                    <div id="expenseEmpty" class="empty-state" style="display: none;">
-                        <p>No expenses recorded. Add shared expenses above.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SETTLEMENT TAB -->
-            <div id="settlementTab" class="tab-panel">
-                <div id="settlementContent"></div>
-            </div>
-        </div>
+    <div class="dashboard" id="dashboard">
+        <h1 id="dashTitle">Danial Taxi</h1>
+        <p id="userInfo">Logged in as Driver 1</p>
+        <button id="logoutBtn">Sign Out</button>
     </div>
 
     <script>
-        let firebaseConfig = {
-            apiKey: "AIzaSyBp-4m0xJRj3J9TH5KLmPqRvWxYzAbCdFE",
-            authDomain: "razacars-a3b2c.firebaseapp.com",
-            projectId: "razacars-a3b2c",
-            storageBucket: "razacars-a3b2c.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcdef123456"
+        let currentDriver = 'driver1';
+        let currentUser = null;
+        let auth, db;
+
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBlwF6FfIOXsxBHGF3U_Njp0mVYiOvMMD8",
+            authDomain: "danial-taxi.firebaseapp.com",
+            projectId: "danial-taxi",
+            storageBucket: "danial-taxi.firebasestorage.app",
+            messagingSenderId: "785280554352",
+            appId: "1:785280554352:web:e5ff30d25488bc4d926bb5"
         };
 
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        let currentUser = null;
-        let currentDriver = 'driver1';
-
-        // Initialize date/time fields
-        document.getElementById('entryDate').valueAsDate = new Date();
-        document.getElementById('expenseDate').valueAsDate = new Date();
-        document.getElementById('entryTime').value = new Date().toTimeString().slice(0, 5);
-
-        function selectDriver(driver) {
-            currentDriver = driver;
-            document.querySelectorAll('.driver-option').forEach(btn => btn.classList.remove('active'));
-            event.target.closest('.driver-option').classList.add('active');
+        try {
+            firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            db = firebase.firestore();
+            console.log("Firebase initialized successfully");
+        } catch(err) {
+            console.error("Firebase error:", err);
         }
 
-        function showMessage(elementId, message, isError = true) {
-            const el = document.getElementById(elementId);
-            el.textContent = message;
-            el.className = `auth-message ${isError ? 'message-error' : 'message-success'}`;
+        // Driver selection
+        document.getElementById('driver1Btn').addEventListener('click', function() {
+            currentDriver = 'driver1';
+            document.getElementById('driver1Btn').classList.add('active');
+            document.getElementById('driver2Btn').classList.remove('active');
+            console.log("Selected: Driver 1");
+        });
+
+        document.getElementById('driver2Btn').addEventListener('click', function() {
+            currentDriver = 'driver2';
+            document.getElementById('driver2Btn').classList.add('active');
+            document.getElementById('driver1Btn').classList.remove('active');
+            console.log("Selected: Driver 2");
+        });
+
+        // Sign In
+        document.getElementById('loginBtn').addEventListener('click', function() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!email || !password) {
+                showError('Please enter email and password');
+                return;
+            }
+
+            console.log("Attempting login with:", email);
+
+            auth.signInWithEmailAndPassword(email, password)
+                .then(result => {
+                    console.log("Login successful:", result.user.uid);
+                    currentUser = result.user;
+                    showDashboard();
+                })
+                .catch(error => {
+                    console.error("Login failed:", error.code, error.message);
+                    showError(error.message);
+                });
+        });
+
+        // Create Account
+        document.getElementById('signupBtn').addEventListener('click', function() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!email || !password) {
+                showError('Please enter email and password');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters');
+                return;
+            }
+
+            console.log("Attempting signup as:", currentDriver);
+
+            auth.createUserWithEmailAndPassword(email, password)
+                .then(result => {
+                    console.log("Signup successful:", result.user.uid);
+                    currentUser = result.user;
+                    
+                    // Save to Firestore
+                    db.collection('users').doc(currentUser.uid).set({
+                        email: email,
+                        driver: currentDriver,
+                        driverName: currentDriver === 'driver1' ? 'Driver 1' : 'Driver 2',
+                        created: new Date()
+                    }).then(() => {
+                        console.log("User data saved");
+                        showDashboard();
+                    });
+                })
+                .catch(error => {
+                    console.error("Signup failed:", error.code, error.message);
+                    showError(error.message);
+                });
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            auth.signOut().then(() => {
+                console.log("Logged out");
+                currentUser = null;
+                document.getElementById('authScreen').style.display = 'flex';
+                document.getElementById('dashboard').classList.remove('active');
+                document.getElementById('email').value = '';
+                document.getElementById('password').value = '';
+            });
+        });
+
+        function showError(msg) {
+            const el = document.getElementById('errorMsg');
+            el.textContent = msg;
             el.style.display = 'block';
             setTimeout(() => el.style.display = 'none', 4000);
         }
 
-        function login() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
-
-            if (!email || !password) {
-                showMessage('authError', 'Please enter email and password', true);
-                return;
-            }
-
-            auth.signInWithEmailAndPassword(email, password)
-                .then(user => {
-                    currentUser = user.user;
-                    loadDashboard();
-                })
-                .catch(error => {
-                    showMessage('authError', error.message, true);
-                });
-        }
-
-        function signup() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
-
-            if (!email || !password) {
-                showMessage('authError', 'Please enter email and password', true);
-                return;
-            }
-
-            auth.createUserWithEmailAndPassword(email, password)
-                .then(user => {
-                    currentUser = user.user;
-                    db.collection('users').doc(currentUser.uid).set({
-                        email: email,
-                        driver: currentDriver,
-                        created: new Date()
-                    });
-                    loadDashboard();
-                })
-                .catch(error => {
-                    showMessage('authError', error.message, true);
-                });
-        }
-
-        function logout() {
-            auth.signOut().then(() => {
-                currentUser = null;
-                document.querySelector('.auth-container').style.display = 'flex';
-                document.getElementById('dashboard').classList.remove('active');
-                document.getElementById('email').value = '';
-                document.getElementById('password').value = '';
-                document.getElementById('authError').style.display = 'none';
-            });
-        }
-
-        function loadDashboard() {
-            document.querySelector('.auth-container').style.display = 'none';
+        function showDashboard() {
+            document.getElementById('authScreen').style.display = 'none';
             document.getElementById('dashboard').classList.add('active');
-            document.getElementById('currentDriver').textContent = `Logged in as ${currentDriver === 'driver1' ? 'Driver 1' : 'Driver 2'}`;
-            loadEntries();
-            loadExpenses();
-            loadSettlement();
+            const driverName = currentDriver === 'driver1' ? 'Driver 1' : 'Driver 2';
+            document.getElementById('userInfo').textContent = `Logged in as ${driverName}`;
         }
 
-        function addEntry() {
-            if (!currentUser) return;
-
-            const date = document.getElementById('entryDate').value;
-            const time = document.getElementById('entryTime').value;
-            const cash = parseFloat(document.getElementById('cashAmount').value) || 0;
-            const card = parseFloat(document.getElementById('cardAmount').value) || 0;
-            const tips = parseFloat(document.getElementById('tipsAmount').value) || 0;
-            const notes = document.getElementById('entryNotes').value;
-
-            if (cash === 0 && card === 0 && tips === 0) {
-                showMessage('entryMsg', 'Enter at least one amount', true);
-                return;
-            }
-
-            db.collection('danial_taxi_entries').add({
-                driver: currentDriver,
-                date: date,
-                time: time,
-                cash: cash,
-                card: card,
-                tips: tips,
-                notes: notes,
-                timestamp: new Date(),
-                userId: currentUser.uid
-            }).then(() => {
-                showMessage('entryMsg', 'Entry recorded successfully', false);
-                document.getElementById('cashAmount').value = '';
-                document.getElementById('cardAmount').value = '';
-                document.getElementById('tipsAmount').value = '';
-                document.getElementById('entryNotes').value = '';
-                document.getElementById('entryDate').valueAsDate = new Date();
-                loadEntries();
-                loadSettlement();
-            });
-        }
-
-        function addExpense() {
-            if (!currentUser) return;
-
-            const date = document.getElementById('expenseDate').value;
-            const category = document.getElementById('expenseCategory').value;
-            const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
-            const paidBy = document.getElementById('expensePaidBy').value;
-            const notes = document.getElementById('expenseNotes').value;
-
-            if (amount <= 0) {
-                showMessage('expenseMsg', 'Enter a valid amount', true);
-                return;
-            }
-
-            db.collection('danial_taxi_expenses').add({
-                date: date,
-                category: category,
-                amount: amount,
-                paidBy: paidBy,
-                notes: notes,
-                timestamp: new Date(),
-                userId: currentUser.uid
-            }).then(() => {
-                showMessage('expenseMsg', 'Expense recorded successfully', false);
-                document.getElementById('expenseAmount').value = '';
-                document.getElementById('expenseNotes').value = '';
-                document.getElementById('expenseCategory').value = 'Petrol';
-                document.getElementById('expensePaidBy').value = 'both';
-                document.getElementById('expenseDate').valueAsDate = new Date();
-                loadExpenses();
-                loadSettlement();
-            });
-        }
-
-        function loadEntries() {
-            db.collection('danial_taxi_entries')
-                .orderBy('timestamp', 'desc')
-                .onSnapshot(snapshot => {
-                    let totalCash = 0, totalCard = 0, totalTips = 0;
-                    let html = '';
-
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        totalCash += data.cash || 0;
-                        totalCard += data.card || 0;
-                        totalTips += data.tips || 0;
-
-                        const total = (data.cash || 0) + (data.card || 0) + (data.tips || 0);
-                        html += `
-                            <div class="entry-item">
-                                <div class="entry-content">
-                                    <div class="entry-title">${data.driver === 'driver1' ? 'Driver 1' : 'Driver 2'} • ${data.date} ${data.time}</div>
-                                    <div class="entry-meta">
-                                        Cash: €${(data.cash || 0).toFixed(2)} | Card: €${(data.card || 0).toFixed(2)} | Tips: €${(data.tips || 0).toFixed(2)}
-                                        ${data.notes ? `<br>Note: ${data.notes}` : ''}
-                                    </div>
-                                </div>
-                                <div class="entry-actions">
-                                    <div class="entry-amount">€${total.toFixed(2)}</div>
-                                    <button class="btn-delete" onclick="deleteEntry('${doc.id}')">Delete</button>
-                                </div>
-                            </div>
-                        `;
-                    });
-
-                    document.getElementById('entryList').innerHTML = html || '<p class="empty-state" style="padding: 40px 0;">No entries yet</p>';
-                    document.getElementById('totalCash').textContent = totalCash.toFixed(2);
-                    document.getElementById('totalCard').textContent = totalCard.toFixed(2);
-                    document.getElementById('totalTips').textContent = totalTips.toFixed(2);
-                });
-        }
-
-        function loadExpenses() {
-            db.collection('danial_taxi_expenses')
-                .orderBy('timestamp', 'desc')
-                .onSnapshot(snapshot => {
-                    let totalExpenses = 0;
-                    let html = '';
-
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        totalExpenses += data.amount || 0;
-
-                        html += `
-                            <div class="entry-item">
-                                <div class="entry-content">
-                                    <div class="entry-title">${data.category} • ${data.date}</div>
-                                    <div class="entry-meta">
-                                        Paid by: ${data.paidBy === 'both' ? 'Both (Shared)' : (data.paidBy === 'driver1' ? 'Driver 1' : 'Driver 2')}
-                                        ${data.notes ? `<br>Note: ${data.notes}` : ''}
-                                    </div>
-                                </div>
-                                <div class="entry-actions">
-                                    <div class="entry-amount">-€${(data.amount || 0).toFixed(2)}</div>
-                                    <button class="btn-delete" onclick="deleteExpense('${doc.id}')">Delete</button>
-                                </div>
-                            </div>
-                        `;
-                    });
-
-                    document.getElementById('expenseList').innerHTML = html || '<p class="empty-state" style="padding: 40px 0;">No expenses recorded</p>';
-                    document.getElementById('totalExpenses').textContent = totalExpenses.toFixed(2);
-                });
-        }
-
-        function loadSettlement() {
-            Promise.all([
-                db.collection('danial_taxi_entries').get(),
-                db.collection('danial_taxi_expenses').get()
-            ]).then(([entriesSnap, expensesSnap]) => {
-                let driver1Total = 0, driver2Total = 0;
-                let totalExpenses = 0;
-
-                entriesSnap.forEach(doc => {
-                    const data = doc.data();
-                    const income = (data.cash || 0) + (data.card || 0) + (data.tips || 0);
-                    if (data.driver === 'driver1') driver1Total += income;
-                    if (data.driver === 'driver2') driver2Total += income;
-                });
-
-                expensesSnap.forEach(doc => {
-                    const data = doc.data();
-                    totalExpenses += data.amount || 0;
-                });
-
-                const combinedIncome = driver1Total + driver2Total;
-                const expensePerDriver = totalExpenses / 2;
-                const driver1Share = driver1Total - expensePerDriver;
-                const driver2Share = driver2Total - expensePerDriver;
-
-                let html = `
-                    <div class="settlement-card">
-                        <h3>Income Overview</h3>
-                        <div class="settlement-row">
-                            <span class="settlement-label">Driver 1 Income</span>
-                            <span class="settlement-value">€${driver1Total.toFixed(2)}</span>
-                        </div>
-                        <div class="settlement-row">
-                            <span class="settlement-label">Driver 2 Income</span>
-                            <span class="settlement-value">€${driver2Total.toFixed(2)}</span>
-                        </div>
-                        <div class="settlement-row settlement-total">
-                            <span class="settlement-label">Combined Income</span>
-                            <span class="settlement-value">€${combinedIncome.toFixed(2)}</span>
-                        </div>
-                    </div>
-
-                    <div class="settlement-card">
-                        <h3>Shared Expenses</h3>
-                        <div class="settlement-row">
-                            <span class="settlement-label">Total Expenses</span>
-                            <span class="settlement-value">€${totalExpenses.toFixed(2)}</span>
-                        </div>
-                        <div class="settlement-row">
-                            <span class="settlement-label">Per Driver (50%)</span>
-                            <span class="settlement-value">€${expensePerDriver.toFixed(2)}</span>
-                        </div>
-                    </div>
-
-                    <div class="settlement-card">
-                        <h3>Final Settlement</h3>
-                        <div class="settlement-share">
-                            <span class="share-label">Driver 1 Final Share</span>
-                            €${driver1Share.toFixed(2)}
-                        </div>
-                        <div class="settlement-share" style="margin-top: 12px; background: linear-gradient(135deg, #f59e0b, #fbbf24);">
-                            <span class="share-label">Driver 2 Final Share</span>
-                            €${driver2Share.toFixed(2)}
-                        </div>
-                    </div>
-                `;
-
-                document.getElementById('settlementContent').innerHTML = html;
-            });
-        }
-
-        function deleteEntry(id) {
-            if (confirm('Delete this entry?')) {
-                db.collection('danial_taxi_entries').doc(id).delete().then(() => {
-                    loadEntries();
-                    loadSettlement();
-                });
-            }
-        }
-
-        function deleteExpense(id) {
-            if (confirm('Delete this expense?')) {
-                db.collection('danial_taxi_expenses').doc(id).delete().then(() => {
-                    loadExpenses();
-                    loadSettlement();
-                });
-            }
-        }
-
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
-            
-            if (tab === 'entries') {
-                document.getElementById('entriesTab').classList.add('active');
-                document.querySelectorAll('.tab-button')[0].classList.add('active');
-            } else if (tab === 'expenses') {
-                document.getElementById('expensesTab').classList.add('active');
-                document.querySelectorAll('.tab-button')[1].classList.add('active');
-            } else if (tab === 'settlement') {
-                document.getElementById('settlementTab').classList.add('active');
-                document.querySelectorAll('.tab-button')[2].classList.add('active');
-            }
-        }
-
-        // Auth state listener
+        // Check auth state
         auth.onAuthStateChanged(user => {
             if (user) {
+                console.log("User already logged in:", user.uid);
                 currentUser = user;
-                loadDashboard();
-            } else {
-                document.querySelector('.auth-container').style.display = 'flex';
-                document.getElementById('dashboard').classList.remove('active');
+                showDashboard();
             }
         });
     </script>
