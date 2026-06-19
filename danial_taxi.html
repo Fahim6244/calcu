@@ -3,177 +3,477 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danial Taxi</title>
+    <title>Danial Taxi – Premium Dual Driver Income Management</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
+        :root {
+            --primary: #1a1a1a;
+            --secondary: #2d2d2d;
+            --accent: #d4af37;
+            --accent-light: #f59e0b;
+            --text: #ffffff;
+            --text-muted: #b8b8b8;
+            --border: #3d3d3d;
+            --bg: #0f0f0f;
         }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        
+        /* ===== AUTH SCREEN ===== */
         .auth-screen {
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             padding: 20px;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
         }
-        .auth-box {
-            background: white;
-            padding: 40px;
-            border-radius: 16px;
+        .auth-container {
+            background: var(--primary);
+            padding: 50px 45px;
+            border-radius: 20px;
             width: 100%;
-            max-width: 480px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        .auth-title {
-            font-size: 28px;
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .auth-header {
+            text-align: center;
+            margin-bottom: 45px;
+        }
+        .auth-logo {
+            font-family: 'Merriweather', serif;
+            font-size: 32px;
             font-weight: 700;
-            text-align: center;
-            margin-bottom: 8px;
-            color: #000;
+            color: var(--accent);
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
         }
-        .auth-subtitle {
-            text-align: center;
-            color: #666;
+        .auth-tagline {
             font-size: 13px;
-            margin-bottom: 32px;
+            color: var(--text-muted);
+            font-weight: 500;
+            letter-spacing: 1.2px;
             text-transform: uppercase;
-            letter-spacing: 1px;
         }
         .driver-select {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 24px;
+            gap: 14px;
+            margin-bottom: 32px;
         }
-        .driver-btn {
-            padding: 14px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            background: white;
+        .driver-option {
+            padding: 16px;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            background: var(--secondary);
             cursor: pointer;
-            font-weight: 600;
             font-size: 15px;
-            transition: all 0.2s ease;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.3s ease;
         }
-        .driver-btn.active {
-            background: #d4af37;
-            color: white;
-            border-color: #d4af37;
+        .driver-option:hover {
+            border-color: var(--accent);
+            background: #3d3d3d;
+            color: var(--accent);
+            transform: translateY(-2px);
+        }
+        .driver-option.active {
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            border-color: var(--accent);
+            color: #000;
+            box-shadow: 0 8px 16px rgba(212,175,55,0.3);
         }
         .form-group {
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
         .form-label {
             display: block;
             font-size: 12px;
             font-weight: 600;
-            color: #333;
-            margin-bottom: 6px;
+            color: var(--text);
+            margin-bottom: 8px;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         .form-input {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 15px;
+            padding: 13px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            background: var(--secondary);
+            color: var(--text);
             font-family: inherit;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+        .form-input::placeholder {
+            color: var(--text-muted);
         }
         .form-input:focus {
             outline: none;
-            border-color: #d4af37;
+            border-color: var(--accent);
+            background: #3d3d3d;
             box-shadow: 0 0 0 3px rgba(212,175,55,0.1);
         }
-        .button-group {
+        .auth-buttons {
             display: grid;
-            gap: 10px;
-            margin-bottom: 16px;
+            gap: 12px;
+            margin-top: 28px;
         }
         .btn {
-            padding: 12px;
+            padding: 13px;
             border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 15px;
-            cursor: pointer;
-            transition: all 0.2s;
+            border-radius: 10px;
             font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
-        .btn-login {
-            background: linear-gradient(135deg, #d4af37, #f59e0b);
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
             color: #000;
-            width: 100%;
+            box-shadow: 0 4px 15px rgba(212,175,55,0.3);
         }
-        .btn-signup {
-            background: #f5f5f5;
-            color: #333;
-            border: 1px solid #d4af37;
-            width: 100%;
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212,175,55,0.4);
         }
-        .error-msg {
-            background: rgba(220,38,38,0.1);
-            color: #dc2626;
-            padding: 12px;
-            border-radius: 8px;
-            border-left: 3px solid #dc2626;
-            margin-bottom: 16px;
-            display: none;
+        .btn-secondary {
+            background: var(--secondary);
+            color: var(--accent);
+            border: 1.5px solid var(--accent);
+        }
+        .btn-secondary:hover {
+            background: #3d3d3d;
+            transform: translateY(-2px);
+        }
+        .auth-error {
+            background: rgba(239,68,68,0.1);
+            color: #f87171;
+            padding: 14px;
+            border-radius: 10px;
+            border-left: 3px solid #f87171;
+            margin-bottom: 20px;
             font-size: 14px;
+            display: none;
         }
+
+        /* ===== DASHBOARD ===== */
         .dashboard {
             display: none;
-            padding: 40px 20px;
-            max-width: 1200px;
-            margin: 0 auto;
+            min-height: 100vh;
+            padding: 25px;
         }
         .dashboard.active {
             display: block;
         }
+        .dashboard-wrap {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
         .dash-header {
-            background: white;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             padding: 30px;
-            border-radius: 12px;
+            border-radius: 16px;
             margin-bottom: 30px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        .dash-title {
-            font-size: 32px;
-            font-weight: 700;
-            color: #000;
+        .header-content h1 {
+            font-family: 'Merriweather', serif;
+            font-size: 36px;
+            color: var(--accent);
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
         }
-        .dash-info {
-            color: #666;
+        .header-meta {
             font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+        .header-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .stat-mini {
+            background: rgba(212,175,55,0.1);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent);
+        }
+        .stat-mini-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .stat-mini-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent);
         }
         .btn-logout {
-            padding: 10px 20px;
-            background: #dc2626;
-            color: white;
-            border: none;
-            border-radius: 8px;
+            padding: 11px 24px;
+            background: #7f1d1d;
+            color: #fca5a5;
+            border: 1px solid #991b1b;
+            border-radius: 10px;
             cursor: pointer;
             font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-logout:hover {
+            background: #991b1b;
+            color: #fecaca;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 25px;
+            background: var(--primary);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 11px 18px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .tab-btn:hover {
+            background: var(--secondary);
+            color: var(--text);
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            color: #000;
+            box-shadow: 0 4px 12px rgba(212,175,55,0.3);
+        }
+
+        /* Sections */
+        .section {
+            background: var(--primary);
+            padding: 25px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .section:hover {
+            border-color: var(--accent);
+            box-shadow: 0 6px 20px rgba(212,175,55,0.1);
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 18px;
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Forms */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+        .form-select {
+            width: 100%;
+            padding: 13px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            background: var(--secondary);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .form-select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(212,175,55,0.1);
+        }
+
+        /* Calendar */
+        .calendar {
+            background: var(--secondary);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            background: var(--primary);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+        .calendar-day:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .calendar-day.today {
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            color: #000;
+            border-color: var(--accent);
+        }
+
+        /* Entries */
+        .entry-item {
+            background: var(--secondary);
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--accent);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            transition: all 0.2s;
+            border: 1px solid var(--border);
+        }
+        .entry-item:hover {
+            background: #3d3d3d;
+            transform: translateX(4px);
+        }
+        .entry-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: var(--text);
+        }
+        .entry-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .entry-value {
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        /* Buttons */
+        .btn-add {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 16px;
+        }
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212,175,55,0.3);
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .btn-save {
+            padding: 13px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59,130,246,0.3);
+        }
+        .btn-share {
+            padding: 13px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-share:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212,175,55,0.3);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            .dash-header { flex-direction: column; gap: 20px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .action-buttons { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
+    <!-- AUTH SCREEN -->
     <div class="auth-screen" id="authScreen">
-        <div class="auth-box">
-            <div class="auth-title">🚕 Danial Taxi</div>
-            <div class="auth-subtitle">Professional Income Tracker</div>
+        <div class="auth-container">
+            <div class="auth-header">
+                <div class="auth-logo">🚕 Danial Taxi</div>
+                <div class="auth-tagline">Premium Dual Driver Management</div>
+            </div>
 
-            <div id="errorMsg" class="error-msg"></div>
+            <div id="authError" class="auth-error"></div>
 
             <div class="driver-select">
-                <button class="driver-btn active" id="driver1Btn">Driver 1</button>
-                <button class="driver-btn" id="driver2Btn">Driver 2</button>
+                <button class="driver-option active" id="d1Btn">Driver 1</button>
+                <button class="driver-option" id="d2Btn">Driver 2</button>
             </div>
 
             <div class="form-group">
@@ -186,23 +486,145 @@
                 <input type="password" id="password" class="form-input" placeholder="••••••••">
             </div>
 
-            <div class="button-group">
-                <button class="btn btn-login" id="loginBtn">Sign In</button>
-                <button class="btn btn-signup" id="signupBtn">Create Account</button>
+            <div class="auth-buttons">
+                <button class="btn btn-primary" id="loginBtn">Sign In</button>
+                <button class="btn btn-secondary" id="signupBtn">Create Account</button>
             </div>
         </div>
     </div>
 
+    <!-- DASHBOARD -->
     <div class="dashboard" id="dashboard">
-        <div class="dash-header">
-            <div>
-                <div class="dash-title">Danial Taxi</div>
-                <div class="dash-info" id="userInfo">Logged in as Driver 1</div>
+        <div class="dashboard-wrap">
+            <div class="dash-header">
+                <div class="header-content">
+                    <h1>🚕 Danial Taxi</h1>
+                    <div class="header-meta" id="headerMeta">Logged in as Driver 1 • June 2026</div>
+                    <div class="header-stats">
+                        <div class="stat-mini">
+                            <div class="stat-mini-label">Total Income</div>
+                            <div class="stat-mini-value">€<span id="totalIncome">0.00</span></div>
+                        </div>
+                        <div class="stat-mini">
+                            <div class="stat-mini-label">Monthly Target</div>
+                            <div class="stat-mini-value">64% Complete</div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-logout" id="logoutBtn">Exit</button>
             </div>
-            <button class="btn-logout" id="logoutBtn">Sign Out</button>
-        </div>
-        <div id="dashContent">
-            <p>Dashboard loading...</p>
+
+            <div class="tabs">
+                <button class="tab-btn active" id="entryTabBtn">📝 Entry</button>
+                <button class="tab-btn" id="historyTabBtn">📋 History</button>
+                <button class="tab-btn" id="summaryTabBtn">📊 Summary</button>
+                <button class="tab-btn" id="settlementTabBtn">💰 Settlement</button>
+            </div>
+
+            <!-- ENTRY TAB -->
+            <div id="entryTab" class="tab-panel active">
+                <!-- Transfers -->
+                <div class="section">
+                    <div class="section-title">🚗 Transfers</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Date</label>
+                            <input type="date" id="transferDate" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Amount (€)</label>
+                            <input type="number" id="transferAmount" class="form-input" placeholder="0.00" step="0.01">
+                        </div>
+                    </div>
+                    <button class="btn-add" onclick="addTransfer()">Add Transfer</button>
+                    <div id="transferList" style="margin-top: 16px;"></div>
+                </div>
+
+                <!-- Uber -->
+                <div class="section">
+                    <div class="section-title">🚕 Uber App</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Uber Income (€)</label>
+                            <input type="number" id="uberAmount" class="form-input" placeholder="0.00" step="0.01">
+                        </div>
+                    </div>
+                    <div style="background: var(--secondary); padding: 16px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; font-weight: 700; color: var(--accent);">
+                            <span>Total</span>
+                            <span id="uberTotal">€0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cash & Tips -->
+                <div class="section">
+                    <div class="section-title">💵 Cash & Tips</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Cash (In Hand) (€)</label>
+                            <input type="number" id="cashInHand" class="form-input" placeholder="0.00" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Card Cash (€)</label>
+                            <input type="number" id="cardCash" class="form-input" placeholder="0.00" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Tips (€)</label>
+                            <input type="number" id="tips" class="form-input" placeholder="0.00" step="0.01">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expenses -->
+                <div class="section">
+                    <div class="section-title">💰 Expenses - Both Approve</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Type</label>
+                            <select id="expenseType" class="form-select">
+                                <option>-- Select --</option>
+                                <option>Petrol</option>
+                                <option>Maintenance</option>
+                                <option>Washing</option>
+                                <option>Parking</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Amount (€)</label>
+                            <input type="number" id="expenseAmount" class="form-input" placeholder="0.00" step="0.01">
+                        </div>
+                        <div class="form-group" style="grid-column: 1/-1;">
+                            <label class="form-label">Note</label>
+                            <input type="text" id="expenseNote" class="form-input" placeholder="Optional...">
+                        </div>
+                    </div>
+                    <button class="btn-add" onclick="addExpense()">Add Expense</button>
+                    <div id="expenseList" style="margin-top: 16px;"></div>
+                </div>
+
+                <!-- Action -->
+                <div class="action-buttons">
+                    <button class="btn-save" onclick="saveEntry()">💾 Save</button>
+                    <button class="btn-share" onclick="shareEntry()">📤 Share</button>
+                </div>
+            </div>
+
+            <!-- HISTORY TAB -->
+            <div id="historyTab" class="tab-panel">
+                <div class="empty-state"><p>📋 History loading...</p></div>
+            </div>
+
+            <!-- SUMMARY TAB -->
+            <div id="summaryTab" class="tab-panel">
+                <div class="empty-state"><p>📊 Summary loading...</p></div>
+            </div>
+
+            <!-- SETTLEMENT TAB -->
+            <div id="settlementTab" class="tab-panel">
+                <div class="empty-state"><p>💰 Settlement loading...</p></div>
+            </div>
         </div>
     </div>
 
@@ -211,7 +633,6 @@
         let currentUser = null;
         let auth, db;
 
-        // Initialize Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBlwF6FfIOXsxBHGF3U_Njp0mVYiOvMMD8",
             authDomain: "danial-taxi.firebaseapp.com",
@@ -224,141 +645,135 @@
         firebase.initializeApp(firebaseConfig);
         auth = firebase.auth();
         db = firebase.firestore();
-        console.log("✅ Firebase initialized");
 
         // Driver selection
-        document.getElementById('driver1Btn').addEventListener('click', function() {
+        document.getElementById('d1Btn').addEventListener('click', function() {
             currentDriver = 'driver1';
-            document.getElementById('driver1Btn').classList.add('active');
-            document.getElementById('driver2Btn').classList.remove('active');
-            console.log("Selected: Driver 1");
+            this.classList.add('active');
+            document.getElementById('d2Btn').classList.remove('active');
         });
 
-        document.getElementById('driver2Btn').addEventListener('click', function() {
+        document.getElementById('d2Btn').addEventListener('click', function() {
             currentDriver = 'driver2';
-            document.getElementById('driver2Btn').classList.add('active');
-            document.getElementById('driver1Btn').classList.remove('active');
-            console.log("Selected: Driver 2");
+            this.classList.add('active');
+            document.getElementById('d1Btn').classList.remove('active');
         });
 
-        // Sign In
-        document.getElementById('loginBtn').addEventListener('click', function() {
+        // Login
+        document.getElementById('loginBtn').addEventListener('click', login);
+        document.getElementById('signupBtn').addEventListener('click', signup);
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+
+        function login() {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
-
-            if (!email || !password) {
-                showError('Please enter email and password');
-                return;
-            }
-
-            console.log("🔐 Attempting login with:", email);
-
+            if (!email || !password) { showError('Enter email and password'); return; }
+            
             auth.signInWithEmailAndPassword(email, password)
                 .then(result => {
-                    console.log("✅ Login successful:", result.user.uid);
                     currentUser = result.user;
-                    showDashboard();
+                    loadDashboard();
                 })
-                .catch(error => {
-                    console.error("❌ Login failed:", error.code, error.message);
-                    showError(error.message);
-                });
-        });
+                .catch(error => showError(error.message));
+        }
 
-        // Create Account
-        document.getElementById('signupBtn').addEventListener('click', function() {
+        function signup() {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
-
-            if (!email || !password) {
-                showError('Please enter email and password');
-                return;
-            }
-
-            if (password.length < 6) {
-                showError('Password must be at least 6 characters');
-                return;
-            }
-
-            console.log("📝 Attempting signup as:", currentDriver);
-
+            if (!email || !password) { showError('Enter email and password'); return; }
+            if (password.length < 6) { showError('Password at least 6 chars'); return; }
+            
             auth.createUserWithEmailAndPassword(email, password)
                 .then(result => {
-                    console.log("✅ Signup successful:", result.user.uid);
                     currentUser = result.user;
-                    
-                    // Save to Firestore
                     db.collection('users').doc(currentUser.uid).set({
-                        email: email,
-                        driver: currentDriver,
-                        driverName: currentDriver === 'driver1' ? 'Driver 1' : 'Driver 2',
-                        created: new Date()
-                    }).then(() => {
-                        console.log("✅ User data saved to Firestore");
-                        showDashboard();
-                    }).catch(err => {
-                        console.error("❌ Firestore error:", err);
-                        showError('Account created but error saving data: ' + err.message);
+                        email, driver: currentDriver, created: new Date()
                     });
+                    loadDashboard();
                 })
-                .catch(error => {
-                    console.error("❌ Signup failed:", error.code, error.message);
-                    showError(error.message);
-                });
-        });
+                .catch(error => showError(error.message));
+        }
 
-        // Logout
-        document.getElementById('logoutBtn').addEventListener('click', function() {
+        function logout() {
             auth.signOut().then(() => {
-                console.log("✅ Logged out");
                 currentUser = null;
                 document.getElementById('authScreen').style.display = 'flex';
                 document.getElementById('dashboard').classList.remove('active');
-                document.getElementById('email').value = '';
-                document.getElementById('password').value = '';
             });
-        });
-
-        function showError(msg) {
-            const el = document.getElementById('errorMsg');
-            el.textContent = msg;
-            el.style.display = 'block';
-            setTimeout(() => el.style.display = 'none', 5000);
         }
 
-        function showDashboard() {
+        function showError(msg) {
+            const el = document.getElementById('authError');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 4000);
+        }
+
+        function loadDashboard() {
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('dashboard').classList.add('active');
             const driverName = currentDriver === 'driver1' ? 'Driver 1' : 'Driver 2';
-            document.getElementById('userInfo').textContent = `Logged in as ${driverName}`;
-            document.getElementById('dashContent').innerHTML = `
-                <div style="background:white;padding:30px;border-radius:12px;text-align:center;">
-                    <h2 style="margin-bottom:20px;color:#000;">Welcome, ${driverName}!</h2>
-                    <p style="color:#666;margin-bottom:20px;">Your income tracker is ready. Full features coming soon.</p>
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
-                        <div style="background:linear-gradient(135deg,#d4af37,#f59e0b);color:white;padding:20px;border-radius:12px;">
-                            <div style="font-size:12px;opacity:0.9;">Total Cash</div>
-                            <div style="font-size:24px;font-weight:700;">€0.00</div>
-                        </div>
-                        <div style="background:linear-gradient(135deg,#d4af37,#f59e0b);color:white;padding:20px;border-radius:12px;">
-                            <div style="font-size:12px;opacity:0.9;">Total Card</div>
-                            <div style="font-size:24px;font-weight:700;">€0.00</div>
-                        </div>
-                        <div style="background:linear-gradient(135deg,#d4af37,#f59e0b);color:white;padding:20px;border-radius:12px;">
-                            <div style="font-size:12px;opacity:0.9;">Total Tips</div>
-                            <div style="font-size:24px;font-weight:700;">€0.00</div>
-                        </div>
-                    </div>
-                </div>
-            `;
+            document.getElementById('headerMeta').textContent = `Logged in as ${driverName} • ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
+            document.getElementById('transferDate').valueAsDate = new Date();
         }
 
-        // Check auth state on load
+        window.addTransfer = function() {
+            if (!currentUser) return;
+            const date = document.getElementById('transferDate').value;
+            const amount = parseFloat(document.getElementById('transferAmount').value) || 0;
+            if (amount <= 0) { alert('Enter valid amount'); return; }
+            db.collection(`drivers/${currentDriver}/transfers`).add({
+                date, amount, timestamp: new Date()
+            }).then(() => {
+                document.getElementById('transferAmount').value = '';
+            });
+        };
+
+        window.addExpense = function() {
+            if (!currentUser) return;
+            const type = document.getElementById('expenseType').value;
+            const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
+            if (type === '-- Select --' || amount <= 0) { alert('Fill all fields'); return; }
+            db.collection('danial_expenses').add({
+                addedBy: currentDriver, type, amount, status: 'pending', timestamp: new Date()
+            }).then(() => {
+                document.getElementById('expenseType').value = '-- Select --';
+                document.getElementById('expenseAmount').value = '';
+            });
+        };
+
+        window.saveEntry = function() { alert('✅ Saved!'); };
+        window.shareEntry = function() { alert('📤 Share!'); };
+
+        // Tabs
+        document.getElementById('entryTabBtn').addEventListener('click', () => switchTab('entry'));
+        document.getElementById('historyTabBtn').addEventListener('click', () => switchTab('history'));
+        document.getElementById('summaryTabBtn').addEventListener('click', () => switchTab('summary'));
+        document.getElementById('settlementTabBtn').addEventListener('click', () => switchTab('settlement'));
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-panel').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
+            
+            if (tab === 'entry') {
+                document.getElementById('entryTab').classList.add('active');
+                document.getElementById('entryTabBtn').classList.add('active');
+            } else if (tab === 'history') {
+                document.getElementById('historyTab').classList.add('active');
+                document.getElementById('historyTabBtn').classList.add('active');
+            } else if (tab === 'summary') {
+                document.getElementById('summaryTab').classList.add('active');
+                document.getElementById('summaryTabBtn').classList.add('active');
+            } else if (tab === 'settlement') {
+                document.getElementById('settlementTab').classList.add('active');
+                document.getElementById('settlementTabBtn').classList.add('active');
+            }
+        }
+
         auth.onAuthStateChanged(user => {
             if (user) {
-                console.log("✅ User already logged in:", user.uid);
                 currentUser = user;
-                showDashboard();
+                loadDashboard();
             }
         });
     </script>
