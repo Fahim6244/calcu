@@ -16,7 +16,6 @@
             padding: 12px;
         }
         
-        /* ===== AUTH ===== */
         .auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
         .auth-box {
             background: #1a1a1a;
@@ -25,7 +24,6 @@
             width: 100%;
             max-width: 450px;
             border: 1px solid #3d3d3d;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
         .auth-title {
             font-size: 32px;
@@ -55,17 +53,13 @@
             font-weight: 600;
             color: #999;
             font-size: 14px;
-            transition: all 0.25s;
         }
         .driver-btn.active {
             background: #d4af37;
             color: #000;
             border-color: #d4af37;
-            box-shadow: 0 4px 12px rgba(212,175,55,0.3);
         }
-        .form-group {
-            margin-bottom: 16px;
-        }
+        .form-group { margin-bottom: 16px; }
         .form-label {
             font-size: 11px;
             font-weight: 600;
@@ -73,9 +67,8 @@
             margin-bottom: 6px;
             display: block;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
-        .form-input {
+        .form-input, .form-select {
             width: 100%;
             padding: 12px 14px;
             border: 1.5px solid #3d3d3d;
@@ -84,18 +77,11 @@
             color: #fff;
             font-size: 15px;
             font-family: inherit;
-            transition: all 0.2s;
         }
         .form-input::placeholder { color: #666; }
-        .form-input:focus {
+        .form-input:focus, .form-select:focus {
             outline: none;
             border-color: #d4af37;
-            background: #3d3d3d;
-            box-shadow: 0 0 0 3px rgba(212,175,55,0.1);
-        }
-        .auth-buttons {
-            display: grid;
-            gap: 12px;
         }
         .btn-login {
             background: #d4af37;
@@ -106,12 +92,9 @@
             font-weight: 700;
             cursor: pointer;
             font-size: 14px;
-            transition: all 0.2s;
+            width: 100%;
         }
-        .btn-login:hover {
-            background: #f59e0b;
-            transform: translateY(-1px);
-        }
+        .btn-login:hover { background: #f59e0b; }
         .btn-signup {
             background: #2d2d2d;
             color: #d4af37;
@@ -121,10 +104,7 @@
             font-weight: 600;
             cursor: pointer;
             font-size: 14px;
-            transition: all 0.2s;
-        }
-        .btn-signup:hover {
-            background: #3d3d3d;
+            width: 100%;
         }
         .error-msg {
             background: rgba(239,68,68,0.15);
@@ -137,12 +117,10 @@
             font-size: 13px;
         }
 
-        /* ===== DASHBOARD ===== */
         .dashboard { display: none; }
         .dashboard.active { display: block; }
         .max-width { max-width: 600px; margin: 0 auto; }
         
-        /* Header */
         .header {
             background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
             padding: 20px;
@@ -175,7 +153,7 @@
             border-radius: 8px;
             border-left: 3px solid #d4af37;
         }
-        .header-stat-label { font-size: 10px; color: #999; text-transform: uppercase; margin-bottom: 3px; }
+        .header-stat-label { font-size: 10px; color: #999; text-transform: uppercase; }
         .header-stat-value { font-size: 16px; font-weight: 700; color: #d4af37; }
         .btn-exit {
             padding: 10px 18px;
@@ -186,11 +164,8 @@
             cursor: pointer;
             font-weight: 600;
             font-size: 12px;
-            transition: all 0.2s;
         }
-        .btn-exit:hover { background: #991b1b; }
 
-        /* Tabs */
         .tabs {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -210,9 +185,7 @@
             font-weight: 600;
             font-size: 12px;
             border-radius: 6px;
-            transition: all 0.2s;
         }
-        .tab-btn:hover { background: #2d2d2d; }
         .tab-btn.active {
             background: #d4af37;
             color: #000;
@@ -221,7 +194,6 @@
         .tab-panel { display: none; }
         .tab-panel.active { display: block; }
 
-        /* Calendar */
         .calendar-section {
             background: #1a1a1a;
             padding: 16px;
@@ -236,13 +208,6 @@
             margin-bottom: 12px;
             display: flex;
             gap: 6px;
-        }
-        .calendar-month-name {
-            text-align: center;
-            font-size: 12px;
-            font-weight: 600;
-            color: #ccc;
-            margin-bottom: 12px;
         }
         .calendar-grid {
             display: grid;
@@ -269,31 +234,19 @@
             font-weight: 600;
             color: #999;
             cursor: pointer;
-            transition: all 0.3s;
         }
-        .calendar-day:hover {
-            border-color: #d4af37;
-            transform: translateY(-2px);
-        }
+        .calendar-day:hover { border-color: #d4af37; }
         .calendar-day.today {
             background: #3b82f6;
             color: #fff;
-            border-color: #3b82f6;
         }
         .calendar-day.has-entry {
             background: #059669;
             color: #fff;
-            border-color: #059669;
         }
         .calendar-day.pending {
             background: #d4af37;
             color: #000;
-            border-color: #d4af37;
-        }
-        .calendar-day.dayoff {
-            background: #7f2626;
-            color: #fca5a5;
-            border-color: #991b1b;
         }
         .calendar-day.selected {
             box-shadow: 0 0 0 2px #d4af37;
@@ -302,7 +255,6 @@
             display: flex;
             gap: 12px;
             font-size: 11px;
-            flex-wrap: wrap;
             padding-top: 12px;
             border-top: 1px solid #3d3d3d;
         }
@@ -318,7 +270,6 @@
             border-radius: 2px;
         }
 
-        /* Sections */
         .section {
             background: #1a1a1a;
             padding: 16px;
@@ -343,24 +294,24 @@
             margin-bottom: 14px;
             font-size: 12px;
             color: #6ee7b7;
-            line-height: 1.5;
         }
 
-        .form-select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #3d3d3d;
-            border-radius: 8px;
+        .entry-list {
+            margin-bottom: 14px;
+        }
+        .entry-item {
             background: #2d2d2d;
-            color: #fff;
-            font-size: 14px;
-            font-family: inherit;
-            cursor: pointer;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid #d4af37;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
         }
-        .form-select:focus {
-            outline: none;
-            border-color: #d4af37;
-        }
+        .entry-item .title { font-weight: 600; }
+        .entry-item .amount { color: #d4af37; font-weight: 700; }
 
         .calculated {
             background: #2d2d2d;
@@ -378,7 +329,7 @@
         }
         .calc-row:last-child { border-bottom: none; }
         .calc-label { color: #999; }
-        .calc-value { font-weight: 700; color: #d4af37; font-family: monospace; }
+        .calc-value { font-weight: 700; color: #d4af37; }
 
         .action-grid {
             display: grid;
@@ -395,11 +346,6 @@
             font-weight: 700;
             font-size: 13px;
             cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-save:hover {
-            background: #2563eb;
-            transform: translateY(-1px);
         }
         .btn-share {
             padding: 12px;
@@ -410,11 +356,6 @@
             font-weight: 700;
             font-size: 13px;
             cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-share:hover {
-            background: #f59e0b;
-            transform: translateY(-1px);
         }
 
         .btn-full {
@@ -425,16 +366,11 @@
             font-weight: 700;
             font-size: 13px;
             cursor: pointer;
-            transition: all 0.2s;
             margin-bottom: 10px;
         }
         .btn-share-all {
             background: linear-gradient(135deg, #8b5cf6, #7c3aed);
             color: white;
-        }
-        .btn-share-all:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
         }
         .btn-add {
             width: 100%;
@@ -447,25 +383,34 @@
             font-size: 13px;
             cursor: pointer;
             margin-bottom: 14px;
-            transition: all 0.2s;
         }
-        .btn-add:hover {
-            background: #f59e0b;
-            transform: translateY(-1px);
-        }
-        .btn-clear {
-            background: #2d2d2d;
-            color: #999;
-            border: 1px solid #3d3d3d;
-        }
-        .btn-clear:hover {
-            background: #3d3d3d;
+        .btn-add:hover { background: #f59e0b; }
+
+        .btn-delete {
+            padding: 4px 8px;
+            background: #7f2626;
+            color: #fca5a5;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
         }
 
         .empty-state {
             text-align: center;
             padding: 50px 20px;
             color: #666;
+        }
+
+        .date-display {
+            font-size: 16px;
+            font-weight: 700;
+            color: #d4af37;
+            margin-bottom: 4px;
+        }
+        .date-meta {
+            font-size: 12px;
+            color: #999;
         }
 
         @media (max-width: 768px) {
@@ -477,7 +422,7 @@
     </style>
 </head>
 <body>
-    <!-- AUTH SCREEN -->
+    <!-- AUTH -->
     <div class="auth-screen" id="authScreen">
         <div class="auth-box">
             <div class="auth-title">🚕 Danial Taxi</div>
@@ -488,24 +433,21 @@
                 <button class="driver-btn" id="d2Btn">Driver 2</button>
             </div>
             <div class="form-group">
-                <label class="form-label">Email Address</label>
+                <label class="form-label">Email</label>
                 <input type="email" id="email" class="form-input" placeholder="name@example.com">
             </div>
             <div class="form-group">
                 <label class="form-label">Password</label>
                 <input type="password" id="password" class="form-input" placeholder="••••••••">
             </div>
-            <div class="auth-buttons">
-                <button class="btn-login" id="loginBtn">Sign In</button>
-                <button class="btn-signup" id="signupBtn">Create Account</button>
-            </div>
+            <button class="btn-login" id="loginBtn">Sign In</button>
+            <button class="btn-login" style="background: #2d2d2d; color: #d4af37; border: 1px solid #d4af37; margin-top: 10px;" id="signupBtn">Create Account</button>
         </div>
     </div>
 
     <!-- DASHBOARD -->
     <div class="dashboard" id="dashboard">
         <div class="max-width">
-            <!-- Header -->
             <div class="header">
                 <div>
                     <div class="header-title">🚕 Danial Taxi</div>
@@ -524,7 +466,6 @@
                 <button class="btn-exit" id="logoutBtn">Exit</button>
             </div>
 
-            <!-- Tabs -->
             <div class="tabs">
                 <button class="tab-btn active" id="tabEntry">📝 Entry</button>
                 <button class="tab-btn" id="tabHistory">📋 History</button>
@@ -537,32 +478,19 @@
                 <!-- Calendar -->
                 <div class="calendar-section">
                     <div class="section-title">📅 Calendar</div>
-                    <div class="calendar-month-name" id="monthName">June 2026</div>
+                    <div style="text-align: center; font-size: 12px; color: #ccc; margin-bottom: 12px;" id="monthName">June 2026</div>
                     <div class="calendar-grid" id="calendarGrid"></div>
                     <div class="calendar-legend">
-                        <div class="legend-item">
-                            <div class="legend-dot" style="background: #059669;"></div>
-                            <span>Saved</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-dot" style="background: #d4af37;"></div>
-                            <span>Pending</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-dot" style="background: #7f2626;"></div>
-                            <span>Day Off</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-dot" style="background: #3b82f6;"></div>
-                            <span>Today</span>
-                        </div>
+                        <div class="legend-item"><div class="legend-dot" style="background: #059669;"></div><span>Saved</span></div>
+                        <div class="legend-item"><div class="legend-dot" style="background: #d4af37;"></div><span>Pending</span></div>
+                        <div class="legend-item"><div class="legend-dot" style="background: #3b82f6;"></div><span>Today</span></div>
                     </div>
                 </div>
 
-                <!-- Date Display -->
+                <!-- Date -->
                 <div class="section">
-                    <div style="font-size: 16px; font-weight: 700; color: #d4af37; margin-bottom: 4px;" id="selectedDate">Today</div>
-                    <div style="font-size: 12px; color: #999;" id="selectedDateMeta">Fri • Today</div>
+                    <div class="date-display" id="selectedDate">Today</div>
+                    <div class="date-meta" id="selectedDateMeta">Fri • Today</div>
                 </div>
 
                 <!-- Transfers -->
@@ -570,12 +498,23 @@
                     <div class="section-title">🚗 Transfers (Barcelona Outside)</div>
                     <div class="form-grid">
                         <div class="form-group">
+                            <label class="form-label">Meter Start</label>
+                            <input type="number" id="meterStart" class="form-input" placeholder="0" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Meter End</label>
+                            <input type="number" id="meterEnd" class="form-input" placeholder="0" step="0.1">
+                        </div>
+                        <div class="form-group">
                             <label class="form-label">Amount (€)</label>
                             <input type="number" id="tAmount" class="form-input" placeholder="0.00" step="0.01">
                         </div>
                     </div>
+                    <div style="background: #2d2d2d; padding: 12px; border-radius: 8px; margin-bottom: 14px; font-size: 12px; color: #d4af37; font-weight: 700;">
+                        Meter Total: <span id="meterTotal">0.0</span> km
+                    </div>
                     <button class="btn-add" onclick="addTransfer()">Add Transfer</button>
-                    <div id="transferList"></div>
+                    <div class="entry-list" id="transferList"></div>
                 </div>
 
                 <!-- Uber -->
@@ -625,16 +564,16 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Amount I Paid</label>
+                            <label class="form-label">Amount</label>
                             <input type="number" id="expAmount" class="form-input" placeholder="0.00" step="0.01">
                         </div>
                         <div class="form-group form-full">
-                            <label class="form-label">Note (Optional)</label>
-                            <input type="text" id="expNote" class="form-input" placeholder="e.g. Shell, NCP parking">
+                            <label class="form-label">Note</label>
+                            <input type="text" id="expNote" class="form-input" placeholder="e.g. Shell, parking">
                         </div>
                     </div>
                     <button class="btn-add" onclick="addExpense()">Add Expense</button>
-                    <div id="expenseList"></div>
+                    <div class="entry-list" id="expenseList"></div>
                 </div>
 
                 <!-- Adjustment -->
@@ -662,7 +601,7 @@
                         </div>
                         <div class="calc-row">
                             <span class="calc-label">💳 Card cash</span>
-                            <span class="calc-value">€<span id="c3">0.00</span> 👊 💸</span>
+                            <span class="calc-value">€<span id="c3">0.00</span></span>
                         </div>
                         <div class="calc-row">
                             <span class="calc-label">💵 Uber cash</span>
@@ -682,7 +621,6 @@
                 </div>
 
                 <button class="btn-full btn-share-all" onclick="shareAll()">📤 Share All — June 2026</button>
-                <button class="btn-full btn-clear" onclick="clearDay()">🗑️ Clear this day</button>
             </div>
 
             <!-- HISTORY TAB -->
@@ -707,6 +645,7 @@
         let currentUser = null;
         let auth, db;
         let selectedDate = new Date();
+        let dayData = {};
 
         const firebaseConfig = {
             apiKey: "AIzaSyBlwF6FfIOXsxBHGF3U_Njp0mVYiOvMMD8",
@@ -721,7 +660,6 @@
         auth = firebase.auth();
         db = firebase.firestore();
 
-        // Driver selection
         document.getElementById('d1Btn').addEventListener('click', function() {
             currentDriver = 'driver1';
             this.classList.add('active');
@@ -734,7 +672,6 @@
             document.getElementById('d1Btn').classList.remove('active');
         });
 
-        // Auth
         document.getElementById('loginBtn').addEventListener('click', login);
         document.getElementById('signupBtn').addEventListener('click', signup);
         document.getElementById('logoutBtn').addEventListener('click', logout);
@@ -783,7 +720,7 @@
             document.getElementById('headerMeta').textContent = `${currentDriver === 'driver1' ? 'Driver 1' : 'Driver 2'} • June 2026`;
             selectedDate = new Date();
             generateCalendar();
-            updateDateDisplay();
+            loadDayData();
         }
 
         function generateCalendar() {
@@ -794,7 +731,6 @@
             monthName.textContent = `${months[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
             grid.innerHTML = '';
             
-            // Headers
             const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
             days.forEach(d => {
                 const el = document.createElement('div');
@@ -807,29 +743,19 @@
             const daysInMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate();
             const today = new Date();
             
-            // Empty cells
-            for (let i = 0; i < firstDay; i++) {
-                const el = document.createElement('div');
-                grid.appendChild(el);
-            }
+            for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
             
-            // Days
             for (let d = 1; d <= daysInMonth; d++) {
                 const dayEl = document.createElement('div');
                 dayEl.className = 'calendar-day';
                 dayEl.textContent = d;
                 
-                const isToday = d === today.getDate() && selectedDate.getMonth() === today.getMonth() && selectedDate.getFullYear() === today.getFullYear();
-                const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                const isSelected = selectedDate.getDate() === d && selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear();
+                const isToday = d === today.getDate() && selectedDate.getMonth() === today.getMonth();
+                const isSelected = selectedDate.getDate() === d;
                 
                 if (isToday) dayEl.classList.add('today');
                 if (isSelected) dayEl.classList.add('selected');
-                
-                // Color based on data (random for demo)
                 if (d % 3 === 0) dayEl.classList.add('has-entry');
-                else if (d % 5 === 0) dayEl.classList.add('pending');
-                else if (d % 7 === 0) dayEl.classList.add('dayoff');
                 
                 dayEl.addEventListener('click', () => selectDate(d));
                 grid.appendChild(dayEl);
@@ -839,51 +765,124 @@
         function selectDate(day) {
             selectedDate.setDate(day);
             generateCalendar();
+            loadDayData();
             updateDateDisplay();
-            clearFields();
         }
 
         function updateDateDisplay() {
             const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             const dayName = days[selectedDate.getDay()];
             const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
             const isToday = selectedDate.toDateString() === new Date().toDateString();
             
             document.getElementById('selectedDate').textContent = dateStr;
-            document.getElementById('selectedDateMeta').textContent = `${dayName} • ${isToday ? 'Today' : months[selectedDate.getMonth()] + ' ' + selectedDate.getDate()}`;
+            document.getElementById('selectedDateMeta').textContent = `${dayName} • ${isToday ? 'Today' : 'Selected'}`;
         }
 
-        function clearFields() {
-            document.getElementById('uberVal').value = '';
-            document.getElementById('cashVal').value = '';
-            document.getElementById('cardVal').value = '';
-            document.getElementById('tipsVal').value = '';
-            document.getElementById('adjVal').value = '';
-            calc();
+        function loadDayData() {
+            const dateStr = formatDate(selectedDate);
+            const docRef = db.collection(`drivers/${currentDriver}/entries`).doc(dateStr);
+            
+            docRef.get().then(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    dayData = data;
+                    document.getElementById('uberVal').value = data.uber || '';
+                    document.getElementById('cashVal').value = data.cash || '';
+                    document.getElementById('cardVal').value = data.card || '';
+                    document.getElementById('tipsVal').value = data.tips || '';
+                    document.getElementById('adjVal').value = data.adj || '';
+                    loadTransfers(dateStr);
+                    loadExpenses(dateStr);
+                } else {
+                    dayData = {};
+                    document.getElementById('uberVal').value = '';
+                    document.getElementById('cashVal').value = '';
+                    document.getElementById('cardVal').value = '';
+                    document.getElementById('tipsVal').value = '';
+                    document.getElementById('adjVal').value = '';
+                    document.getElementById('transferList').innerHTML = '';
+                    document.getElementById('expenseList').innerHTML = '';
+                }
+                calc();
+            });
+        }
+
+        function loadTransfers(dateStr) {
+            db.collection(`drivers/${currentDriver}/entries/${dateStr}/transfers`).get().then(snap => {
+                const html = snap.docs.map(d => {
+                    const data = d.data();
+                    return `<div class="entry-item"><div><div class="title">📍 ${data.start || 0} → ${data.end || 0} km (${data.amount}€)</div></div><button class="btn-delete" onclick="deleteTransfer('${dateStr}', '${d.id}')">Delete</button></div>`;
+                }).join('');
+                document.getElementById('transferList').innerHTML = html || '<p style="color: #666; font-size: 12px;">No transfers added</p>';
+            });
+        }
+
+        function loadExpenses(dateStr) {
+            db.collection(`drivers/${currentDriver}/entries/${dateStr}/expenses`).get().then(snap => {
+                const html = snap.docs.map(d => {
+                    const data = d.data();
+                    return `<div class="entry-item"><div><div class="title">${data.type}</div><div style="font-size: 11px; color: #999;">${data.note || '-'}</div></div><div><span class="amount">€${data.amount.toFixed(2)}</span><button class="btn-delete" onclick="deleteExpense('${dateStr}', '${d.id}')">Delete</button></div></div>`;
+                }).join('');
+                document.getElementById('expenseList').innerHTML = html || '<p style="color: #666; font-size: 12px;">No expenses added</p>';
+            });
         }
 
         window.addTransfer = function() {
+            const start = parseFloat(document.getElementById('meterStart').value) || 0;
+            const end = parseFloat(document.getElementById('meterEnd').value) || 0;
             const amount = parseFloat(document.getElementById('tAmount').value) || 0;
             if (amount <= 0) { alert('Enter valid amount'); return; }
-            db.collection(`drivers/${currentDriver}/transfers`).add({ 
-                date: selectedDate.toISOString(), 
-                amount, 
-                ts: new Date() 
+            
+            const dateStr = formatDate(selectedDate);
+            db.collection(`drivers/${currentDriver}/entries/${dateStr}/transfers`).add({
+                start, end, amount, ts: new Date()
+            }).then(() => {
+                document.getElementById('meterStart').value = '';
+                document.getElementById('meterEnd').value = '';
+                document.getElementById('tAmount').value = '';
+                loadTransfers(dateStr);
             });
-            document.getElementById('tAmount').value = '';
+        };
+
+        window.deleteTransfer = function(dateStr, id) {
+            db.collection(`drivers/${currentDriver}/entries/${dateStr}/transfers`).doc(id).delete().then(() => {
+                loadTransfers(dateStr);
+            });
         };
 
         window.addExpense = function() {
             const type = document.getElementById('expType').value;
             const amount = parseFloat(document.getElementById('expAmount').value) || 0;
+            const note = document.getElementById('expNote').value;
             if (type === '-- Select --' || amount <= 0) { alert('Fill all'); return; }
-            db.collection('danial_expenses').add({
-                driver: currentDriver, type, amount, status: 'pending', ts: new Date()
+            
+            const dateStr = formatDate(selectedDate);
+            db.collection(`drivers/${currentDriver}/entries/${dateStr}/expenses`).add({
+                type, amount, note, ts: new Date()
+            }).then(() => {
+                document.getElementById('expType').value = '-- Select --';
+                document.getElementById('expAmount').value = '';
+                document.getElementById('expNote').value = '';
+                loadExpenses(dateStr);
             });
-            document.getElementById('expType').value = '-- Select --';
-            document.getElementById('expAmount').value = '';
         };
+
+        window.deleteExpense = function(dateStr, id) {
+            db.collection(`drivers/${currentDriver}/entries/${dateStr}/expenses`).doc(id).delete().then(() => {
+                loadExpenses(dateStr);
+            });
+        };
+
+        document.getElementById('meterStart').addEventListener('input', updateMeterTotal);
+        document.getElementById('meterEnd').addEventListener('input', updateMeterTotal);
+
+        function updateMeterTotal() {
+            const start = parseFloat(document.getElementById('meterStart').value) || 0;
+            const end = parseFloat(document.getElementById('meterEnd').value) || 0;
+            const total = Math.max(0, end - start);
+            document.getElementById('meterTotal').textContent = total.toFixed(1);
+        }
 
         function calc() {
             const uber = parseFloat(document.getElementById('uberVal').value) || 0;
@@ -899,16 +898,46 @@
             document.getElementById('totalInc').textContent = (uber + cash + card + tips).toFixed(2);
         }
 
-        window.saveDay = function() { alert('✅ Saved!'); calc(); };
-        window.shareDay = function() { alert('📱 Shared!'); };
-        window.shareAll = function() { alert('📤 Share All — June 2026'); };
-        window.clearDay = function() {
-            if (confirm('Clear today?')) {
-                clearFields();
-            }
+        window.saveDay = function() {
+            const dateStr = formatDate(selectedDate);
+            const uber = parseFloat(document.getElementById('uberVal').value) || 0;
+            const cash = parseFloat(document.getElementById('cashVal').value) || 0;
+            const card = parseFloat(document.getElementById('cardVal').value) || 0;
+            const tips = parseFloat(document.getElementById('tipsVal').value) || 0;
+            const adj = parseFloat(document.getElementById('adjVal').value) || 0;
+            
+            db.collection(`drivers/${currentDriver}/entries`).doc(dateStr).set({
+                uber, cash, card, tips, adj, ts: new Date()
+            }).then(() => {
+                alert('✅ Saved!');
+                generateCalendar();
+                loadDayData();
+            });
         };
 
-        // Tabs
+        window.shareDay = function() {
+            const dateStr = formatDate(selectedDate);
+            const uber = parseFloat(document.getElementById('uberVal').value) || 0;
+            const cash = parseFloat(document.getElementById('cashVal').value) || 0;
+            const card = parseFloat(document.getElementById('cardVal').value) || 0;
+            const tips = parseFloat(document.getElementById('tipsVal').value) || 0;
+            const total = uber + cash + card + tips;
+            
+            const driverName = currentDriver === 'driver1' ? 'Driver 1' : 'Driver 2';
+            const message = `📍 *Danial Taxi - Daily Summary*\n\n🚕 ${driverName}\n📅 ${dateStr}\n\n💰 *Income Breakdown:*\n🚕 Uber App: €${uber.toFixed(2)}\n💵 Cash: €${cash.toFixed(2)}\n💳 Card: €${card.toFixed(2)}\n🎁 Tips: €${tips.toFixed(2)}\n\n*Total: €${total.toFixed(2)}*`;
+            
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+        };
+
+        window.shareAll = function() {
+            const driverName = currentDriver === 'driver1' ? 'Driver 1' : 'Driver 2';
+            const message = `📤 *Danial Taxi - Share All*\n\n🚕 ${driverName}\n📅 June 2026\n\n💾 Full month summary coming...`;
+            
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+        };
+
         document.getElementById('tabEntry').addEventListener('click', () => switchTab('entry'));
         document.getElementById('tabHistory').addEventListener('click', () => switchTab('history'));
         document.getElementById('tabSummary').addEventListener('click', () => switchTab('summary'));
@@ -917,20 +946,12 @@
         function switchTab(tab) {
             document.querySelectorAll('.tab-panel').forEach(e => e.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
-            
-            if (tab === 'entry') {
-                document.getElementById('entryTab').classList.add('active');
-                document.getElementById('tabEntry').classList.add('active');
-            } else if (tab === 'history') {
-                document.getElementById('historyTab').classList.add('active');
-                document.getElementById('tabHistory').classList.add('active');
-            } else if (tab === 'summary') {
-                document.getElementById('summaryTab').classList.add('active');
-                document.getElementById('tabSummary').classList.add('active');
-            } else if (tab === 'settlement') {
-                document.getElementById('settlementTab').classList.add('active');
-                document.getElementById('tabSettlement').classList.add('active');
-            }
+            document.getElementById(tab + 'Tab').classList.add('active');
+            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+        }
+
+        function formatDate(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         }
 
         auth.onAuthStateChanged(user => {
