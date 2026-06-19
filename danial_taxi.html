@@ -3,628 +3,542 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danial Taxi – Premium Dual Driver Income Management</title>
+    <title>Danial Taxi</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            --primary: #1a1a1a;
-            --secondary: #2d2d2d;
-            --accent: #d4af37;
-            --accent-light: #f59e0b;
-            --text: #ffffff;
-            --text-muted: #b8b8b8;
-            --border: #3d3d3d;
-            --bg: #0f0f0f;
-        }
         body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
-            color: var(--text);
-            line-height: 1.6;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f0f;
+            color: #fff;
+            padding: 15px;
         }
-        
-        /* ===== AUTH SCREEN ===== */
-        .auth-screen {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
-        }
-        .auth-container {
-            background: var(--primary);
-            padding: 50px 45px;
-            border-radius: 20px;
+        .auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .auth-box {
+            background: #1a1a1a;
+            padding: 35px;
+            border-radius: 16px;
             width: 100%;
-            max-width: 500px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05);
-            border: 1px solid var(--border);
-            animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-width: 420px;
+            border: 1px solid #3d3d3d;
         }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .auth-header {
-            text-align: center;
-            margin-bottom: 45px;
-        }
-        .auth-logo {
-            font-family: 'Merriweather', serif;
-            font-size: 32px;
+        .auth-title {
+            font-size: 28px;
             font-weight: 700;
-            color: var(--accent);
-            margin-bottom: 12px;
-            letter-spacing: -0.5px;
+            color: #d4af37;
+            text-align: center;
+            margin-bottom: 8px;
         }
-        .auth-tagline {
-            font-size: 13px;
-            color: var(--text-muted);
-            font-weight: 500;
-            letter-spacing: 1.2px;
-            text-transform: uppercase;
+        .auth-subtitle {
+            text-align: center;
+            color: #b8b8b8;
+            font-size: 12px;
+            margin-bottom: 28px;
         }
         .driver-select {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            margin-bottom: 32px;
-        }
-        .driver-option {
-            padding: 16px;
-            border: 1.5px solid var(--border);
-            border-radius: 12px;
-            background: var(--secondary);
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--text-muted);
-            transition: all 0.3s ease;
-        }
-        .driver-option:hover {
-            border-color: var(--accent);
-            background: #3d3d3d;
-            color: var(--accent);
-            transform: translateY(-2px);
-        }
-        .driver-option.active {
-            background: linear-gradient(135deg, var(--accent), var(--accent-light));
-            border-color: var(--accent);
-            color: #000;
-            box-shadow: 0 8px 16px rgba(212,175,55,0.3);
-        }
-        .form-group {
+            gap: 10px;
             margin-bottom: 20px;
         }
-        .form-label {
-            display: block;
-            font-size: 12px;
+        .driver-btn {
+            padding: 12px;
+            border: 2px solid #3d3d3d;
+            border-radius: 8px;
+            background: #2d2d2d;
+            cursor: pointer;
             font-weight: 600;
-            color: var(--text);
-            margin-bottom: 8px;
+            color: #b8b8b8;
+            transition: all 0.2s;
+        }
+        .driver-btn.active {
+            background: #d4af37;
+            color: #000;
+            border-color: #d4af37;
+        }
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #b8b8b8;
+            margin-bottom: 5px;
+            display: block;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
-        .form-input {
+        .form-input, .form-select {
             width: 100%;
-            padding: 13px 16px;
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            background: var(--secondary);
-            color: var(--text);
-            font-family: inherit;
+            padding: 11px;
+            border: 1px solid #3d3d3d;
+            border-radius: 8px;
+            background: #2d2d2d;
+            color: #fff;
             font-size: 15px;
-            transition: all 0.3s ease;
+            font-family: inherit;
         }
-        .form-input::placeholder {
-            color: var(--text-muted);
-        }
-        .form-input:focus {
+        .form-input::placeholder { color: #6b7280; }
+        .form-input:focus, .form-select:focus {
             outline: none;
-            border-color: var(--accent);
-            background: #3d3d3d;
-            box-shadow: 0 0 0 3px rgba(212,175,55,0.1);
+            border-color: #d4af37;
+            box-shadow: 0 0 0 2px rgba(212,175,55,0.1);
         }
         .auth-buttons {
             display: grid;
-            gap: 12px;
-            margin-top: 28px;
+            gap: 10px;
+            margin-top: 20px;
         }
-        .btn {
-            padding: 13px;
+        .btn-login {
+            background: #d4af37;
+            color: #000;
+            padding: 12px;
             border: none;
-            border-radius: 10px;
-            font-family: inherit;
-            font-size: 15px;
+            border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
         }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent), var(--accent-light));
-            color: #000;
-            box-shadow: 0 4px 15px rgba(212,175,55,0.3);
+        .btn-login:hover { background: #f59e0b; }
+        .btn-signup {
+            background: #2d2d2d;
+            color: #d4af37;
+            border: 1px solid #d4af37;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
         }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(212,175,55,0.4);
-        }
-        .btn-secondary {
-            background: var(--secondary);
-            color: var(--accent);
-            border: 1.5px solid var(--accent);
-        }
-        .btn-secondary:hover {
-            background: #3d3d3d;
-            transform: translateY(-2px);
-        }
-        .auth-error {
+        .error-msg {
             background: rgba(239,68,68,0.1);
-            color: #f87171;
-            padding: 14px;
-            border-radius: 10px;
-            border-left: 3px solid #f87171;
-            margin-bottom: 20px;
-            font-size: 14px;
+            color: #ef4444;
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 3px solid #ef4444;
+            margin-bottom: 16px;
             display: none;
+            font-size: 13px;
         }
 
-        /* ===== DASHBOARD ===== */
-        .dashboard {
-            display: none;
-            min-height: 100vh;
-            padding: 25px;
-        }
-        .dashboard.active {
-            display: block;
-        }
-        .dashboard-wrap {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        /* Header */
+        .dashboard { display: none; }
+        .dashboard.active { display: block; }
+        
         .dash-header {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            padding: 30px;
-            border-radius: 16px;
-            margin-bottom: 30px;
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #3d3d3d;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            border: 1px solid var(--border);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        .header-content h1 {
-            font-family: 'Merriweather', serif;
-            font-size: 36px;
-            color: var(--accent);
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
+        .header-left h1 {
+            font-size: 28px;
+            color: #d4af37;
+            margin-bottom: 4px;
         }
-        .header-meta {
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-bottom: 16px;
+        .header-info {
+            font-size: 12px;
+            color: #b8b8b8;
+            margin-bottom: 12px;
         }
         .header-stats {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-top: 16px;
+            gap: 10px;
         }
-        .stat-mini {
-            background: rgba(212,175,55,0.1);
-            padding: 12px;
+        .stat {
+            background: #2d2d2d;
+            padding: 10px;
             border-radius: 8px;
-            border-left: 3px solid var(--accent);
+            border-left: 3px solid #d4af37;
         }
-        .stat-mini-label {
-            font-size: 11px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
-        .stat-mini-value {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--accent);
-        }
+        .stat-label { font-size: 10px; color: #b8b8b8; text-transform: uppercase; margin-bottom: 4px; }
+        .stat-value { font-size: 16px; font-weight: 700; color: #d4af37; }
         .btn-logout {
-            padding: 11px 24px;
+            padding: 10px 18px;
             background: #7f1d1d;
             color: #fca5a5;
             border: 1px solid #991b1b;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        .btn-logout:hover {
-            background: #991b1b;
-            color: #fecaca;
+            font-size: 12px;
         }
 
-        /* Tabs */
         .tabs {
             display: flex;
             gap: 8px;
-            margin-bottom: 25px;
-            background: var(--primary);
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #3d3d3d;
             flex-wrap: wrap;
         }
         .tab-btn {
-            padding: 11px 18px;
+            padding: 9px 14px;
             border: none;
             background: transparent;
-            color: var(--text-muted);
+            color: #b8b8b8;
             cursor: pointer;
             font-weight: 600;
-            font-size: 13px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
+            font-size: 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
         }
-        .tab-btn:hover {
-            background: var(--secondary);
-            color: var(--text);
-        }
+        .tab-btn:hover { background: #2d2d2d; }
         .tab-btn.active {
-            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            background: #d4af37;
             color: #000;
-            box-shadow: 0 4px 12px rgba(212,175,55,0.3);
         }
 
-        /* Sections */
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
         .section {
-            background: var(--primary);
-            padding: 25px;
-            border-radius: 14px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        .section:hover {
-            border-color: var(--accent);
-            box-shadow: 0 6px 20px rgba(212,175,55,0.1);
+            background: #1a1a1a;
+            padding: 18px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            border: 1px solid #3d3d3d;
         }
         .section-title {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 700;
-            color: var(--accent);
-            margin-bottom: 18px;
+            color: #d4af37;
+            margin-bottom: 14px;
             display: flex;
-            gap: 10px;
+            gap: 8px;
         }
 
-        /* Forms */
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 16px;
-            margin-bottom: 18px;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 14px;
         }
-        .form-select {
-            width: 100%;
-            padding: 13px 16px;
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            background: var(--secondary);
-            color: var(--text);
-            font-family: inherit;
-            font-size: 15px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .form-select:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(212,175,55,0.1);
-        }
+        .form-group-full { grid-column: 1 / -1; }
 
-        /* Calendar */
-        .calendar {
-            background: var(--secondary);
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-        }
-        .calendar-day {
-            aspect-ratio: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .info-box {
+            background: #2d2d2d;
+            border: 1px solid #3d3d3d;
             border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            background: var(--primary);
-            color: var(--text-muted);
-            border: 1px solid var(--border);
-            transition: all 0.2s;
-        }
-        .calendar-day:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-        .calendar-day.today {
-            background: linear-gradient(135deg, var(--accent), var(--accent-light));
-            color: #000;
-            border-color: var(--accent);
+            padding: 12px;
+            margin-bottom: 14px;
+            font-size: 12px;
+            color: #6ee7b7;
+            line-height: 1.5;
         }
 
-        /* Entries */
         .entry-item {
-            background: var(--secondary);
-            padding: 14px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            border-left: 3px solid var(--accent);
+            background: #2d2d2d;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid #d4af37;
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            transition: all 0.2s;
-            border: 1px solid var(--border);
+            align-items: center;
         }
-        .entry-item:hover {
-            background: #3d3d3d;
-            transform: translateX(4px);
-        }
-        .entry-title {
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 4px;
-            color: var(--text);
-        }
-        .entry-meta {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-        .entry-value {
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--accent);
-        }
+        .entry-title { font-weight: 600; font-size: 13px; }
+        .entry-meta { font-size: 11px; color: #b8b8b8; margin-top: 2px; }
+        .entry-amount { color: #d4af37; font-weight: 700; font-size: 14px; }
 
-        /* Buttons */
         .btn-add {
             width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            padding: 11px;
+            background: #d4af37;
             color: #000;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             font-weight: 600;
+            font-size: 13px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
-        .btn-add:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(212,175,55,0.3);
+        .btn-add:hover { background: #f59e0b; }
+
+        .calculated-box {
+            background: #2d2d2d;
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid #3d3d3d;
+            margin-bottom: 14px;
         }
+        .calc-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #3d3d3d;
+            font-size: 13px;
+        }
+        .calc-row:last-child { border-bottom: none; }
+        .calc-label { color: #b8b8b8; }
+        .calc-value { font-weight: 700; color: #d4af37; }
 
         .action-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 20px;
+            gap: 10px;
+            margin-bottom: 12px;
         }
         .btn-save {
-            padding: 13px;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            padding: 12px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .btn-save:hover { background: #2563eb; }
+        .btn-share {
+            padding: 12px;
+            background: #d4af37;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .btn-share:hover { background: #f59e0b; }
+
+        .btn-share-all {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
             color: white;
             border: none;
             border-radius: 10px;
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 14px;
             cursor: pointer;
-            transition: all 0.3s;
+            margin-bottom: 12px;
         }
-        .btn-save:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(59,130,246,0.3);
-        }
-        .btn-share {
-            padding: 13px;
-            background: linear-gradient(135deg, var(--accent), var(--accent-light));
-            color: #000;
-            border: none;
-            border-radius: 10px;
+        .btn-share-all:hover { opacity: 0.9; }
+
+        .btn-clear {
+            width: 100%;
+            padding: 11px;
+            background: #2d2d2d;
+            color: #b8b8b8;
+            border: 1px solid #3d3d3d;
+            border-radius: 8px;
             font-weight: 600;
+            font-size: 13px;
             cursor: pointer;
-            transition: all 0.3s;
-        }
-        .btn-share:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(212,175,55,0.3);
         }
 
         .empty-state {
             text-align: center;
             padding: 40px 20px;
-            color: var(--text-muted);
+            color: #b8b8b8;
         }
 
         @media (max-width: 768px) {
-            .dash-header { flex-direction: column; gap: 20px; }
-            .form-grid { grid-template-columns: 1fr; }
+            .dash-header { flex-direction: column; gap: 15px; }
             .action-buttons { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <!-- AUTH SCREEN -->
+    <!-- AUTH -->
     <div class="auth-screen" id="authScreen">
-        <div class="auth-container">
-            <div class="auth-header">
-                <div class="auth-logo">🚕 Danial Taxi</div>
-                <div class="auth-tagline">Premium Dual Driver Management</div>
-            </div>
-
-            <div id="authError" class="auth-error"></div>
-
+        <div class="auth-box">
+            <div class="auth-title">🚕 Danial Taxi</div>
+            <div class="auth-subtitle">Barcelona Dual Driver Manager</div>
+            <div id="errorMsg" class="error-msg"></div>
             <div class="driver-select">
-                <button class="driver-option active" id="d1Btn">Driver 1</button>
-                <button class="driver-option" id="d2Btn">Driver 2</button>
+                <button class="driver-btn active" id="d1">Driver 1</button>
+                <button class="driver-btn" id="d2">Driver 2</button>
             </div>
-
             <div class="form-group">
-                <label class="form-label">Email Address</label>
-                <input type="email" id="email" class="form-input" placeholder="your@email.com">
+                <label class="form-label">Email</label>
+                <input type="email" id="email" class="form-input" placeholder="email@example.com">
             </div>
-
             <div class="form-group">
                 <label class="form-label">Password</label>
                 <input type="password" id="password" class="form-input" placeholder="••••••••">
             </div>
-
             <div class="auth-buttons">
-                <button class="btn btn-primary" id="loginBtn">Sign In</button>
-                <button class="btn btn-secondary" id="signupBtn">Create Account</button>
+                <button class="btn-login" id="loginBtn">Sign In</button>
+                <button class="btn-signup" id="signupBtn">Create Account</button>
             </div>
         </div>
     </div>
 
     <!-- DASHBOARD -->
     <div class="dashboard" id="dashboard">
-        <div class="dashboard-wrap">
-            <div class="dash-header">
-                <div class="header-content">
-                    <h1>🚕 Danial Taxi</h1>
-                    <div class="header-meta" id="headerMeta">Logged in as Driver 1 • June 2026</div>
-                    <div class="header-stats">
-                        <div class="stat-mini">
-                            <div class="stat-mini-label">Total Income</div>
-                            <div class="stat-mini-value">€<span id="totalIncome">0.00</span></div>
-                        </div>
-                        <div class="stat-mini">
-                            <div class="stat-mini-label">Monthly Target</div>
-                            <div class="stat-mini-value">64% Complete</div>
-                        </div>
+        <div class="dash-header">
+            <div class="header-left">
+                <h1>🚕 Danial Taxi</h1>
+                <div class="header-info" id="headerInfo">Driver 1 • June 2026</div>
+                <div class="header-stats">
+                    <div class="stat">
+                        <div class="stat-label">Total Income</div>
+                        <div class="stat-value">€<span id="totalIncome">0.00</span></div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Progress</div>
+                        <div class="stat-value">64%</div>
                     </div>
                 </div>
-                <button class="btn-logout" id="logoutBtn">Exit</button>
+            </div>
+            <button class="btn-logout" id="logoutBtn">Exit</button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" id="entryTabBtn">📝 Entry</button>
+            <button class="tab-btn" id="historyTabBtn">📋 History</button>
+            <button class="tab-btn" id="summaryTabBtn">📊 Summary</button>
+            <button class="tab-btn" id="settlementTabBtn">💰 Settlement</button>
+        </div>
+
+        <!-- ENTRY TAB -->
+        <div id="entryTab" class="tab-panel active">
+            <!-- Transfers -->
+            <div class="section">
+                <div class="section-title">🚗 Transfers (Barcelona Outside)</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Date</label>
+                        <input type="date" id="transferDate" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Amount (€)</label>
+                        <input type="number" id="transferAmount" class="form-input" placeholder="0.00" step="0.01">
+                    </div>
+                </div>
+                <button class="btn-add" onclick="addTransfer()">Add Transfer</button>
+                <div id="transferList"></div>
             </div>
 
-            <div class="tabs">
-                <button class="tab-btn active" id="entryTabBtn">📝 Entry</button>
-                <button class="tab-btn" id="historyTabBtn">📋 History</button>
-                <button class="tab-btn" id="summaryTabBtn">📊 Summary</button>
-                <button class="tab-btn" id="settlementTabBtn">💰 Settlement</button>
-            </div>
-
-            <!-- ENTRY TAB -->
-            <div id="entryTab" class="tab-panel active">
-                <!-- Transfers -->
-                <div class="section">
-                    <div class="section-title">🚗 Transfers</div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Date</label>
-                            <input type="date" id="transferDate" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Amount (€)</label>
-                            <input type="number" id="transferAmount" class="form-input" placeholder="0.00" step="0.01">
-                        </div>
+            <!-- Uber -->
+            <div class="section">
+                <div class="section-title">🚕 Uber App Income</div>
+                <div class="form-grid">
+                    <div class="form-group form-group-full">
+                        <label class="form-label">Uber Total (€)</label>
+                        <input type="number" id="uberAmount" class="form-input" placeholder="0.00" step="0.01">
                     </div>
-                    <button class="btn-add" onclick="addTransfer()">Add Transfer</button>
-                    <div id="transferList" style="margin-top: 16px;"></div>
-                </div>
-
-                <!-- Uber -->
-                <div class="section">
-                    <div class="section-title">🚕 Uber App</div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Uber Income (€)</label>
-                            <input type="number" id="uberAmount" class="form-input" placeholder="0.00" step="0.01">
-                        </div>
-                    </div>
-                    <div style="background: var(--secondary); padding: 16px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 16px;">
-                        <div style="display: flex; justify-content: space-between; font-weight: 700; color: var(--accent);">
-                            <span>Total</span>
-                            <span id="uberTotal">€0.00</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Cash & Tips -->
-                <div class="section">
-                    <div class="section-title">💵 Cash & Tips</div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Cash (In Hand) (€)</label>
-                            <input type="number" id="cashInHand" class="form-input" placeholder="0.00" step="0.01">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Card Cash (€)</label>
-                            <input type="number" id="cardCash" class="form-input" placeholder="0.00" step="0.01">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Tips (€)</label>
-                            <input type="number" id="tips" class="form-input" placeholder="0.00" step="0.01">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Expenses -->
-                <div class="section">
-                    <div class="section-title">💰 Expenses - Both Approve</div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Type</label>
-                            <select id="expenseType" class="form-select">
-                                <option>-- Select --</option>
-                                <option>Petrol</option>
-                                <option>Maintenance</option>
-                                <option>Washing</option>
-                                <option>Parking</option>
-                                <option>Other</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Amount (€)</label>
-                            <input type="number" id="expenseAmount" class="form-input" placeholder="0.00" step="0.01">
-                        </div>
-                        <div class="form-group" style="grid-column: 1/-1;">
-                            <label class="form-label">Note</label>
-                            <input type="text" id="expenseNote" class="form-input" placeholder="Optional...">
-                        </div>
-                    </div>
-                    <button class="btn-add" onclick="addExpense()">Add Expense</button>
-                    <div id="expenseList" style="margin-top: 16px;"></div>
-                </div>
-
-                <!-- Action -->
-                <div class="action-buttons">
-                    <button class="btn-save" onclick="saveEntry()">💾 Save</button>
-                    <button class="btn-share" onclick="shareEntry()">📤 Share</button>
                 </div>
             </div>
 
-            <!-- HISTORY TAB -->
-            <div id="historyTab" class="tab-panel">
-                <div class="empty-state"><p>📋 History loading...</p></div>
+            <!-- Cash & Tips -->
+            <div class="section">
+                <div class="section-title">💵 Cash & Tips</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Cash (Hand) (€)</label>
+                        <input type="number" id="cashInHand" class="form-input" placeholder="0.00" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Card Cash (€)</label>
+                        <input type="number" id="cardCash" class="form-input" placeholder="0.00" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tips (€)</label>
+                        <input type="number" id="tips" class="form-input" placeholder="0.00" step="0.01">
+                    </div>
+                </div>
             </div>
 
-            <!-- SUMMARY TAB -->
-            <div id="summaryTab" class="tab-panel">
-                <div class="empty-state"><p>📊 Summary loading...</p></div>
+            <!-- Expenses -->
+            <div class="section">
+                <div class="section-title">💰 My Expenses</div>
+                <div class="info-box">✅ Only fill if YOU paid from pocket. Owner returns it all.</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Type</label>
+                        <select id="expenseType" class="form-select">
+                            <option>-- Select --</option>
+                            <option>Petrol</option>
+                            <option>Maintenance</option>
+                            <option>Washing</option>
+                            <option>Parking</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Amount I Paid (€)</label>
+                        <input type="number" id="expenseAmount" class="form-input" placeholder="0.00" step="0.01">
+                    </div>
+                    <div class="form-group form-group-full">
+                        <label class="form-label">Note (Optional)</label>
+                        <input type="text" id="expenseNote" class="form-input" placeholder="e.g. Shell station, NCP parking...">
+                    </div>
+                </div>
+                <button class="btn-add" onclick="addExpense()">Add Expense</button>
+                <div id="expenseList"></div>
             </div>
 
-            <!-- SETTLEMENT TAB -->
-            <div id="settlementTab" class="tab-panel">
-                <div class="empty-state"><p>💰 Settlement loading...</p></div>
+            <!-- Adjustment -->
+            <div class="section">
+                <div class="section-title">⚖️ Adjustment</div>
+                <div class="form-grid">
+                    <div class="form-group form-group-full">
+                        <label class="form-label">Advance / Adjustment (€)</label>
+                        <input type="number" id="adjustment" class="form-input" placeholder="0.00" step="0.01">
+                    </div>
+                </div>
             </div>
+
+            <!-- Calculated -->
+            <div class="section">
+                <div class="section-title">📊 Calculated</div>
+                <div class="calculated-box">
+                    <div class="calc-row">
+                        <span class="calc-label">🚕 Uber App</span>
+                        <span class="calc-value">€<span id="calcUber">0.00</span></span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-label">📊 Total Income</span>
+                        <span class="calc-value">€<span id="calcTotal">0.00</span></span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-label">💳 Card cash</span>
+                        <span class="calc-value">€<span id="calcCard">0.00</span> 👊 💸</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-label">💵 Uber cash</span>
+                        <span class="calc-value">€<span id="calcCash">0.00</span></span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-label">🎁 Tip</span>
+                        <span class="calc-value">€<span id="calcTip">0.00</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="action-buttons">
+                <button class="btn-save" onclick="saveEntry()">💾 Save</button>
+                <button class="btn-share" onclick="shareEntry()">📱 Share</button>
+            </div>
+
+            <button class="btn-share-all" onclick="shareAll()">📤 Share All — June 2026</button>
+
+            <button class="btn-clear" onclick="clearDay()">🗑️ Clear this day</button>
+        </div>
+
+        <!-- HISTORY TAB -->
+        <div id="historyTab" class="tab-panel">
+            <div class="empty-state">📋 History loading...</div>
+        </div>
+
+        <!-- SUMMARY TAB -->
+        <div id="summaryTab" class="tab-panel">
+            <div class="empty-state">📊 Summary loading...</div>
+        </div>
+
+        <!-- SETTLEMENT TAB -->
+        <div id="settlementTab" class="tab-panel">
+            <div class="empty-state">💰 Settlement loading...</div>
         </div>
     </div>
 
@@ -647,19 +561,19 @@
         db = firebase.firestore();
 
         // Driver selection
-        document.getElementById('d1Btn').addEventListener('click', function() {
+        document.getElementById('d1').addEventListener('click', function() {
             currentDriver = 'driver1';
             this.classList.add('active');
-            document.getElementById('d2Btn').classList.remove('active');
+            document.getElementById('d2').classList.remove('active');
         });
 
-        document.getElementById('d2Btn').addEventListener('click', function() {
+        document.getElementById('d2').addEventListener('click', function() {
             currentDriver = 'driver2';
             this.classList.add('active');
-            document.getElementById('d1Btn').classList.remove('active');
+            document.getElementById('d1').classList.remove('active');
         });
 
-        // Login
+        // Auth
         document.getElementById('loginBtn').addEventListener('click', login);
         document.getElementById('signupBtn').addEventListener('click', signup);
         document.getElementById('logoutBtn').addEventListener('click', logout);
@@ -668,30 +582,23 @@
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
             if (!email || !password) { showError('Enter email and password'); return; }
-            
             auth.signInWithEmailAndPassword(email, password)
-                .then(result => {
-                    currentUser = result.user;
-                    loadDashboard();
-                })
-                .catch(error => showError(error.message));
+                .then(r => { currentUser = r.user; loadDash(); })
+                .catch(e => showError(e.message));
         }
 
         function signup() {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
             if (!email || !password) { showError('Enter email and password'); return; }
-            if (password.length < 6) { showError('Password at least 6 chars'); return; }
-            
+            if (password.length < 6) { showError('Password min 6 chars'); return; }
             auth.createUserWithEmailAndPassword(email, password)
-                .then(result => {
-                    currentUser = result.user;
-                    db.collection('users').doc(currentUser.uid).set({
-                        email, driver: currentDriver, created: new Date()
-                    });
-                    loadDashboard();
+                .then(r => {
+                    currentUser = r.user;
+                    db.collection('users').doc(r.user.uid).set({ email, driver: currentDriver, created: new Date() });
+                    loadDash();
                 })
-                .catch(error => showError(error.message));
+                .catch(e => showError(e.message));
         }
 
         function logout() {
@@ -703,47 +610,64 @@
         }
 
         function showError(msg) {
-            const el = document.getElementById('authError');
+            const el = document.getElementById('errorMsg');
             el.textContent = msg;
             el.style.display = 'block';
-            setTimeout(() => el.style.display = 'none', 4000);
+            setTimeout(() => el.style.display = 'none', 3000);
         }
 
-        function loadDashboard() {
+        function loadDash() {
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('dashboard').classList.add('active');
-            const driverName = currentDriver === 'driver1' ? 'Driver 1' : 'Driver 2';
-            document.getElementById('headerMeta').textContent = `Logged in as ${driverName} • ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
+            document.getElementById('headerInfo').textContent = `${currentDriver === 'driver1' ? 'Driver 1' : 'Driver 2'} • June 2026`;
             document.getElementById('transferDate').valueAsDate = new Date();
         }
 
         window.addTransfer = function() {
-            if (!currentUser) return;
             const date = document.getElementById('transferDate').value;
             const amount = parseFloat(document.getElementById('transferAmount').value) || 0;
             if (amount <= 0) { alert('Enter valid amount'); return; }
-            db.collection(`drivers/${currentDriver}/transfers`).add({
-                date, amount, timestamp: new Date()
-            }).then(() => {
-                document.getElementById('transferAmount').value = '';
-            });
+            db.collection(`drivers/${currentDriver}/transfers`).add({ date, amount, ts: new Date() });
+            document.getElementById('transferAmount').value = '';
         };
 
         window.addExpense = function() {
-            if (!currentUser) return;
             const type = document.getElementById('expenseType').value;
             const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
-            if (type === '-- Select --' || amount <= 0) { alert('Fill all fields'); return; }
+            if (type === '-- Select --' || amount <= 0) { alert('Fill all'); return; }
             db.collection('danial_expenses').add({
-                addedBy: currentDriver, type, amount, status: 'pending', timestamp: new Date()
-            }).then(() => {
-                document.getElementById('expenseType').value = '-- Select --';
-                document.getElementById('expenseAmount').value = '';
+                driver: currentDriver, type, amount, status: 'pending', ts: new Date()
             });
+            document.getElementById('expenseType').value = '-- Select --';
+            document.getElementById('expenseAmount').value = '';
         };
 
-        window.saveEntry = function() { alert('✅ Saved!'); };
-        window.shareEntry = function() { alert('📤 Share!'); };
+        window.saveEntry = function() { alert('✅ Saved!'); updateCalculated(); };
+        window.shareEntry = function() { alert('📤 Shared!'); };
+        window.shareAll = function() { alert('📤 Share All Month!'); };
+        window.clearDay = function() {
+            if (confirm('Clear all entries today?')) {
+                document.getElementById('uberAmount').value = '';
+                document.getElementById('cashInHand').value = '';
+                document.getElementById('cardCash').value = '';
+                document.getElementById('tips').value = '';
+                updateCalculated();
+            }
+        };
+
+        function updateCalculated() {
+            const uber = parseFloat(document.getElementById('uberAmount').value) || 0;
+            const cash = parseFloat(document.getElementById('cashInHand').value) || 0;
+            const card = parseFloat(document.getElementById('cardCash').value) || 0;
+            const tip = parseFloat(document.getElementById('tips').value) || 0;
+            
+            document.getElementById('calcUber').textContent = uber.toFixed(2);
+            document.getElementById('calcTotal').textContent = (uber + cash + card + tip).toFixed(2);
+            document.getElementById('calcCard').textContent = card.toFixed(2);
+            document.getElementById('calcCash').textContent = cash.toFixed(2);
+            document.getElementById('calcTip').textContent = tip.toFixed(2);
+            document.getElementById('totalIncome').textContent = (uber + cash + card + tip).toFixed(2);
+        }
 
         // Tabs
         document.getElementById('entryTabBtn').addEventListener('click', () => switchTab('entry'));
@@ -770,10 +694,16 @@
             }
         }
 
+        // Update on input
+        document.getElementById('uberAmount').addEventListener('input', updateCalculated);
+        document.getElementById('cashInHand').addEventListener('input', updateCalculated);
+        document.getElementById('cardCash').addEventListener('input', updateCalculated);
+        document.getElementById('tips').addEventListener('input', updateCalculated);
+
         auth.onAuthStateChanged(user => {
             if (user) {
                 currentUser = user;
-                loadDashboard();
+                loadDash();
             }
         });
     </script>
