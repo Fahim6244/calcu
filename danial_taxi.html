@@ -10,137 +10,159 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: #0f0f0f;
             color: #fff;
-            padding: 15px;
+            padding: 12px;
         }
+        
+        /* ===== AUTH ===== */
         .auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
         .auth-box {
             background: #1a1a1a;
-            padding: 35px;
-            border-radius: 16px;
+            padding: 40px;
+            border-radius: 20px;
             width: 100%;
-            max-width: 420px;
+            max-width: 450px;
             border: 1px solid #3d3d3d;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
         .auth-title {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 700;
             color: #d4af37;
             text-align: center;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         .auth-subtitle {
             text-align: center;
-            color: #b8b8b8;
+            color: #999;
             font-size: 12px;
-            margin-bottom: 28px;
+            margin-bottom: 30px;
+            letter-spacing: 0.5px;
         }
         .driver-select {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 12px;
+            margin-bottom: 24px;
         }
         .driver-btn {
-            padding: 12px;
+            padding: 14px;
             border: 2px solid #3d3d3d;
-            border-radius: 8px;
+            border-radius: 10px;
             background: #2d2d2d;
             cursor: pointer;
             font-weight: 600;
-            color: #b8b8b8;
-            transition: all 0.2s;
+            color: #999;
+            font-size: 14px;
+            transition: all 0.25s;
         }
         .driver-btn.active {
             background: #d4af37;
             color: #000;
             border-color: #d4af37;
+            box-shadow: 0 4px 12px rgba(212,175,55,0.3);
         }
         .form-group {
-            margin-bottom: 14px;
+            margin-bottom: 16px;
         }
         .form-label {
             font-size: 11px;
             font-weight: 600;
-            color: #b8b8b8;
-            margin-bottom: 5px;
+            color: #ccc;
+            margin-bottom: 6px;
             display: block;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        .form-input, .form-select {
+        .form-input {
             width: 100%;
-            padding: 11px;
-            border: 1px solid #3d3d3d;
-            border-radius: 8px;
+            padding: 12px 14px;
+            border: 1.5px solid #3d3d3d;
+            border-radius: 10px;
             background: #2d2d2d;
             color: #fff;
             font-size: 15px;
             font-family: inherit;
+            transition: all 0.2s;
         }
-        .form-input::placeholder { color: #6b7280; }
-        .form-input:focus, .form-select:focus {
+        .form-input::placeholder { color: #666; }
+        .form-input:focus {
             outline: none;
             border-color: #d4af37;
-            box-shadow: 0 0 0 2px rgba(212,175,55,0.1);
+            background: #3d3d3d;
+            box-shadow: 0 0 0 3px rgba(212,175,55,0.1);
         }
         .auth-buttons {
             display: grid;
-            gap: 10px;
-            margin-top: 20px;
+            gap: 12px;
         }
         .btn-login {
             background: #d4af37;
             color: #000;
-            padding: 12px;
+            padding: 13px;
             border: none;
-            border-radius: 8px;
-            font-weight: 600;
+            border-radius: 10px;
+            font-weight: 700;
             cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
         }
-        .btn-login:hover { background: #f59e0b; }
+        .btn-login:hover {
+            background: #f59e0b;
+            transform: translateY(-1px);
+        }
         .btn-signup {
             background: #2d2d2d;
             color: #d4af37;
-            border: 1px solid #d4af37;
-            padding: 12px;
-            border-radius: 8px;
+            border: 1.5px solid #d4af37;
+            padding: 13px;
+            border-radius: 10px;
             font-weight: 600;
             cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .btn-signup:hover {
+            background: #3d3d3d;
         }
         .error-msg {
-            background: rgba(239,68,68,0.1);
-            color: #ef4444;
-            padding: 10px;
+            background: rgba(239,68,68,0.15);
+            color: #ff6b6b;
+            padding: 12px;
             border-radius: 8px;
-            border-left: 3px solid #ef4444;
-            margin-bottom: 16px;
+            border-left: 3px solid #ff6b6b;
+            margin-bottom: 20px;
             display: none;
             font-size: 13px;
         }
 
+        /* ===== DASHBOARD ===== */
         .dashboard { display: none; }
         .dashboard.active { display: block; }
+        .max-width { max-width: 600px; margin: 0 auto; }
         
-        .dash-header {
-            background: #1a1a1a;
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
             padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
+            border-radius: 14px;
+            margin-bottom: 16px;
             border: 1px solid #3d3d3d;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
         }
-        .header-left h1 {
-            font-size: 28px;
+        .header-title {
+            font-size: 26px;
+            font-weight: 700;
             color: #d4af37;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
-        .header-info {
+        .header-meta {
             font-size: 12px;
-            color: #b8b8b8;
+            color: #999;
             margin-bottom: 12px;
         }
         .header-stats {
@@ -148,15 +170,15 @@
             grid-template-columns: 1fr 1fr;
             gap: 10px;
         }
-        .stat {
+        .header-stat {
             background: #2d2d2d;
             padding: 10px;
             border-radius: 8px;
             border-left: 3px solid #d4af37;
         }
-        .stat-label { font-size: 10px; color: #b8b8b8; text-transform: uppercase; margin-bottom: 4px; }
-        .stat-value { font-size: 16px; font-weight: 700; color: #d4af37; }
-        .btn-logout {
+        .header-stat-label { font-size: 10px; color: #999; text-transform: uppercase; margin-bottom: 3px; }
+        .header-stat-value { font-size: 16px; font-weight: 700; color: #d4af37; }
+        .btn-exit {
             padding: 10px 18px;
             background: #7f1d1d;
             color: #fca5a5;
@@ -165,23 +187,26 @@
             cursor: pointer;
             font-weight: 600;
             font-size: 12px;
+            transition: all 0.2s;
         }
+        .btn-exit:hover { background: #991b1b; }
 
+        /* Tabs */
         .tabs {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
             gap: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             background: #1a1a1a;
-            padding: 10px;
+            padding: 8px;
             border-radius: 10px;
             border: 1px solid #3d3d3d;
-            flex-wrap: wrap;
         }
         .tab-btn {
-            padding: 9px 14px;
+            padding: 10px;
             border: none;
             background: transparent;
-            color: #b8b8b8;
+            color: #999;
             cursor: pointer;
             font-weight: 600;
             font-size: 12px;
@@ -192,44 +217,99 @@
         .tab-btn.active {
             background: #d4af37;
             color: #000;
+            box-shadow: 0 2px 8px rgba(212,175,55,0.3);
         }
 
-        .tab-panel { display: none; }
-        .tab-panel.active { display: block; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
-        .section {
+        /* Calendar */
+        .calendar-section {
             background: #1a1a1a;
-            padding: 18px;
+            padding: 16px;
             border-radius: 12px;
-            margin-bottom: 16px;
             border: 1px solid #3d3d3d;
+            margin-bottom: 14px;
         }
         .section-title {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
             color: #d4af37;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
             display: flex;
-            gap: 8px;
+            gap: 6px;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+        }
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #2d2d2d;
+            border: 1px solid #3d3d3d;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #999;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .calendar-day:hover {
+            border-color: #d4af37;
+            color: #d4af37;
+        }
+        .calendar-day.today {
+            background: #d4af37;
+            color: #000;
+            border-color: #d4af37;
+        }
+
+        /* Sections */
+        .section {
+            background: #1a1a1a;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #3d3d3d;
+            margin-bottom: 14px;
         }
 
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             gap: 12px;
             margin-bottom: 14px;
         }
-        .form-group-full { grid-column: 1 / -1; }
+        .form-full { grid-column: 1 / -1; }
 
         .info-box {
             background: #2d2d2d;
-            border: 1px solid #3d3d3d;
+            border: 1px solid #4d4d4d;
             border-radius: 8px;
             padding: 12px;
             margin-bottom: 14px;
             font-size: 12px;
             color: #6ee7b7;
             line-height: 1.5;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #3d3d3d;
+            border-radius: 8px;
+            background: #2d2d2d;
+            color: #fff;
+            font-size: 14px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .form-select:focus {
+            outline: none;
+            border-color: #d4af37;
         }
 
         .entry-item {
@@ -241,29 +321,42 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            font-size: 13px;
         }
-        .entry-title { font-weight: 600; font-size: 13px; }
-        .entry-meta { font-size: 11px; color: #b8b8b8; margin-top: 2px; }
-        .entry-amount { color: #d4af37; font-weight: 700; font-size: 14px; }
 
         .btn-add {
             width: 100%;
-            padding: 11px;
+            padding: 12px;
             background: #d4af37;
             color: #000;
             border: none;
             border-radius: 8px;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 13px;
             cursor: pointer;
             margin-bottom: 14px;
+            transition: all 0.2s;
         }
-        .btn-add:hover { background: #f59e0b; }
+        .btn-add:hover {
+            background: #f59e0b;
+            transform: translateY(-1px);
+        }
 
-        .calculated-box {
+        .info-msg {
+            background: #2d2d2d;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #3d3d3d;
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 14px;
+            line-height: 1.5;
+        }
+
+        .calculated {
             background: #2d2d2d;
             padding: 14px;
-            border-radius: 10px;
+            border-radius: 8px;
             border: 1px solid #3d3d3d;
             margin-bottom: 14px;
         }
@@ -275,10 +368,10 @@
             font-size: 13px;
         }
         .calc-row:last-child { border-bottom: none; }
-        .calc-label { color: #b8b8b8; }
-        .calc-value { font-weight: 700; color: #d4af37; }
+        .calc-label { color: #999; }
+        .calc-value { font-weight: 700; color: #d4af37; font-family: monospace; }
 
-        .action-buttons {
+        .action-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
@@ -290,76 +383,87 @@
             color: white;
             border: none;
             border-radius: 8px;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 13px;
             cursor: pointer;
+            transition: all 0.2s;
         }
-        .btn-save:hover { background: #2563eb; }
+        .btn-save:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
         .btn-share {
             padding: 12px;
             background: #d4af37;
             color: #000;
             border: none;
             border-radius: 8px;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 13px;
             cursor: pointer;
+            transition: all 0.2s;
         }
-        .btn-share:hover { background: #f59e0b; }
+        .btn-share:hover {
+            background: #f59e0b;
+            transform: translateY(-1px);
+        }
 
-        .btn-share-all {
+        .btn-full {
             width: 100%;
-            padding: 14px;
+            padding: 13px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+        }
+        .btn-share-all {
             background: linear-gradient(135deg, #8b5cf6, #7c3aed);
             color: white;
-            border: none;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 14px;
-            cursor: pointer;
-            margin-bottom: 12px;
         }
-        .btn-share-all:hover { opacity: 0.9; }
-
+        .btn-share-all:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
         .btn-clear {
-            width: 100%;
-            padding: 11px;
             background: #2d2d2d;
-            color: #b8b8b8;
+            color: #999;
             border: 1px solid #3d3d3d;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 13px;
-            cursor: pointer;
+        }
+        .btn-clear:hover {
+            background: #3d3d3d;
         }
 
         .empty-state {
             text-align: center;
-            padding: 40px 20px;
-            color: #b8b8b8;
+            padding: 50px 20px;
+            color: #666;
         }
 
         @media (max-width: 768px) {
-            .dash-header { flex-direction: column; gap: 15px; }
-            .action-buttons { grid-template-columns: 1fr; }
+            .header { flex-direction: column; gap: 15px; }
+            .tabs { grid-template-columns: repeat(2, 1fr); }
+            .action-grid { grid-template-columns: 1fr; }
             .form-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <!-- AUTH -->
+    <!-- AUTH SCREEN -->
     <div class="auth-screen" id="authScreen">
         <div class="auth-box">
             <div class="auth-title">🚕 Danial Taxi</div>
-            <div class="auth-subtitle">Barcelona Dual Driver Manager</div>
+            <div class="auth-subtitle">Professional Income Manager</div>
             <div id="errorMsg" class="error-msg"></div>
             <div class="driver-select">
-                <button class="driver-btn active" id="d1">Driver 1</button>
-                <button class="driver-btn" id="d2">Driver 2</button>
+                <button class="driver-btn active" id="d1Btn">Driver 1</button>
+                <button class="driver-btn" id="d2Btn">Driver 2</button>
             </div>
             <div class="form-group">
-                <label class="form-label">Email</label>
-                <input type="email" id="email" class="form-input" placeholder="email@example.com">
+                <label class="form-label">Email Address</label>
+                <input type="email" id="email" class="form-input" placeholder="name@example.com">
             </div>
             <div class="form-group">
                 <label class="form-label">Password</label>
@@ -374,171 +478,180 @@
 
     <!-- DASHBOARD -->
     <div class="dashboard" id="dashboard">
-        <div class="dash-header">
-            <div class="header-left">
-                <h1>🚕 Danial Taxi</h1>
-                <div class="header-info" id="headerInfo">Driver 1 • June 2026</div>
-                <div class="header-stats">
-                    <div class="stat">
-                        <div class="stat-label">Total Income</div>
-                        <div class="stat-value">€<span id="totalIncome">0.00</span></div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-label">Progress</div>
-                        <div class="stat-value">64%</div>
-                    </div>
-                </div>
-            </div>
-            <button class="btn-logout" id="logoutBtn">Exit</button>
-        </div>
-
-        <div class="tabs">
-            <button class="tab-btn active" id="entryTabBtn">📝 Entry</button>
-            <button class="tab-btn" id="historyTabBtn">📋 History</button>
-            <button class="tab-btn" id="summaryTabBtn">📊 Summary</button>
-            <button class="tab-btn" id="settlementTabBtn">💰 Settlement</button>
-        </div>
-
-        <!-- ENTRY TAB -->
-        <div id="entryTab" class="tab-panel active">
-            <!-- Transfers -->
-            <div class="section">
-                <div class="section-title">🚗 Transfers (Barcelona Outside)</div>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Date</label>
-                        <input type="date" id="transferDate" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Amount (€)</label>
-                        <input type="number" id="transferAmount" class="form-input" placeholder="0.00" step="0.01">
+        <div class="max-width">
+            <!-- Header -->
+            <div class="header">
+                <div>
+                    <div class="header-title">🚕 Danial Taxi</div>
+                    <div class="header-meta" id="headerMeta">Driver 1 • June 2026</div>
+                    <div class="header-stats">
+                        <div class="header-stat">
+                            <div class="header-stat-label">Total Income</div>
+                            <div class="header-stat-value">€<span id="totalInc">0.00</span></div>
+                        </div>
+                        <div class="header-stat">
+                            <div class="header-stat-label">Progress</div>
+                            <div class="header-stat-value">64% Done</div>
+                        </div>
                     </div>
                 </div>
-                <button class="btn-add" onclick="addTransfer()">Add Transfer</button>
-                <div id="transferList"></div>
+                <button class="btn-exit" id="logoutBtn">Exit</button>
             </div>
 
-            <!-- Uber -->
-            <div class="section">
-                <div class="section-title">🚕 Uber App Income</div>
-                <div class="form-grid">
-                    <div class="form-group form-group-full">
-                        <label class="form-label">Uber Total (€)</label>
-                        <input type="number" id="uberAmount" class="form-input" placeholder="0.00" step="0.01">
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" id="tabEntry">📝 Entry</button>
+                <button class="tab-btn" id="tabHistory">📋 History</button>
+                <button class="tab-btn" id="tabSummary">📊 Summary</button>
+                <button class="tab-btn" id="tabSettlement">💰 Settlement</button>
+            </div>
+
+            <!-- ENTRY TAB -->
+            <div id="entryTab" class="tab-content active">
+                <!-- Calendar -->
+                <div class="calendar-section">
+                    <div class="section-title">📅 Calendar</div>
+                    <div class="calendar-grid" id="calendarGrid"></div>
+                </div>
+
+                <!-- Transfers -->
+                <div class="section">
+                    <div class="section-title">🚗 Transfers (Barcelona Outside)</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Date</label>
+                            <input type="date" id="tDate" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Amount (€)</label>
+                            <input type="number" id="tAmount" class="form-input" placeholder="0.00" step="0.01">
+                        </div>
+                    </div>
+                    <button class="btn-add" onclick="addTransfer()">Add Transfer</button>
+                    <div id="transferList"></div>
+                </div>
+
+                <!-- Uber -->
+                <div class="section">
+                    <div class="section-title">🚕 Uber App Income</div>
+                    <div class="form-grid">
+                        <div class="form-group form-full">
+                            <label class="form-label">Uber Total (€)</label>
+                            <input type="number" id="uberVal" class="form-input" placeholder="0.00" step="0.01" oninput="calc()">
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Cash & Tips -->
-            <div class="section">
-                <div class="section-title">💵 Cash & Tips</div>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Cash (Hand) (€)</label>
-                        <input type="number" id="cashInHand" class="form-input" placeholder="0.00" step="0.01">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Card Cash (€)</label>
-                        <input type="number" id="cardCash" class="form-input" placeholder="0.00" step="0.01">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Tips (€)</label>
-                        <input type="number" id="tips" class="form-input" placeholder="0.00" step="0.01">
+                <!-- Cash & Tips -->
+                <div class="section">
+                    <div class="section-title">💵 Cash & Tips</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Cash (Hand)</label>
+                            <input type="number" id="cashVal" class="form-input" placeholder="0.00" step="0.01" oninput="calc()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Card Cash</label>
+                            <input type="number" id="cardVal" class="form-input" placeholder="0.00" step="0.01" oninput="calc()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Tips</label>
+                            <input type="number" id="tipsVal" class="form-input" placeholder="0.00" step="0.01" oninput="calc()">
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Expenses -->
-            <div class="section">
-                <div class="section-title">💰 My Expenses</div>
-                <div class="info-box">✅ Only fill if YOU paid from pocket. Owner returns it all.</div>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Type</label>
-                        <select id="expenseType" class="form-select">
-                            <option>-- Select --</option>
-                            <option>Petrol</option>
-                            <option>Maintenance</option>
-                            <option>Washing</option>
-                            <option>Parking</option>
-                            <option>Other</option>
-                        </select>
+                <!-- Expenses -->
+                <div class="section">
+                    <div class="section-title">💰 My Expenses</div>
+                    <div class="info-box">✅ Only fill if YOU paid from pocket. Owner returns it all.</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Type</label>
+                            <select id="expType" class="form-select">
+                                <option>-- Select --</option>
+                                <option>Petrol</option>
+                                <option>Maintenance</option>
+                                <option>Washing</option>
+                                <option>Parking</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Amount I Paid</label>
+                            <input type="number" id="expAmount" class="form-input" placeholder="0.00" step="0.01">
+                        </div>
+                        <div class="form-group form-full">
+                            <label class="form-label">Note (Optional)</label>
+                            <input type="text" id="expNote" class="form-input" placeholder="e.g. Shell, NCP parking">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Amount I Paid (€)</label>
-                        <input type="number" id="expenseAmount" class="form-input" placeholder="0.00" step="0.01">
-                    </div>
-                    <div class="form-group form-group-full">
-                        <label class="form-label">Note (Optional)</label>
-                        <input type="text" id="expenseNote" class="form-input" placeholder="e.g. Shell station, NCP parking...">
+                    <button class="btn-add" onclick="addExpense()">Add Expense</button>
+                    <div id="expenseList"></div>
+                </div>
+
+                <!-- Adjustment -->
+                <div class="section">
+                    <div class="section-title">⚖️ Adjustment / Advance</div>
+                    <div class="form-grid">
+                        <div class="form-group form-full">
+                            <label class="form-label">Amount (€)</label>
+                            <input type="number" id="adjVal" class="form-input" placeholder="0.00" step="0.01" oninput="calc()">
+                        </div>
                     </div>
                 </div>
-                <button class="btn-add" onclick="addExpense()">Add Expense</button>
-                <div id="expenseList"></div>
-            </div>
 
-            <!-- Adjustment -->
-            <div class="section">
-                <div class="section-title">⚖️ Adjustment</div>
-                <div class="form-grid">
-                    <div class="form-group form-group-full">
-                        <label class="form-label">Advance / Adjustment (€)</label>
-                        <input type="number" id="adjustment" class="form-input" placeholder="0.00" step="0.01">
+                <!-- Calculated -->
+                <div class="section">
+                    <div class="section-title">📊 Calculated</div>
+                    <div class="calculated">
+                        <div class="calc-row">
+                            <span class="calc-label">🚕 Uber App</span>
+                            <span class="calc-value">€<span id="c1">0.00</span></span>
+                        </div>
+                        <div class="calc-row">
+                            <span class="calc-label">📊 Total Income</span>
+                            <span class="calc-value">€<span id="c2">0.00</span></span>
+                        </div>
+                        <div class="calc-row">
+                            <span class="calc-label">💳 Card cash</span>
+                            <span class="calc-value">€<span id="c3">0.00</span> 👊 💸</span>
+                        </div>
+                        <div class="calc-row">
+                            <span class="calc-label">💵 Uber cash</span>
+                            <span class="calc-value">€<span id="c4">0.00</span></span>
+                        </div>
+                        <div class="calc-row">
+                            <span class="calc-label">🎁 Tip</span>
+                            <span class="calc-value">€<span id="c5">0.00</span></span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Calculated -->
-            <div class="section">
-                <div class="section-title">📊 Calculated</div>
-                <div class="calculated-box">
-                    <div class="calc-row">
-                        <span class="calc-label">🚕 Uber App</span>
-                        <span class="calc-value">€<span id="calcUber">0.00</span></span>
-                    </div>
-                    <div class="calc-row">
-                        <span class="calc-label">📊 Total Income</span>
-                        <span class="calc-value">€<span id="calcTotal">0.00</span></span>
-                    </div>
-                    <div class="calc-row">
-                        <span class="calc-label">💳 Card cash</span>
-                        <span class="calc-value">€<span id="calcCard">0.00</span> 👊 💸</span>
-                    </div>
-                    <div class="calc-row">
-                        <span class="calc-label">💵 Uber cash</span>
-                        <span class="calc-value">€<span id="calcCash">0.00</span></span>
-                    </div>
-                    <div class="calc-row">
-                        <span class="calc-label">🎁 Tip</span>
-                        <span class="calc-value">€<span id="calcTip">0.00</span></span>
-                    </div>
+                <!-- Action Buttons -->
+                <div class="action-grid">
+                    <button class="btn-save" onclick="saveDay()">💾 Save</button>
+                    <button class="btn-share" onclick="shareDay()">📱 Share</button>
                 </div>
+
+                <button class="btn-full btn-share-all" onclick="shareAll()">📤 Share All — June 2026</button>
+                <button class="btn-full btn-clear" onclick="clearDay()">🗑️ Clear this day</button>
             </div>
 
-            <!-- Buttons -->
-            <div class="action-buttons">
-                <button class="btn-save" onclick="saveEntry()">💾 Save</button>
-                <button class="btn-share" onclick="shareEntry()">📱 Share</button>
+            <!-- HISTORY TAB -->
+            <div id="historyTab" class="tab-content">
+                <div class="empty-state">📋 History coming soon...</div>
             </div>
 
-            <button class="btn-share-all" onclick="shareAll()">📤 Share All — June 2026</button>
+            <!-- SUMMARY TAB -->
+            <div id="summaryTab" class="tab-content">
+                <div class="empty-state">📊 Summary coming soon...</div>
+            </div>
 
-            <button class="btn-clear" onclick="clearDay()">🗑️ Clear this day</button>
-        </div>
-
-        <!-- HISTORY TAB -->
-        <div id="historyTab" class="tab-panel">
-            <div class="empty-state">📋 History loading...</div>
-        </div>
-
-        <!-- SUMMARY TAB -->
-        <div id="summaryTab" class="tab-panel">
-            <div class="empty-state">📊 Summary loading...</div>
-        </div>
-
-        <!-- SETTLEMENT TAB -->
-        <div id="settlementTab" class="tab-panel">
-            <div class="empty-state">💰 Settlement loading...</div>
+            <!-- SETTLEMENT TAB -->
+            <div id="settlementTab" class="tab-content">
+                <div class="empty-state">💰 Settlement coming soon...</div>
+            </div>
         </div>
     </div>
 
@@ -561,16 +674,16 @@
         db = firebase.firestore();
 
         // Driver selection
-        document.getElementById('d1').addEventListener('click', function() {
+        document.getElementById('d1Btn').addEventListener('click', function() {
             currentDriver = 'driver1';
             this.classList.add('active');
-            document.getElementById('d2').classList.remove('active');
+            document.getElementById('d2Btn').classList.remove('active');
         });
 
-        document.getElementById('d2').addEventListener('click', function() {
+        document.getElementById('d2Btn').addEventListener('click', function() {
             currentDriver = 'driver2';
             this.classList.add('active');
-            document.getElementById('d1').classList.remove('active');
+            document.getElementById('d1Btn').classList.remove('active');
         });
 
         // Auth
@@ -580,25 +693,25 @@
 
         function login() {
             const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
-            if (!email || !password) { showError('Enter email and password'); return; }
-            auth.signInWithEmailAndPassword(email, password)
+            const pass = document.getElementById('password').value.trim();
+            if (!email || !pass) { showErr('Enter email & password'); return; }
+            auth.signInWithEmailAndPassword(email, pass)
                 .then(r => { currentUser = r.user; loadDash(); })
-                .catch(e => showError(e.message));
+                .catch(e => showErr(e.message));
         }
 
         function signup() {
             const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
-            if (!email || !password) { showError('Enter email and password'); return; }
-            if (password.length < 6) { showError('Password min 6 chars'); return; }
-            auth.createUserWithEmailAndPassword(email, password)
+            const pass = document.getElementById('password').value.trim();
+            if (!email || !pass) { showErr('Enter email & password'); return; }
+            if (pass.length < 6) { showErr('Min 6 chars'); return; }
+            auth.createUserWithEmailAndPassword(email, pass)
                 .then(r => {
                     currentUser = r.user;
-                    db.collection('users').doc(r.user.uid).set({ email, driver: currentDriver, created: new Date() });
+                    db.collection('users').doc(r.user.uid).set({ email, driver: currentDriver });
                     loadDash();
                 })
-                .catch(e => showError(e.message));
+                .catch(e => showErr(e.message));
         }
 
         function logout() {
@@ -609,7 +722,7 @@
             });
         }
 
-        function showError(msg) {
+        function showErr(msg) {
             const el = document.getElementById('errorMsg');
             el.textContent = msg;
             el.style.display = 'block';
@@ -619,86 +732,107 @@
         function loadDash() {
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('dashboard').classList.add('active');
-            document.getElementById('headerInfo').textContent = `${currentDriver === 'driver1' ? 'Driver 1' : 'Driver 2'} • June 2026`;
-            document.getElementById('transferDate').valueAsDate = new Date();
+            document.getElementById('headerMeta').textContent = `${currentDriver === 'driver1' ? 'Driver 1' : 'Driver 2'} • June 2026`;
+            document.getElementById('tDate').valueAsDate = new Date();
+            generateCalendar();
+        }
+
+        function generateCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            const days = ['S','M','T','W','T','F','S'];
+            days.forEach(d => {
+                const el = document.createElement('div');
+                el.textContent = d;
+                el.style.cssText = 'text-align: center; color: #999; font-size: 11px; font-weight: 600; padding: 6px;';
+                grid.appendChild(el);
+            });
+            
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
+            const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+            
+            for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
+            
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day' + (d === today.getDate() ? ' today' : '');
+                dayEl.textContent = d;
+                grid.appendChild(dayEl);
+            }
         }
 
         window.addTransfer = function() {
-            const date = document.getElementById('transferDate').value;
-            const amount = parseFloat(document.getElementById('transferAmount').value) || 0;
+            const date = document.getElementById('tDate').value;
+            const amount = parseFloat(document.getElementById('tAmount').value) || 0;
             if (amount <= 0) { alert('Enter valid amount'); return; }
             db.collection(`drivers/${currentDriver}/transfers`).add({ date, amount, ts: new Date() });
-            document.getElementById('transferAmount').value = '';
+            document.getElementById('tAmount').value = '';
         };
 
         window.addExpense = function() {
-            const type = document.getElementById('expenseType').value;
-            const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
+            const type = document.getElementById('expType').value;
+            const amount = parseFloat(document.getElementById('expAmount').value) || 0;
             if (type === '-- Select --' || amount <= 0) { alert('Fill all'); return; }
             db.collection('danial_expenses').add({
                 driver: currentDriver, type, amount, status: 'pending', ts: new Date()
             });
-            document.getElementById('expenseType').value = '-- Select --';
-            document.getElementById('expenseAmount').value = '';
+            document.getElementById('expType').value = '-- Select --';
+            document.getElementById('expAmount').value = '';
         };
 
-        window.saveEntry = function() { alert('✅ Saved!'); updateCalculated(); };
-        window.shareEntry = function() { alert('📤 Shared!'); };
-        window.shareAll = function() { alert('📤 Share All Month!'); };
+        function calc() {
+            const uber = parseFloat(document.getElementById('uberVal').value) || 0;
+            const cash = parseFloat(document.getElementById('cashVal').value) || 0;
+            const card = parseFloat(document.getElementById('cardVal').value) || 0;
+            const tips = parseFloat(document.getElementById('tipsVal').value) || 0;
+            
+            document.getElementById('c1').textContent = uber.toFixed(2);
+            document.getElementById('c2').textContent = (uber + cash + card + tips).toFixed(2);
+            document.getElementById('c3').textContent = card.toFixed(2);
+            document.getElementById('c4').textContent = cash.toFixed(2);
+            document.getElementById('c5').textContent = tips.toFixed(2);
+            document.getElementById('totalInc').textContent = (uber + cash + card + tips).toFixed(2);
+        }
+
+        window.saveDay = function() { alert('✅ Saved!'); calc(); };
+        window.shareDay = function() { alert('📱 Shared!'); };
+        window.shareAll = function() { alert('📤 Share All — June 2026'); };
         window.clearDay = function() {
-            if (confirm('Clear all entries today?')) {
-                document.getElementById('uberAmount').value = '';
-                document.getElementById('cashInHand').value = '';
-                document.getElementById('cardCash').value = '';
-                document.getElementById('tips').value = '';
-                updateCalculated();
+            if (confirm('Clear today?')) {
+                document.getElementById('uberVal').value = '';
+                document.getElementById('cashVal').value = '';
+                document.getElementById('cardVal').value = '';
+                document.getElementById('tipsVal').value = '';
+                document.getElementById('adjVal').value = '';
+                calc();
             }
         };
 
-        function updateCalculated() {
-            const uber = parseFloat(document.getElementById('uberAmount').value) || 0;
-            const cash = parseFloat(document.getElementById('cashInHand').value) || 0;
-            const card = parseFloat(document.getElementById('cardCash').value) || 0;
-            const tip = parseFloat(document.getElementById('tips').value) || 0;
-            
-            document.getElementById('calcUber').textContent = uber.toFixed(2);
-            document.getElementById('calcTotal').textContent = (uber + cash + card + tip).toFixed(2);
-            document.getElementById('calcCard').textContent = card.toFixed(2);
-            document.getElementById('calcCash').textContent = cash.toFixed(2);
-            document.getElementById('calcTip').textContent = tip.toFixed(2);
-            document.getElementById('totalIncome').textContent = (uber + cash + card + tip).toFixed(2);
-        }
-
         // Tabs
-        document.getElementById('entryTabBtn').addEventListener('click', () => switchTab('entry'));
-        document.getElementById('historyTabBtn').addEventListener('click', () => switchTab('history'));
-        document.getElementById('summaryTabBtn').addEventListener('click', () => switchTab('summary'));
-        document.getElementById('settlementTabBtn').addEventListener('click', () => switchTab('settlement'));
+        document.getElementById('tabEntry').addEventListener('click', () => switchTab('entry'));
+        document.getElementById('tabHistory').addEventListener('click', () => switchTab('history'));
+        document.getElementById('tabSummary').addEventListener('click', () => switchTab('summary'));
+        document.getElementById('tabSettlement').addEventListener('click', () => switchTab('settlement'));
 
         function switchTab(tab) {
-            document.querySelectorAll('.tab-panel').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
             
             if (tab === 'entry') {
                 document.getElementById('entryTab').classList.add('active');
-                document.getElementById('entryTabBtn').classList.add('active');
+                document.getElementById('tabEntry').classList.add('active');
             } else if (tab === 'history') {
                 document.getElementById('historyTab').classList.add('active');
-                document.getElementById('historyTabBtn').classList.add('active');
+                document.getElementById('tabHistory').classList.add('active');
             } else if (tab === 'summary') {
                 document.getElementById('summaryTab').classList.add('active');
-                document.getElementById('summaryTabBtn').classList.add('active');
+                document.getElementById('tabSummary').classList.add('active');
             } else if (tab === 'settlement') {
                 document.getElementById('settlementTab').classList.add('active');
-                document.getElementById('settlementTabBtn').classList.add('active');
+                document.getElementById('tabSettlement').classList.add('active');
             }
         }
-
-        // Update on input
-        document.getElementById('uberAmount').addEventListener('input', updateCalculated);
-        document.getElementById('cashInHand').addEventListener('input', updateCalculated);
-        document.getElementById('cardCash').addEventListener('input', updateCalculated);
-        document.getElementById('tips').addEventListener('input', updateCalculated);
 
         auth.onAuthStateChanged(user => {
             if (user) {
