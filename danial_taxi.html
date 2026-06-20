@@ -630,12 +630,6 @@ body{
         <div class="card"><div class="date-strip">
           <div><div class="big" id="selDate">Today</div><div class="meta" id="selMeta">—</div></div>
           <div id="selPill"></div></div></div>
-        <div class="card"><div class="s-title">🕒 Shift</div>
-          <div class="seg shift" id="shiftSeg">
-            <button data-shift="morning">🌅 Morning</button>
-            <button data-shift="night">🌙 Night</button>
-            <button data-shift="other">🕒 Full / Other</button>
-          </div></div>
         <div class="card"><div class="s-title">🚕 Taxi Meter <span class="badge" id="tfCount">0 trips</span></div>
           <div class="fgrid">
             <div class="fld ffull"><label class="lbl">Meter amount</label><div class="in-money"><span class="cur">€</span><input type="number" id="tfAmt" class="in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
@@ -645,13 +639,16 @@ body{
           <button class="btn-add" id="addTf">➕ Add fare</button>
           <div class="list" id="tfList"></div>
         </div>
-        <div class="card"><div class="s-title">💶 Income</div>
+        <div class="card"><div class="s-title">📱 Uber / Bolt</div>
           <div class="fgrid">
-            <div class="fld ffull"><label class="lbl">Uber / Bolt total</label><div class="in-money"><span class="cur">€</span><input type="number" id="fUber" class="in money-in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
-            <div class="fld"><label class="lbl">Cash (in hand)</label><div class="in-money"><span class="cur">€</span><input type="number" id="fCash" class="in money-in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
-            <div class="fld"><label class="lbl">Card (terminal)</label><div class="in-money"><span class="cur">€</span><input type="number" id="fCard" class="in money-in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
-            <div class="fld ffull"><label class="lbl">🎁 Tips</label><div class="in-money"><span class="cur">€</span><input type="number" id="fTips" class="in money-in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
-          </div></div>
+            <div class="fld"><label class="lbl">Uber / Bolt total</label><div class="in-money"><span class="cur">€</span><input type="number" id="fUber" class="in money-in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
+            <div class="fld"><label class="lbl">↳ of that, cash 💵</label><div class="in-money"><span class="cur">€</span><input type="number" id="fUberCash" class="in money-in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
+          </div>
+          <div class="hint">Cash = the rider paid you cash (you keep it). The rest goes to the company card.</div>
+        </div>
+        <div class="card"><div class="s-title">🎁 Tips</div>
+          <div class="fld ffull"><label class="lbl">Tips — you keep 100%</label><div class="in-money"><span class="cur">€</span><input type="number" id="fTips" class="in money-in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
+        </div>
         <div class="card"><div class="s-title">🧾 Expenses <span class="badge" id="exCount">0 items</span></div>
           <div class="fgrid">
             <div class="fld"><label class="lbl">Type</label><select id="exType" class="sel">
@@ -659,6 +656,8 @@ body{
               <option value="🧼 Wash">🧼 Wash</option><option value="🅿️ Parking">🅿️ Parking</option>
               <option value="🛣️ Toll">🛣️ Toll</option><option value="📦 Other">📦 Other</option></select></div>
             <div class="fld"><label class="lbl">Amount</label><div class="in-money"><span class="cur">€</span><input type="number" id="exAmt" class="in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
+            <div class="fld ffull"><label class="lbl">Paid by</label>
+              <div class="seg" id="exMethod"><button data-m="cash" class="on">💵 Cash</button><button data-m="card">💳 Card</button></div></div>
             <div class="fld ffull"><label class="lbl">Note</label><input type="text" id="exNote" class="in" placeholder="optional"></div>
           </div>
           <button class="btn-add" id="addEx">➕ Add expense</button>
@@ -666,15 +665,13 @@ body{
         </div>
         <div class="card card-gold"><div class="s-title">🧮 My day</div>
           <div class="calc">
-            <div class="crow"><span class="cl">🚕 Uber / Bolt</span><span class="cv">€<span id="b1" class="tnum">0,00</span></span></div>
-            <div class="crow"><span class="cl">💳 Card</span><span class="cv">€<span id="b2" class="tnum">0,00</span></span></div>
-            <div class="crow"><span class="cl">💵 Cash</span><span class="cv">€<span id="b3" class="tnum">0,00</span></span></div>
+            <div class="crow"><span class="cl">📱 Uber / Bolt</span><span class="cv">€<span id="b1" class="tnum">0,00</span></span></div>
             <div class="crow"><span class="cl">🚕 Taxi Meter</span><span class="cv">€<span id="b4" class="tnum">0,00</span></span></div>
-            <div class="crow"><span class="cl">🎁 Tips</span><span class="cv">€<span id="b5" class="tnum">0,00</span></span></div>
+            <div class="crow"><span class="cl">🎁 Tips (yours)</span><span class="cv">€<span id="b5" class="tnum">0,00</span></span></div>
             <div class="crow total"><span class="cl">📈 Total income</span><span class="cv">€<span id="bTotal" class="tnum">0,00</span></span></div>
-            <div class="crow sub"><span class="cl">↳ cash in hand</span><span class="cv">€<span id="bCash" class="tnum">0,00</span></span></div>
-            <div class="crow sub"><span class="cl">↳ expenses</span><span class="cv">€<span id="bExp" class="tnum">0,00</span></span></div>
-            <div class="crow sub"><span class="cl">↳ kept after expenses</span><span class="cv">€<span id="bNet" class="tnum">0,00</span></span></div>
+            <div class="crow sub"><span class="cl">💵 cash you keep</span><span class="cv">€<span id="bCash" class="tnum">0,00</span></span></div>
+            <div class="crow sub"><span class="cl">💳 to company card</span><span class="cv">€<span id="bCard" class="tnum">0,00</span></span></div>
+            <div class="crow sub"><span class="cl">🧾 expenses</span><span class="cv">€<span id="bExp" class="tnum">0,00</span></span></div>
           </div></div>
         <div class="autosave" id="autoSave"></div>
         <div class="act-grid">
@@ -719,7 +716,7 @@ body{
       <div id="moneyBody"></div>
     </div>
 
-    <div class="foot">🚕 <span id="footBiz">Danial Taxi</span> · <b id="verStamp">v4.2</b> · gold standard</div>
+    <div class="foot">🚕 <span id="footBiz">Danial Taxi</span> · <b id="verStamp">v4.3</b> · gold standard</div>
   </div>
 </div>
 
@@ -734,7 +731,7 @@ body{
 <div class="modal-bg" id="sheetBg"><div class="modal wide"><div id="sheetBody"></div></div></div>
 
 <script>
-const APP_VERSION='v4.2';
+const APP_VERSION='v4.3';
 const firebaseConfig = {
   apiKey: "AIzaSyBlwF6FfIOXsxBHGF3U_Njp0mVYiOvMMD8",
   authDomain: "danial-taxi.firebaseapp.com",
@@ -896,7 +893,7 @@ function renderHeaderDriver(){
   const car=myCar?('🚗 '+myCar.number):'no car yet';
   $('ringCap').textContent='days'; const goal=22; const pct=Math.min(100,days/goal*100);
   $('ringFg').setAttribute('stroke-dasharray',`${pct} ${100-pct}`); $('ringPct').textContent=days;
-  $('hMeta').innerHTML+=` · ${car}`;
+  $('hMeta').innerHTML+=` · ${car}${me.shift?(' · '+shiftTag(me.shift)):''}`;
 }
 function renderHeaderOwner(){
   const r='<span class="role-pill adm">Owner</span>'+(me.carId?' <span class="role-pill drv">Driver</span>':'');
@@ -929,13 +926,14 @@ function changeMonth(delta){ viewM+=delta; if(viewM<0){viewM=11;viewY--;} if(vie
 ['calNext','hNext','sNext','setNext'].forEach(id=>{ const el=$(id); if(el) el.onclick=()=>changeMonth(1); });
 
 /* =================== DAY COMPUTE =================== */
-function computeDay(d){ if(!d) return {uber:0,card:0,cash:0,tips:0,transfers:0,total:0,cashInHand:0,digital:0,expenses:0,km:0,net:0};
-  const uber=num(d.uber),card=num(d.card),cash=num(d.cash),tips=num(d.tips);
-  let tf=0,tfCash=0,tfCard=0,km=0; (d.transfers||[]).forEach(t=>{ const a=num(t.amount); tf+=a;
-    if(t.method==='card')tfCard+=a; else tfCash+=a; km+=Math.max(0,num(t.end)-num(t.start)); });
-  let exp=0; (d.expenses||[]).forEach(e=>exp+=num(e.amount));
-  const total=uber+card+cash+tips+tf;
-  return {uber,card,cash,tips,transfers:tf,total,cashInHand:cash+tfCash,digital:uber+card+tips+tfCard,expenses:exp,km,net:total-exp}; }
+function computeDay(d){ if(!d) return {uber:0,uberCash:0,uberCard:0,meter:0,meterCash:0,meterCard:0,tips:0,total:0,cashIncome:0,cardIncome:0,cashHeld:0,expenses:0,cashExp:0,cardExp:0,net:0};
+  const uber=num(d.uber), uberCash=Math.min(num(d.uberCash),num(d.uber)), uberCard=Math.max(0,uber-uberCash), tips=num(d.tips);
+  let meterCash=0,meterCard=0; (d.transfers||[]).forEach(t=>{ const a=num(t.amount); if(t.method==='card')meterCard+=a; else meterCash+=a; });
+  const meter=meterCash+meterCard;
+  let cashExp=0,cardExp=0; (d.expenses||[]).forEach(e=>{ const a=num(e.amount); if(e.method==='card')cardExp+=a; else cashExp+=a; });
+  const expenses=cashExp+cardExp;
+  const cashIncome=uberCash+meterCash, cardIncome=uberCard+meterCard+tips, total=uber+meter+tips, cashHeld=cashIncome-cashExp;
+  return {uber,uberCash,uberCard,meter,meterCash,meterCard,tips,total,cashIncome,cardIncome,cashHeld,expenses,cashExp,cardExp,net:total-expenses}; }
 function dayHasData(d){ const c=computeDay(d); return c.total>0||c.expenses>0||(d&&(d.transfers||[]).length); }
 
 /* =================== CALENDAR + ENTRY =================== */
@@ -968,18 +966,15 @@ function selectDay(d){ selDay=d;
   currentDay=stored?JSON.parse(JSON.stringify(stored)):blankDay();
   currentDay.transfers=currentDay.transfers||[]; currentDay.expenses=currentDay.expenses||[];
   loadDayIntoForm(); renderCalendar(); }
-function loadDayIntoForm(){ $('fUber').value=currentDay.uber||''; $('fCard').value=currentDay.card||'';
-  $('fCash').value=currentDay.cash||''; $('fTips').value=currentDay.tips||'';
-  document.querySelectorAll('#shiftSeg button').forEach(b=>b.classList.toggle('on',b.dataset.shift===currentDay.shift));
+function loadDayIntoForm(){ $('fUber').value=currentDay.uber||''; $('fUberCash').value=currentDay.uberCash||''; $('fTips').value=currentDay.tips||'';
+  exMethod='cash'; document.querySelectorAll('#exMethod button').forEach(b=>b.classList.toggle('on',b.dataset.m==='cash'));
   renderTransfers(); renderExpenses(); recalc(); setAutoSave('',''); }
-function recalc(){ currentDay.uber=num($('fUber').value); currentDay.card=num($('fCard').value);
-  currentDay.cash=num($('fCash').value); currentDay.tips=num($('fTips').value); const c=computeDay(currentDay);
-  $('b1').textContent=eur(c.uber).slice(1); $('b2').textContent=eur(c.card).slice(1); $('b3').textContent=eur(c.cash).slice(1);
-  $('b4').textContent=eur(c.transfers).slice(1); $('b5').textContent=eur(c.tips).slice(1); $('bTotal').textContent=eur(c.total).slice(1);
-  $('bCash').textContent=eur(c.cashInHand).slice(1); $('bExp').textContent=eur(c.expenses).slice(1); $('bNet').textContent=eur(c.net).slice(1); }
-['fUber','fCard','fCash','fTips'].forEach(id=>$(id).addEventListener('input',()=>{ recalc(); scheduleSave(); }));
-document.querySelectorAll('#shiftSeg button').forEach(b=>b.onclick=()=>{ currentDay.shift=b.dataset.shift;
-  document.querySelectorAll('#shiftSeg button').forEach(x=>x.classList.toggle('on',x===b)); scheduleSave(); });
+function recalc(){ currentDay.uber=num($('fUber').value); currentDay.uberCash=num($('fUberCash').value); currentDay.tips=num($('fTips').value);
+  const c=computeDay(currentDay);
+  $('b1').textContent=eur(c.uber).slice(1); $('b4').textContent=eur(c.meter).slice(1); $('b5').textContent=eur(c.tips).slice(1);
+  $('bTotal').textContent=eur(c.total).slice(1); $('bCash').textContent=eur(c.cashHeld).slice(1);
+  $('bCard').textContent=eur(c.cardIncome).slice(1); $('bExp').textContent=eur(c.expenses).slice(1); }
+['fUber','fUberCash','fTips'].forEach(id=>$(id).addEventListener('input',()=>{ recalc(); scheduleSave(); }));
 
 let tfMethod='cash';
 document.querySelectorAll('#tfMethod button').forEach(b=>b.onclick=()=>{ tfMethod=b.dataset.m;
@@ -991,11 +986,15 @@ $('addTf').onclick=()=>{ const amt=num($('tfAmt').value);
 function renderTransfers(){ const t=currentDay.transfers||[]; $('tfCount').textContent=t.length+(t.length===1?' trip':' trips');
   $('tfList').innerHTML=t.length?t.map((x,i)=>`<div class="item"><div><div class="ti">${x.method==='card'?'💳':'💵'} ${eur(num(x.amount))}</div><div class="su">${x.method==='card'?'Card':'Cash'}</div></div><div class="item-r"><button class="btn-del" onclick="delTf(${i})">✕</button></div></div>`).join(''):'<div class="empty-list">No fares yet</div>'; }
 window.delTf=i=>{ currentDay.transfers.splice(i,1); renderTransfers(); recalc(); flushSave(); };
+
+let exMethod='cash';
+document.querySelectorAll('#exMethod button').forEach(b=>b.onclick=()=>{ exMethod=b.dataset.m;
+  document.querySelectorAll('#exMethod button').forEach(x=>x.classList.toggle('on',x===b)); });
 $('addEx').onclick=()=>{ const amt=num($('exAmt').value); if(amt<=0) return toast('Enter the expense amount','error');
-  currentDay.expenses.push({type:$('exType').value,amount:amt,note:$('exNote').value.trim()});
+  currentDay.expenses.push({type:$('exType').value,amount:amt,method:exMethod,note:$('exNote').value.trim()});
   $('exAmt').value='';$('exNote').value=''; renderExpenses(); recalc(); flushSave(); toast('🧾 Expense added','success'); };
 function renderExpenses(){ const x=currentDay.expenses||[]; $('exCount').textContent=x.length+(x.length===1?' item':' items');
-  $('exList').innerHTML=x.length?x.map((e,i)=>`<div class="item" style="border-left-color:var(--red)"><div><div class="ti">${esc(e.type)}</div>${e.note?`<div class="su">${esc(e.note)}</div>`:''}</div><div class="item-r"><span class="amt" style="color:#f87171">${eur(num(e.amount))}</span><button class="btn-del" onclick="delEx(${i})">✕</button></div></div>`).join(''):'<div class="empty-list">No expenses yet</div>'; }
+  $('exList').innerHTML=x.length?x.map((e,i)=>`<div class="item" style="border-left-color:var(--red)"><div><div class="ti">${esc(e.type)} <span style="font-size:10px;color:var(--dim)">${e.method==='card'?'💳 card':'💵 cash'}</span></div>${e.note?`<div class="su">${esc(e.note)}</div>`:''}</div><div class="item-r"><span class="amt" style="color:#f87171">${eur(num(e.amount))}</span><button class="btn-del" onclick="delEx(${i})">✕</button></div></div>`).join(''):'<div class="empty-list">No expenses yet</div>'; }
 window.delEx=i=>{ currentDay.expenses.splice(i,1); renderExpenses(); recalc(); flushSave(); };
 
 function setAutoSave(cls,txt){ const el=$('autoSave'); el.className='autosave '+cls; el.textContent=txt; }
@@ -1003,10 +1002,12 @@ function scheduleSave(){ setAutoSave('saving','💾 Saving…'); clearTimeout(sa
 function flushSave(cb){ clearTimeout(saveTimer); persistDay(cb); }
 function persistDay(cb){ if(!canEnter()) return; recalc(); const c=computeDay(currentDay), date=curKey();
   const carId=me.carId||(myCar&&myCar.id)||null;
-  const rec={ driverId:uid, driverName:me.name, ownerId, carId, date, ym:monthKey(viewY,viewM), shift:currentDay.shift||'',
-    uber:num(currentDay.uber),card:num(currentDay.card),cash:num(currentDay.cash),tips:num(currentDay.tips),
-    transfers:currentDay.transfers||[],expenses:currentDay.expenses||[],
-    income:c.total,cashInHand:c.cashInHand,digital:c.digital,expenseTotal:c.expenses,kmTotal:c.km,updatedAt:Date.now() };
+  const rec={ driverId:uid, driverName:me.name, ownerId, carId, date, ym:monthKey(viewY,viewM), shift:me.shift||'',
+    uber:num(currentDay.uber), uberCash:num(currentDay.uberCash), tips:num(currentDay.tips),
+    transfers:currentDay.transfers||[], expenses:currentDay.expenses||[],
+    income:c.total, cashHeld:c.cashHeld, cashIncome:c.cashIncome, cardIncome:c.cardIncome,
+    expenseTotal:c.expenses, cashExp:c.cashExp, cardExp:c.cardExp,
+    meterTotal:c.meter, meterCash:c.meterCash, meterCard:c.meterCard, uberCard:c.uberCard, updatedAt:Date.now() };
   const id=uid+'_'+date;
   if(!dayHasData(currentDay)){ entriesCol().doc(id).delete().catch(()=>{}); delete monthEntries[date];
     ownerEntries=ownerEntries.filter(e=>!(e.driverId===uid&&e.date===date)); setAutoSave('','—'); afterPersist(); if(cb)cb(); return; }
@@ -1029,23 +1030,24 @@ function renderHistory(){ const keys=Object.keys(monthEntries).filter(k=>dayHasD
   list.innerHTML=keys.map(k=>{ const d=monthEntries[k],c=computeDay(d),day=parseInt(k.slice(-2),10),dt=new Date(viewY,viewM,day);
     const sh=d.shift==='morning'?'🌅':d.shift==='night'?'🌙':'';
     return `<div class="hrow" onclick="jumpTo(${day})"><div class="hrow-date"><div class="hrow-day">${day}</div><div class="hrow-dow">${DOW[dt.getDay()].slice(0,3)}</div></div>
-      <div class="hrow-mid"><div class="hrow-tot">${eur(c.total)} ${sh}</div><div class="hrow-tags"><span class="tag cash">💵 ${eur(c.cashInHand)}</span>${c.expenses>0?`<span class="tag exp">🧾 ${eur(c.expenses)}</span>`:''}${c.km>0?`<span class="tag km">📍 ${c.km.toFixed(0)}km</span>`:''}</div></div><div class="hrow-go">›</div></div>`;
+      <div class="hrow-mid"><div class="hrow-tot">${eur(c.total)} ${sh}</div><div class="hrow-tags"><span class="tag cash">💵 ${eur(c.cashHeld)}</span>${c.expenses>0?`<span class="tag exp">🧾 ${eur(c.expenses)}</span>`:''}${c.tips>0?`<span class="tag km">🎁 ${eur(c.tips)}</span>`:''}</div></div><div class="hrow-go">›</div></div>`;
   }).join(''); }
 window.jumpTo=d=>{ switchTab('entry'); selDay=d; selectDay(d); window.scrollTo({top:0,behavior:'smooth'}); };
 function renderSummary(){ const body=$('sumBody'); if(!body) return;
   const keys=Object.keys(monthEntries).filter(k=>dayHasData(monthEntries[k]));
   if(!keys.length){ body.innerHTML=emptyState('📊','Nothing yet','Log some days to see stats.'); return; }
-  let inc=0,uber=0,card=0,cash=0,tips=0,tf=0,exp=0,km=0,cih=0,best=0,bestDay='';
-  keys.forEach(k=>{ const c=computeDay(monthEntries[k]); inc+=c.total;uber+=c.uber;card+=c.card;cash+=c.cash;tips+=c.tips;tf+=c.transfers;exp+=c.expenses;km+=c.km;cih+=c.cashInHand; if(c.total>best){best=c.total;bestDay=k.slice(-2);} });
-  const days=keys.length,avg=inc/days,max=Math.max(uber,card,cash,tips,tf,1);
+  let inc=0,uber=0,meter=0,tips=0,cash=0,cardv=0,exp=0,best=0,bestDay='';
+  keys.forEach(k=>{ const c=computeDay(monthEntries[k]); inc+=c.total;uber+=c.uber;meter+=c.meter;tips+=c.tips;cash+=c.cashHeld;cardv+=c.cardIncome;exp+=c.expenses; if(c.total>best){best=c.total;bestDay=k.slice(-2);} });
+  const days=keys.length,avg=inc/days,max=Math.max(uber,meter,tips,1);
   const bar=(l,v,e)=>`<div class="bar-row"><div class="bar-top"><span class="bar-lbl">${e} ${l}</span><span class="bar-amt">${eur(v)}</span></div><div class="bar-track"><div class="bar-fill" style="width:${v/max*100}%"></div></div></div>`;
   body.innerHTML=`<div class="kpi-grid">
     <div class="kpi span"><div class="kpi-lbl">📈 My income</div><div class="kpi-val">${eur(inc)}</div></div>
     <div class="kpi"><div class="kpi-lbl">📅 Avg / day</div><div class="kpi-val">${eur(avg)}</div></div>
     <div class="kpi"><div class="kpi-lbl">🏆 Best day</div><div class="kpi-val">${eur(best)}<br><small>${bestDay?'the '+bestDay:''}</small></div></div>
-    <div class="kpi"><div class="kpi-lbl">💵 Cash in hand</div><div class="kpi-val">${eur(cih)}</div></div>
+    <div class="kpi"><div class="kpi-lbl">💵 Cash kept</div><div class="kpi-val">${eur(cash)}</div></div>
+    <div class="kpi"><div class="kpi-lbl">💳 To company card</div><div class="kpi-val">${eur(cardv)}</div></div>
     <div class="kpi"><div class="kpi-lbl">🧾 Expenses</div><div class="kpi-val" style="color:#f87171">${eur(exp)}</div></div></div>
-    <div class="card"><div class="s-title">💰 Income by source</div>${bar('Uber / Bolt',uber,'📱')}${bar('Card',card,'💳')}${bar('Cash',cash,'💵')}${bar('Taxi Meter',tf,'🚕')}${bar('Tips',tips,'🎁')}</div>`; }
+    <div class="card"><div class="s-title">💰 Income by source</div>${bar('Uber / Bolt',uber,'📱')}${bar('Taxi Meter',meter,'🚕')}${bar('Tips',tips,'🎁')}</div>`; }
 
 /* =================== CARS =================== */
 function driversOfCar(carId){ return allDrivers.filter(d=>d.carId===carId); }
@@ -1114,13 +1116,13 @@ function renderDrivers(){ const list=$('driversList'); if(!list) return;
   let html='';
   if(ownerSelf){ const carName=ownerSelf.carId?(cars.find(c=>c.id===ownerSelf.carId)||{}).number:null;
     html+=`<div class="drv-card"><div class="mem-av">${initials(ownerSelf.name)}</div>
-      <div class="drv-info"><div class="drv-name">${esc(ownerSelf.name)} <span class="role-pill adm">You · Owner</span></div>
+      <div class="drv-info"><div class="drv-name">${esc(ownerSelf.name)} <span class="role-pill adm">You · Owner</span>${ownerSelf.shift?' <span class="role-pill drv">'+shiftTag(ownerSelf.shift)+'</span>':''}</div>
       <div class="drv-sub">${carName?('🚗 '+esc(carName)):'Not driving — tap to assign a car if you drive'}</div></div>
       <button class="drv-go" onclick="assignSheet('${ownerId}')">${carName?'Change':'Drive?'}</button></div>`; }
   if(!drivers.length){ html+=`<div class="empty-hint">🪪 No drivers yet.<br>Create a driver login and share it with them on WhatsApp.</div>`; }
   else html+=drivers.map(d=>{ const carName=d.carId?(cars.find(c=>c.id===d.carId)||{}).number:null;
     return `<div class="drv-card"><div class="mem-av">${initials(d.name)}</div>
-      <div class="drv-info"><div class="drv-name">${esc(d.name)}</div><div class="drv-sub">📧 ${esc(d.email||'')} · ${carName?('🚗 '+esc(carName)):'<span style="color:#fca5a5">no car</span>'}</div></div>
+      <div class="drv-info"><div class="drv-name">${esc(d.name)}${d.shift?' <span class="role-pill drv">'+shiftTag(d.shift)+'</span>':''}</div><div class="drv-sub">📧 ${esc(d.email||'')} · ${carName?('🚗 '+esc(carName)):'<span style="color:#fca5a5">no car</span>'}</div></div>
       <button class="drv-go" onclick="assignSheet('${d.uid}')">Assign</button></div>`; }).join('');
   list.innerHTML=html; }
 
@@ -1164,19 +1166,26 @@ window.copyCreds=(e,p,l)=>{ navigator.clipboard?.writeText(`App: ${l}\nEmail: ${
 window.assignSheet=duid=>{ const drv=allDrivers.find(d=>d.uid===duid); if(!drv) return;
   const opts=[`<div class="assign-opt ${!drv.carId?'on':''}" onclick="pickCar(this,'')"><div class="rad"></div><div class="assign-nm">🚫 No car</div></div>`]
     .concat(cars.map(c=>`<div class="assign-opt ${drv.carId===c.id?'on':''}" onclick="pickCar(this,'${c.id}')"><div class="rad"></div><div class="assign-nm">🚗 ${esc(c.number)}</div></div>`));
-  _pendCar=drv.carId||'';
+  _pendCar=drv.carId||''; _pendShift=drv.shift||'';
   openSheet(`<div class="modal-t">Assign ${esc(drv.name)}</div>
     ${cars.length?'<label class="lbl">Choose a car</label>':'<div class="empty-hint">Add a car first in the Cars tab.</div>'}
     <div class="assign-grid">${opts.join('')}</div>
+    <label class="lbl">Shift</label>
+    <div class="split-pick" style="margin-bottom:14px">
+      <button id="shfDay" class="${drv.shift==='day'?'on':''}" onclick="pickShift('day')">🌅 Day</button>
+      <button id="shfNight" class="${drv.shift==='night'?'on':''}" onclick="pickShift('night')">🌙 Night</button>
+      <button id="shfNone" class="${!drv.shift?'on':''}" onclick="pickShift('')">— Any</button>
+    </div>
     <div class="modal-acts"><button class="modal-btn cancel" onclick="closeSheet()">Cancel</button>
       <button class="modal-btn confirm gold" onclick="saveAssign('${duid}')">Save</button></div>`); };
-let _pendCar='';
+let _pendCar='', _pendShift='';
 window.pickCar=(el,cid)=>{ _pendCar=cid; document.querySelectorAll('.assign-opt').forEach(o=>o.classList.remove('on')); el.classList.add('on'); };
-window.saveAssign=duid=>{ withTimeout(db.collection('users').doc(duid).set({carId:_pendCar||null},{merge:true})).then(()=>{
-    const d=allDrivers.find(x=>x.uid===duid); if(d)d.carId=_pendCar||null;
-    if(duid===uid){ me.carId=_pendCar||null; } closeSheet(); toast('✓ Saved','gold'); renderDrivers(); renderCars();
-    if(duid===uid){ // owner assigned self -> may need entry tab; simplest is reload
-      toast('Reloading to apply…','success'); setTimeout(()=>location.reload(),700); }
+window.pickShift=s=>{ _pendShift=s; ['shfDay','shfNight','shfNone'].forEach(id=>$(id).classList.remove('on'));
+  $(s==='day'?'shfDay':s==='night'?'shfNight':'shfNone').classList.add('on'); };
+window.saveAssign=duid=>{ withTimeout(db.collection('users').doc(duid).set({carId:_pendCar||null,shift:_pendShift||''},{merge:true})).then(()=>{
+    const d=allDrivers.find(x=>x.uid===duid); if(d){ d.carId=_pendCar||null; d.shift=_pendShift||''; }
+    if(duid===uid){ me.carId=_pendCar||null; me.shift=_pendShift||''; } closeSheet(); toast('✓ Saved','gold'); renderDrivers(); renderCars();
+    if(duid===uid){ toast('Reloading to apply…','success'); setTimeout(()=>location.reload(),700); }
   }).catch(e=>toast(fbErr(e,'assign'),'error')); };
 
 /* =================== MONEY / SETTLEMENT =================== */
@@ -1184,16 +1193,30 @@ function minimizeTransfers(rows){ const debt=rows.filter(r=>r.pos>0.01).map(r=>(
   const cred=rows.filter(r=>r.pos<-0.01).map(r=>({name:r.name,amt:-r.pos})).sort((a,b)=>b.amt-a.amt);
   const out=[]; let i=0,j=0; while(i<debt.length&&j<cred.length){ const m=Math.min(debt[i].amt,cred[j].amt);
     out.push({from:debt[i].name,to:cred[j].name,amt:m}); debt[i].amt-=m; cred[j].amt-=m; if(debt[i].amt<0.01)i++; if(cred[j].amt<0.01)j++; } return out; }
-function aggFor(driverUid,carId){ let income=0,exp=0,cash=0,days=0; const ym=monthKey(viewY,viewM);
-  ownerEntries.forEach(e=>{ if(e.driverId===driverUid&&e.carId===carId&&e.ym===ym){ income+=num(e.income); exp+=num(e.expenseTotal); cash+=num(e.cashInHand); days++; } });
-  return {income,exp,cash,days}; }
+function aggFor(driverUid,carId){ const ym=monthKey(viewY,viewM);
+  let income=0,tips=0,cashHeld=0,exp=0,cashExp=0,cardExp=0,meterCash=0,meterCard=0,uberCash=0,uberCard=0,days=0;
+  ownerEntries.forEach(e=>{ if(e.driverId===driverUid&&e.carId===carId&&e.ym===ym){
+    income+=num(e.income); tips+=num(e.tips); cashHeld+=num(e.cashHeld); exp+=num(e.expenseTotal);
+    cashExp+=num(e.cashExp); cardExp+=num(e.cardExp); meterCash+=num(e.meterCash); meterCard+=num(e.meterCard);
+    uberCash+=num(e.uberCash); uberCard+=num(e.uberCard); days++; } });
+  return {income,tips,cashHeld,exp,cashExp,cardExp,meterCash,meterCard,uberCash,uberCard,days,
+    uberTotal:uberCash+uberCard, meterTotal:meterCash+meterCard}; }
+/* Company-pool model: cash stays with driver; card/Uber-card is the company's.
+   Profit split excludes tips (driver keeps own tips). Each driver receives from the
+   card pool: (their share + their tips) − cash they kept. Negative = they pay the company back. */
 function carSettlement(car){ const ds=driversOfCar(car.id), n=ds.length;
-  let totalIncome=0,pooledExp=0; const agg={};
-  ds.forEach(d=>{ const a=aggFor(d.uid,car.id); agg[d.uid]=a; totalIncome+=a.income; pooledExp+=a.exp; });
-  const net=totalIncome-pooledExp;
-  const rows=ds.map(d=>{ const pct=pctFor(car,d.uid,n), share=net*pct/100, a=agg[d.uid], holding=a.income-a.exp, pos=holding-share;
-    return {uid:d.uid,name:d.name,pct,income:a.income,expenses:a.exp,share,holding,pos}; });
-  return {car,drivers:ds,totalIncome,pooledExp,net,rows,transfers:minimizeTransfers(rows)}; }
+  let totalIncome=0,pooledExp=0,poolBase=0,totalTips=0,totalCash=0; const agg={};
+  ds.forEach(d=>{ const a=aggFor(d.uid,car.id); agg[d.uid]=a; totalIncome+=a.income; pooledExp+=a.exp;
+    poolBase+=(a.income-a.tips); totalTips+=a.tips; totalCash+=a.cashHeld; });
+  poolBase-=pooledExp;                       // splittable net profit (tips removed, expenses removed)
+  const rows=ds.map(d=>{ const a=agg[d.uid], pct=pctFor(car,d.uid,n);
+    const share=poolBase*pct/100;            // their slice of the shared profit
+    const cardGet=share+a.tips-a.cashHeld;   // paid out from the card pool (neg = pay company back)
+    return {uid:d.uid,name:d.name,shift:(allDrivers.find(x=>x.uid===d.uid)||{}).shift||'',
+      pct,income:a.income,tips:a.tips,cashHeld:a.cashHeld,expenses:a.exp,share,cardGet,
+      entitlement:share+a.tips,pos:cardGet,agg:a}; });
+  const cardPool=rows.reduce((s,r)=>s+Math.max(0,r.cardGet),0);
+  return {car,drivers:ds,totalIncome,pooledExp,poolBase,totalTips,totalCash,cardPool,rows,transfers:[]}; }
 
 let settleCache={};
 function loadMoney(){ syncLabels();
@@ -1203,14 +1226,15 @@ function loadMoney(){ syncLabels();
 
 function renderMoney(){ const body=$('moneyBody'); if(!body) return; if(isOwner()) renderMoneyOwner(body); else renderMoneyDriver(body); }
 
-function statGrid(a,pct,share){ const kept=a.income-a.exp, avg=a.days?a.income/a.days:0;
+function shiftTag(s){ return s==='day'?'🌅 Day':s==='night'?'🌙 Night':''; }
+function statGrid(r){ const a=r.agg, avg=a.days?a.income/a.days:0;
   return `<div class="dstat">
-    <div class="ds"><div class="k">Made</div><div class="v">${eur(a.income)}</div></div>
-    <div class="ds exp"><div class="k">Spent</div><div class="v">${eur(a.exp)}</div></div>
-    <div class="ds"><div class="k">Kept</div><div class="v">${eur(kept)}</div></div>
-    <div class="ds"><div class="k">Cash</div><div class="v">${eur(a.cash)}</div></div>
-    <div class="ds share"><div class="k">${Math.round(pct)}% share</div><div class="v">${eur(share)}</div></div>
-    <div class="ds"><div class="k">Avg / day</div><div class="v">${eur(avg)}</div></div>
+    <div class="ds"><div class="k">Made</div><div class="v">${eur(r.income)}</div></div>
+    <div class="ds"><div class="k">💵 Cash kept</div><div class="v">${eur(r.cashHeld)}</div></div>
+    <div class="ds"><div class="k">🎁 Tips</div><div class="v">${eur(r.tips)}</div></div>
+    <div class="ds share"><div class="k">${Math.round(r.pct)}% share</div><div class="v">${eur(r.share)}</div></div>
+    <div class="ds"><div class="k">💳 In card</div><div class="v">${r.cardGet<-0.01?'−':''}${eur(Math.abs(r.cardGet))}</div></div>
+    <div class="ds"><div class="k">📅 Avg / day</div><div class="v">${eur(avg)}</div></div>
   </div>`; }
 
 /* ---- DRIVER: only their own data ---- */
@@ -1218,17 +1242,15 @@ function renderMoneyDriver(body){ const car=myCar;
   if(!car){ body.innerHTML=emptyState('🤝','No car assigned','Ask your admin to assign you a car.'); return; }
   const s=carSettlement(car), meRow=s.rows.find(r=>r.uid===uid);
   if(!meRow){ body.innerHTML=emptyState('🤝','Nothing yet','Log your days to see your split.'); return; }
-  const a=aggFor(uid,car.id); const settled=settleCache[car.id]&&settleCache[car.id].settled;
+  const settled=settleCache[car.id]&&settleCache[car.id].settled;
   let net;
-  if(meRow.pos<-0.01){ const t=s.transfers.find(x=>x.to===meRow.name);
-    net=`<div class="big-net get"><div class="bn-l">✅ You receive</div><div class="bn-v">${eur(-meRow.pos)}</div>${t?`<div class="bn-s">from ${esc(t.from)}</div>`:''}</div>`; }
-  else if(meRow.pos>0.01){ const t=s.transfers.find(x=>x.from===meRow.name);
-    net=`<div class="big-net pay"><div class="bn-l">You pay</div><div class="bn-v">${eur(meRow.pos)}</div>${t?`<div class="bn-s">to ${esc(t.to)}</div>`:''}</div>`; }
-  else net=`<div class="big-net even"><div class="bn-l">All settled</div><div class="bn-v">€0,00</div><div class="bn-s">you’re even</div></div>`;
-  body.innerHTML=`<div class="card card-gold"><div class="s-title">🚗 ${esc(car.number)} · ${MONTHS[viewM]} ${viewY}</div>
+  if(meRow.cardGet>0.01) net=`<div class="big-net get"><div class="bn-l">✅ You get from the card</div><div class="bn-v">${eur(meRow.cardGet)}</div><div class="bn-s">on top of the ${eur(meRow.cashHeld)} cash you keep</div></div>`;
+  else if(meRow.cardGet<-0.01) net=`<div class="big-net pay"><div class="bn-l">You hand back to the company</div><div class="bn-v">${eur(-meRow.cardGet)}</div><div class="bn-s">you collected more cash than your share</div></div>`;
+  else net=`<div class="big-net even"><div class="bn-l">All settled</div><div class="bn-v">€0,00</div><div class="bn-s">you’re holding exactly your share</div></div>`;
+  body.innerHTML=`<div class="card card-gold"><div class="s-title">🚗 ${esc(car.number)}${me.shift?' · '+shiftTag(me.shift):''} · ${MONTHS[viewM]} ${viewY}</div>
       ${net}${settled?`<div class="settled-badge" style="margin-top:8px">🤝 Settled by admin</div>`:''}</div>
-    <div class="card"><div class="s-title">📊 Your numbers</div>${statGrid(a,meRow.pct,meRow.share)}
-      <div class="note" style="margin-top:11px">💡 You keep the cash you collect. ${meRow.pos<-0.01?'The amount above is owed to you.':meRow.pos>0.01?'Pay the amount above to settle up.':'You’re holding exactly your share.'}</div></div>
+    <div class="card"><div class="s-title">📊 Your numbers</div>${statGrid(meRow)}
+      <div class="note" style="margin-top:11px">💡 Cash stays in your pocket; the card/Uber money is the company’s. Your ${Math.round(meRow.pct)}% share is ${eur(meRow.share)}${meRow.tips>0?` plus ${eur(meRow.tips)} of your own tips`:''}.</div></div>
     <button class="btn-wide btn-month" onclick='shareCarSettle(${JSON.stringify(car.id)},true)'>📤 Share my split</button>`; }
 
 /* ---- OWNER: combined, everything at a glance ---- */
@@ -1236,53 +1258,74 @@ function renderMoneyOwner(body){
   if(!cars.length){ body.innerHTML=emptyState('🤝','No cars yet','Add a car and drivers, then log days to see the split.'); return; }
   body.innerHTML=cars.map(car=>{ const s=carSettlement(car), hasData=s.totalIncome>0||s.pooledExp>0;
     const settled=settleCache[car.id]&&settleCache[car.id].settled;
-    let who; if(!hasData) who='';
-      else if(!s.transfers.length) who=`<div class="allsq"><div class="ico">✅</div><div class="t">All square</div><div class="s">Everyone holds their share.</div></div>`;
-      else who=s.transfers.map(t=>`<div class="who-card"><span class="who-from">${esc(t.from)}</span><span class="who-arrow">→</span><span class="who-to">${esc(t.to)}</span><span class="who-amt">${eur(t.amt)}</span></div>`).join('')+`<div class="note">💡 Cash stays with whoever collected it — only the difference moves.</div>`;
+    let T={uberCash:0,uberCard:0,meterCash:0,meterCard:0,tips:0,cashExp:0,cardExp:0};
+    s.rows.forEach(r=>{ const a=r.agg; T.uberCash+=a.uberCash;T.uberCard+=a.uberCard;T.meterCash+=a.meterCash;T.meterCard+=a.meterCard;T.tips+=a.tips;T.cashExp+=a.cashExp;T.cardExp+=a.cardExp; });
+    const uberTotal=T.uberCash+T.uberCard, meterTotal=T.meterCash+T.meterCard, cashColl=T.uberCash+T.meterCash, cardColl=T.uberCard+T.meterCard;
     const pool=hasData?`<div class="pool-grid">
       <div class="pool-box"><div class="pool-lbl">💰 Income</div><div class="pool-val">${eur(s.totalIncome)}</div></div>
       <div class="pool-box exp"><div class="pool-lbl">🧾 Expenses</div><div class="pool-val">${eur(s.pooledExp)}</div></div>
-      <div class="pool-box net"><div class="pool-lbl">📈 Net profit to split</div><div class="pool-val">${eur(s.net)}</div></div></div>`:'<div class="empty-list">No income logged for this car yet.</div>';
-    const drv=hasData?s.rows.map(r=>{ const a=aggFor(r.uid,car.id);
-      const cls=r.pos>0.01?'pay':r.pos<-0.01?'get':'even', lbl=r.pos>0.01?('pays '+eur(r.pos)):r.pos<-0.01?('gets '+eur(-r.pos)):'even';
+      <div class="pool-box net"><div class="pool-lbl">📈 Net profit to split (tips excl.)</div><div class="pool-val">${eur(s.poolBase)}</div></div></div>`:'<div class="empty-list">No income logged for this car yet.</div>';
+    const ppList=hasData?s.rows.filter(r=>Math.abs(r.cardGet)>0.01).map(r=>{ const sh=shiftTag(r.shift);
+        return r.cardGet>0
+          ? `<div class="who-card"><span class="who-from">💳 Card pool</span><span class="who-arrow">→</span><span class="who-to">${esc(r.name)}${sh?' '+sh:''}</span><span class="who-amt">${eur(r.cardGet)}</span></div>`
+          : `<div class="who-card"><span class="who-from">${esc(r.name)}${sh?' '+sh:''}</span><span class="who-arrow">→</span><span class="who-to">💳 Company</span><span class="who-amt">${eur(-r.cardGet)}</span></div>`;
+      }).join(''):'';
+    const allSquare=`<div class="allsq"><div class="ico">✅</div><div class="t">All square</div></div>`;
+    const noteLine=`<div class="note">💡 Card/Uber money is the company’s; cash stays with each driver. Above is paid from the card pool.</div>`;
+    const payouts=hasData?((ppList||allSquare)+noteLine):'';
+    const breakdown=hasData?`<div class="card"><div class="s-title">🧾 Full breakdown · ${esc(car.number)}</div><div class="calc">
+        <div class="crow"><span class="cl">📱 Uber / Bolt</span><span class="cv">€${eur(uberTotal).slice(1)}</span></div>
+        <div class="crow sub"><span class="cl">💵 cash · 💳 card</span><span class="cv">${eur(T.uberCash)} · ${eur(T.uberCard)}</span></div>
+        <div class="crow"><span class="cl">🚕 Taxi Meter</span><span class="cv">€${eur(meterTotal).slice(1)}</span></div>
+        <div class="crow sub"><span class="cl">💵 cash · 💳 card</span><span class="cv">${eur(T.meterCash)} · ${eur(T.meterCard)}</span></div>
+        <div class="crow"><span class="cl">🎁 Tips</span><span class="cv">€${eur(T.tips).slice(1)}</span></div>
+        <div class="crow total"><span class="cl">💵 Total cash (drivers)</span><span class="cv">€${eur(cashColl).slice(1)}</span></div>
+        <div class="crow total"><span class="cl">💳 Total card (company)</span><span class="cv">€${eur(cardColl+T.tips).slice(1)}</span></div>
+        <div class="crow"><span class="cl">🧾 Expenses</span><span class="cv">€${eur(T.cashExp+T.cardExp).slice(1)}</span></div>
+        <div class="crow sub"><span class="cl">💵 cash · 💳 card</span><span class="cv">${eur(T.cashExp)} · ${eur(T.cardExp)}</span></div>
+      </div></div>`:'';
+    const drv=hasData?s.rows.map(r=>{ const sh=shiftTag(r.shift);
+      const cls=r.cardGet>0.01?'get':r.cardGet<-0.01?'pay':'even', lbl=r.cardGet>0.01?('gets '+eur(r.cardGet)):r.cardGet<-0.01?('pays back '+eur(-r.cardGet)):'even';
       const you=r.uid===uid?'<span class="you-dot">YOU</span>':'';
       return `<div class="dcard"><div class="dcard-top"><div class="mem-av">${initials(r.name)}</div>
-        <div style="flex:1;min-width:0"><div class="drv-name">${esc(r.name)} ${you}</div><div class="drv-sub">${a.days} day${a.days===1?'':'s'} worked</div></div>
-        <div class="net-badge ${cls}">${lbl}</div></div>${statGrid(a,r.pct,r.share)}</div>`; }).join(''):'';
+        <div style="flex:1;min-width:0"><div class="drv-name">${esc(r.name)} ${you}${sh?' <span class="role-pill drv">'+sh+'</span>':''}</div><div class="drv-sub">${r.agg.days} day${r.agg.days===1?'':'s'} worked</div></div>
+        <div class="net-badge ${cls}">${lbl}</div></div>${statGrid(r)}</div>`; }).join(''):'';
     const actions=hasData?(settled
       ? `<div class="settled-badge" style="margin-top:10px">🤝 Settled${settleCache[car.id].byName?' by '+esc(settleCache[car.id].byName):''}</div><button class="btn-settle reopen" onclick="reopenCar('${car.id}')">🔓 Reopen</button>`
       : `<button class="btn-settle mark" onclick="settleCar('${car.id}')">🤝 Mark settled & lock</button>`):'';
     const share=hasData?`<button class="btn-wide btn-month" onclick='shareCarSettle(${JSON.stringify(car.id)})'>📤 Share split</button>`:'';
-    return `<div class="card card-gold"><div class="s-title">🚗 ${esc(car.number)} · ${MONTHS[viewM]} ${viewY}</div>${who}${pool}</div>
-      ${drv?`<div class="card"><div class="s-title">👥 Each driver — full view</div>${drv}</div>`:''}${actions}${share}`; }).join(''); }
+    return `<div class="card card-gold"><div class="s-title">🚗 ${esc(car.number)} · ${MONTHS[viewM]} ${viewY}</div>${payouts}${pool}</div>
+      ${breakdown}${drv?`<div class="card"><div class="s-title">👥 Each driver — full view</div>${drv}</div>`:''}${actions}${share}`; }).join(''); }
 
 window.settleCar=cid=>{ const car=cars.find(c=>c.id===cid); const s=carSettlement(car);
   confirmModal({ico:'🤝',title:'Settle '+car.number+'?',msg:'Locks '+MONTHS[viewM]+' '+viewY+' for this car.',confirm:'Settle & lock',gold:true,onConfirm:()=>{
     const rec={ownerId,carId:cid,carNumber:car.number,ym:monthKey(viewY,viewM),settled:true,settledAt:Date.now(),byName:me.name,
-      totalIncome:s.totalIncome,pooledExp:s.pooledExp,net:s.net,rows:s.rows.map(r=>({name:r.name,pct:r.pct,income:r.income,pos:r.pos})),transfers:s.transfers};
+      totalIncome:s.totalIncome,pooledExp:s.pooledExp,poolBase:s.poolBase,
+      rows:s.rows.map(r=>({name:r.name,pct:r.pct,income:r.income,cashHeld:r.cashHeld,tips:r.tips,share:r.share,cardGet:r.cardGet}))};
     db.collection('settlements').doc(cid+'_'+monthKey(viewY,viewM)).set(rec).then(()=>{ settleCache[cid]=rec; toast('🤝 Settled & locked','gold'); renderMoney(); }).catch(e=>toast(fbErr(e,'settle'),'error')); } }); };
 window.reopenCar=cid=>{ confirmModal({ico:'🔓',title:'Reopen month?',msg:'Drivers can edit again.',confirm:'Reopen',gold:true,onConfirm:()=>{
     db.collection('settlements').doc(cid+'_'+monthKey(viewY,viewM)).set({settled:false},{merge:true}).then(()=>{ if(settleCache[cid])settleCache[cid].settled=false; toast('Reopened','success'); renderMoney(); }); } }); };
 window.shareCarSettle=(cid,driverOnly)=>{ const car=cars.find(c=>c.id===cid)||myCar; const s=carSettlement(car);
   if(driverOnly){ const r=s.rows.find(x=>x.uid===uid); if(!r) return;
-    let m=`🚕 *${biz}* — ${me.name} · 🚗 ${car.number}\n📅 ${MONTHS[viewM]} ${viewY}\n\n💰 Made: ${eur(r.income)}\n🧾 Spent: ${eur(r.expenses)}\n📊 My ${Math.round(r.pct)}% share: ${eur(r.share)}\n━━━━━━━━━━\n`;
-    m+= r.pos<-0.01?`✅ I receive: ${eur(-r.pos)}`:r.pos>0.01?`💸 I pay: ${eur(r.pos)}`:'✅ All square';
+    let m=`🚕 *${biz}* — ${me.name} · 🚗 ${car.number}\n📅 ${MONTHS[viewM]} ${viewY}\n\n💰 Made: ${eur(r.income)}\n💵 Cash kept: ${eur(r.cashHeld)}\n🎁 Tips: ${eur(r.tips)}\n📊 My ${Math.round(r.pct)}% share: ${eur(r.share)}\n━━━━━━━━━━\n`;
+    m+= r.cardGet>0.01?`✅ I get from card: ${eur(r.cardGet)}`:r.cardGet<-0.01?`💸 I hand back: ${eur(-r.cardGet)}`:'✅ All square';
     return window.open('https://wa.me/?text='+encodeURIComponent(m),'_blank'); }
-  let m=`🚕 *${biz}* — 🚗 ${car.number}\n📅 ${MONTHS[viewM]} ${viewY}\n\n💰 Income: ${eur(s.totalIncome)}\n🧾 Expenses: ${eur(s.pooledExp)}\n📈 Net: ${eur(s.net)}\n\n`;
-  s.rows.forEach(r=>{ m+=`👤 ${r.name} (${Math.round(r.pct)}%): made ${eur(r.income)} → share ${eur(r.share)}\n`; });
-  m+=`\n━━━━━━━━━━\n`; if(!s.transfers.length) m+='✅ All square.'; else { m+='💸 *Settle up:*\n'; s.transfers.forEach(t=>m+=`   ${t.from} → ${t.to}: ${eur(t.amt)}\n`); }
+  let m=`🚕 *${biz}* — 🚗 ${car.number}\n📅 ${MONTHS[viewM]} ${viewY}\n\n💰 Income: ${eur(s.totalIncome)}\n🧾 Expenses: ${eur(s.pooledExp)}\n📈 Net to split: ${eur(s.poolBase)}\n\n`;
+  s.rows.forEach(r=>{ const sh=r.shift?(' '+shiftTag(r.shift)):''; m+=`👤 ${r.name}${sh} (${Math.round(r.pct)}%): cash ${eur(r.cashHeld)} + card ${eur(Math.max(0,r.cardGet))} = ${eur(r.share+r.tips)}\n`; });
+  m+=`\n━━━━━━━━━━\n💳 *Paid from card pool:*\n`;
+  const pp=s.rows.filter(r=>Math.abs(r.cardGet)>0.01);
+  if(!pp.length) m+='✅ All square.'; else pp.forEach(r=>{ m+= r.cardGet>0?`   → ${r.name}: ${eur(r.cardGet)}\n`:`   ${r.name} → company: ${eur(-r.cardGet)}\n`; });
   window.open('https://wa.me/?text='+encodeURIComponent(m),'_blank'); };
 
 /* =================== SHARE (driver day/month) =================== */
 $('shareBtn').onclick=()=>{ const c=computeDay(currentDay); if(!dayHasData(currentDay)) return toast('Nothing to share','error');
   const dt=new Date(viewY,viewM,selDay);
-  let m=`🚕 *${biz}* — ${me.name}${myCar?(' · 🚗 '+myCar.number):''}\n📅 ${DOW[dt.getDay()]}, ${selDay} ${MONTHS[viewM]} ${viewY}\n`;
-  if(currentDay.shift) m+=`🕒 ${currentDay.shift}\n`;
-  m+=`\n🚕 Uber/Bolt: ${eur(c.uber)}\n💳 Card: ${eur(c.card)}\n💵 Cash: ${eur(c.cash)}\n🚕 Taxi Meter: ${eur(c.transfers)}\n🎁 Tips: ${eur(c.tips)}\n━━━━━━━━━━\n📈 *Total: ${eur(c.total)}*\n💵 Cash in hand: ${eur(c.cashInHand)}\n`;
-  if(c.expenses>0) m+=`🧾 Expenses: ${eur(c.expenses)}\n✅ Kept: ${eur(c.net)}\n`;
+  let m=`🚕 *${biz}* — ${me.name}${myCar?(' · 🚗 '+myCar.number):''}${me.shift?(' · '+shiftTag(me.shift)):''}\n📅 ${DOW[dt.getDay()]}, ${selDay} ${MONTHS[viewM]} ${viewY}\n`;
+  m+=`\n📱 Uber/Bolt: ${eur(c.uber)}\n🚕 Taxi Meter: ${eur(c.meter)}\n🎁 Tips: ${eur(c.tips)}\n━━━━━━━━━━\n📈 *Total: ${eur(c.total)}*\n💵 Cash kept: ${eur(c.cashHeld)}\n💳 To company: ${eur(c.cardIncome)}\n`;
+  if(c.expenses>0) m+=`🧾 Expenses: ${eur(c.expenses)}\n`;
   window.open('https://wa.me/?text='+encodeURIComponent(m),'_blank'); };
 $('shareMonthBtn').onclick=()=>{ const keys=Object.keys(monthEntries).filter(k=>dayHasData(monthEntries[k])); if(!keys.length) return toast('No entries','error');
-  let inc=0,cih=0,exp=0; keys.forEach(k=>{ const c=computeDay(monthEntries[k]); inc+=c.total;cih+=c.cashInHand;exp+=c.expenses; });
+  let inc=0,cih=0,exp=0; keys.forEach(k=>{ const c=computeDay(monthEntries[k]); inc+=c.total;cih+=c.cashHeld;exp+=c.expenses; });
   let m=`🚕 *${biz}* — ${me.name}\n📅 ${MONTHS[viewM]} ${viewY}\n\n📈 Income: ${eur(inc)}\n📅 Days: ${keys.length}\n💵 Cash in hand: ${eur(cih)}\n🧾 Expenses: ${eur(exp)}\n✅ Kept: ${eur(inc-exp)}`;
   window.open('https://wa.me/?text='+encodeURIComponent(m),'_blank'); };
 </script>
