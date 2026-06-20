@@ -735,7 +735,7 @@ body{
       <div id="settleBody"></div>
     </div>
 
-    <div class="foot">🚕 Danial Taxi · <b id="verStamp">v3.0</b> · gold standard</div>
+    <div class="foot">🚕 Danial Taxi · <b id="verStamp">v3.1</b> · gold standard</div>
   </div>
 </div>
 
@@ -754,7 +754,7 @@ body{
 </div>
 
 <script>
-const APP_VERSION='v3.0';
+const APP_VERSION='v3.1';
 /* ---------- Firebase ---------- */
 const firebaseConfig = {
   apiKey: "AIzaSyBlwF6FfIOXsxBHGF3U_Njp0mVYiOvMMD8",
@@ -844,11 +844,11 @@ auth.onAuthStateChanged(user=>{
   uid=user.uid;
   db.collection('users').doc(uid).get().then(doc=>{
     me = doc.exists ? doc.data() : null;
-    if(!me){ me={name:user.email,email:user.email,teamId:null,role:null};
-      db.collection('users').doc(uid).set(me); }
+    if(!me){ me={name:user.displayName||user.email,email:user.email,teamId:null,role:null};
+      db.collection('users').doc(uid).set(me).catch(e=>console.error('user doc write blocked:',e)); }
     if(!me.teamId){ showOnboard(); }
     else { loadTeam(me.teamId).then(()=>bootApp()).catch(()=>showOnboard()); }
-  });
+  }).catch(e=>{ console.error('user read blocked:',e); me={name:user.email,email:user.email,teamId:null,role:null}; showOnboard(); });
 });
 
 function loadTeam(tid){ return db.collection('teams').doc(tid).get().then(doc=>{
@@ -867,7 +867,16 @@ $('logoutBtn').onclick=()=>auth.signOut();
 let obDrives=true;
 function showOnboard(){ show('ob'); obShow('choose'); $('obTitle').textContent='Welcome, '+(me.name||'driver').split(' ')[0]+'!';
   $('obSub').textContent='Set up your partnership'; obErr(''); }
-function obErr(m){ const e=$('obErr'); e.textContent=m; e.style.display=m?'block':'none'; }
+function obErr(m){ const e=$('obErr'); e.textContent=m; e.style.display=m?'block':'none';
+  if(m) e.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+function obBusy(btn,txt){ btn.dataset.label=btn.textContent; btn.textContent=txt; btn.disabled=true; btn.style.opacity='.6'; }
+function obDone(btn,fallback){ btn.textContent=btn.dataset.label||fallback; btn.disabled=false; btn.style.opacity='1'; }
+function fbErr(e,action){ const c=(e&&e.code)||''; console.error('Firestore error:',e);
+  if(c.includes('permission-denied')||/insufficient permissions/i.test(e&&e.message||''))
+    return '🔒 Database blocked the write. Your Firestore Security Rules need updating — see the steps your developer gave you, then try again.';
+  if(c.includes('unavailable')||c.includes('network')) return '📡 Network problem — check your connection and try again.';
+  if(c.includes('not-found')) return 'Database not found. Make sure Firestore is enabled in Firebase.';
+  return 'Could not '+(action||'continue')+': '+((e&&e.message)||'unknown error')+'.'; }
 function obShow(s){ $('obChoose').style.display=s==='choose'?'block':'none';
   $('obCreate').style.display=s==='create'?'block':'none';
   $('obJoin').style.display=s==='join'?'block':'none'; obErr(''); }
@@ -880,32 +889,38 @@ $('obDriveNo').onclick=()=>{ obDrives=false; $('obDriveNo').classList.add('activ
 function genCode(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<6;i++)s+=c[Math.floor(Math.random()*c.length)]; return s; }
 
 $('obCreateBtn').onclick=()=>{
+  if(!uid){ return obErr('Not signed in — please reload and sign in again.'); }
+  const btn=$('obCreateBtn'); if(btn.disabled) return;
   const tname=$('obTeamName').value.trim()||'Danial Taxi';
   const tid=db.collection('teams').doc().id;
   const code=genCode();
   const role=obDrives?'admindriver':'admin';
-  const members={}; members[uid]={name:me.name,pct:100,sharesExpenses:true,role,active:true,joinedAt:Date.now()};
+  const members={}; members[uid]={name:me.name||'Driver',pct:100,sharesExpenses:true,role,active:true,joinedAt:Date.now()};
   const tdoc={name:tname,code,adminUid:uid,target:6000,created:Date.now(),members};
+  obBusy(btn,'Creating…'); obErr('');
+  // set+merge on the user doc (works even if the user doc doesn't exist yet)
   db.collection('teams').doc(tid).set(tdoc)
-    .then(()=>db.collection('users').doc(uid).update({teamId:tid,role}))
+    .then(()=>db.collection('users').doc(uid).set({teamId:tid,role},{merge:true}))
     .then(()=>{ me.teamId=tid; me.role=role; teamId=tid; team=tdoc; toast('🎉 Partnership created','gold'); bootApp(); })
-    .catch(e=>obErr(e.message||'Could not create partnership.'));
+    .catch(e=>{ obDone(btn,'Create partnership 🚀'); obErr(fbErr(e,'create your partnership')); });
 };
 
 $('obJoinBtn').onclick=()=>{
+  if(!uid){ return obErr('Not signed in — please reload and sign in again.'); }
+  const btn=$('obJoinBtn'); if(btn.disabled) return;
   const code=$('obCode').value.trim().toUpperCase();
   if(code.length!==6) return obErr('Enter the 6-character code.');
+  obBusy(btn,'Joining…'); obErr('');
   db.collection('teams').where('code','==',code).limit(1).get().then(snap=>{
-    if(snap.empty) return obErr('No partnership found for that code.');
+    if(snap.empty){ obDone(btn,'Join partnership 🤝'); return obErr('No partnership found for that code.'); }
     const doc=snap.docs[0]; const tid=doc.id; const tdoc=doc.data();
     const members=tdoc.members||{};
-    if(members[uid]) { /* already member */ }
-    else members[uid]={name:me.name,pct:0,sharesExpenses:true,role:'driver',active:true,joinedAt:Date.now()};
-    db.collection('teams').doc(tid).set({members},{merge:true})
-      .then(()=>db.collection('users').doc(uid).update({teamId:tid,role:'driver'}))
+    if(!members[uid]) members[uid]={name:me.name||'Driver',pct:0,sharesExpenses:true,role:'driver',active:true,joinedAt:Date.now()};
+    return db.collection('teams').doc(tid).set({members},{merge:true})
+      .then(()=>db.collection('users').doc(uid).set({teamId:tid,role:'driver'},{merge:true}))
       .then(()=>{ me.teamId=tid; me.role='driver'; teamId=tid; team={...tdoc,members};
         toast('🤝 Joined '+(tdoc.name||'partnership'),'success'); bootApp(); });
-  }).catch(e=>obErr(e.message||'Could not join.'));
+  }).catch(e=>{ obDone(btn,'Join partnership 🤝'); obErr(fbErr(e,'join the partnership')); });
 };
 
 /* =========================================================
