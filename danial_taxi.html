@@ -460,6 +460,11 @@ body{
 .pool-val{font-size:19px;font-weight:800;color:var(--gold);margin-top:3px}
 .pool-box.net .pool-val{font-size:25px}
 .pool-box.exp .pool-val{color:#f87171}
+.ok-msg{background:var(--green-bg);color:#6ee7b7;padding:12px 14px;border-radius:var(--r-xs);
+  border-left:3px solid var(--green);margin-bottom:16px;display:none;font-size:13px;font-weight:700}
+.hint{font-size:10.5px;color:var(--faint);font-weight:600;margin-top:6px}
+.auth-seg{margin-bottom:18px}
+.auth-seg button{padding:11px}
 </style>
 </head>
 <body>
@@ -470,17 +475,23 @@ body{
     <div class="brand-badge">🚕</div>
     <div class="auth-title">Danial Taxi</div>
     <div class="auth-sub" id="authSub">Partnership income & settlement</div>
-    <div id="errMsg" class="err-msg"></div>
 
-    <!-- LOGIN / REGISTER form -->
+    <div class="seg auth-seg" id="authSeg">
+      <button data-mode="login" class="on">🔑 Sign in</button>
+      <button data-mode="register">✨ Create account</button>
+    </div>
+
+    <div id="errMsg" class="err-msg"></div>
+    <div id="okMsg" class="ok-msg"></div>
+
     <div id="authForm">
       <div class="fld" id="nameFld" style="display:none">
         <label class="lbl">Your name</label>
-        <input type="text" id="fName" class="in" placeholder="e.g. Fahim" autocomplete="name">
+        <input type="text" id="fName" class="in" placeholder="e.g. Fahim Ahmad" autocomplete="name">
       </div>
       <div class="fld">
         <label class="lbl">Email</label>
-        <input type="email" id="email" class="in" placeholder="name@example.com" autocomplete="email">
+        <input type="email" id="email" class="in" placeholder="name@example.com" autocomplete="email" inputmode="email">
       </div>
       <div class="fld">
         <label class="lbl">Password</label>
@@ -488,9 +499,9 @@ body{
           <input type="password" id="password" class="in" placeholder="••••••••" autocomplete="current-password">
           <button class="pw-toggle" id="pwToggle" type="button">👁️</button>
         </div>
+        <div class="hint" id="pwHint" style="display:none">Use at least 6 characters</div>
       </div>
       <button class="btn-primary" id="loginBtn">Sign in</button>
-      <button class="btn-ghost" id="signupBtn">Create account</button>
     </div>
   </div>
 </div>
@@ -501,6 +512,7 @@ body{
     <div class="brand-badge">🤝</div>
     <div class="auth-title" id="obTitle">Welcome</div>
     <div class="auth-sub" id="obSub">Set up your partnership</div>
+    <div id="obOk" class="ok-msg"></div>
     <div id="obErr" class="err-msg"></div>
 
     <!-- choose -->
@@ -735,7 +747,7 @@ body{
       <div id="settleBody"></div>
     </div>
 
-    <div class="foot">🚕 Danial Taxi · <b id="verStamp">v3.1</b> · gold standard</div>
+    <div class="foot">🚕 Danial Taxi · <b id="verStamp">v3.2</b> · gold standard</div>
   </div>
 </div>
 
@@ -754,7 +766,7 @@ body{
 </div>
 
 <script>
-const APP_VERSION='v3.1';
+const APP_VERSION='v3.2';
 /* ---------- Firebase ---------- */
 const firebaseConfig = {
   apiKey: "AIzaSyBlwF6FfIOXsxBHGF3U_Njp0mVYiOvMMD8",
@@ -809,46 +821,70 @@ function blankDay(){ return {uber:0,card:0,cash:0,tips:0,shift:'',transfers:[],e
 ========================================================= */
 $('pwToggle').onclick=()=>{ const p=$('password'); p.type=p.type==='password'?'text':'password'; $('pwToggle').textContent=p.type==='password'?'👁️':'🙈'; };
 
-function authErr(m){ const e=$('errMsg'); e.textContent=m; e.style.display=m?'block':'none'; }
-function setMode(reg){ isRegister=reg; $('nameFld').style.display=reg?'block':'none';
-  $('loginBtn').textContent=reg?'Create account':'Sign in';
-  $('signupBtn').textContent=reg?'‹ I already have an account':'Create account';
-  $('authSub').textContent=reg?'Register a new driver account':'Partnership income & settlement'; authErr(''); }
+function authErr(m){ const e=$('errMsg'); e.textContent=m; e.style.display=m?'block':'none';
+  if(m){ $('okMsg').style.display='none'; e.scrollIntoView({behavior:'smooth',block:'nearest'}); } }
+function authOk(m){ const e=$('okMsg'); e.textContent=m; e.style.display=m?'block':'none'; if(m)$('errMsg').style.display='none'; }
+function authBusy(t){ const b=$('loginBtn'); b.textContent=t; b.disabled=true; b.style.opacity='.6'; }
+function authReset(){ $('loginBtn').textContent=isRegister?'Create account ✨':'Sign in 🔑'; $('loginBtn').disabled=false; $('loginBtn').style.opacity='1'; }
 
-$('signupBtn').onclick=()=>setMode(!isRegister);
+function setMode(reg){ isRegister=reg;
+  document.querySelectorAll('#authSeg button').forEach(x=>x.classList.toggle('on',(x.dataset.mode==='register')===reg));
+  $('nameFld').style.display=reg?'block':'none';
+  $('pwHint').style.display=reg?'block':'none';
+  $('loginBtn').textContent=reg?'Create account ✨':'Sign in 🔑';
+  $('authSub').textContent=reg?'Create your driver account':'Partnership income & settlement';
+  $('password').setAttribute('autocomplete',reg?'new-password':'current-password');
+  authErr(''); authOk(''); }
+document.querySelectorAll('#authSeg button').forEach(b=>b.onclick=()=>setMode(b.dataset.mode==='register'));
+
+const EMAILRE=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+let justRegistered=false;
 $('loginBtn').onclick=()=>{
   const email=$('email').value.trim(), pw=$('password').value;
-  if(!email||!pw) return authErr('Please enter email and password.');
+  if(!email) return authErr('Please enter your email.');
+  if(!EMAILRE.test(email)) return authErr('That email doesn’t look right — check for typos.');
+  if(!pw) return authErr('Please enter your password.');
   if(isRegister){
     const name=$('fName').value.trim();
     if(!name) return authErr('Please enter your name.');
     if(pw.length<6) return authErr('Password must be at least 6 characters.');
+    authBusy('Creating account…');
     auth.createUserWithEmailAndPassword(email,pw)
-      .then(cred=>db.collection('users').doc(cred.user.uid).set({name,email,created:Date.now(),teamId:null,role:null}))
-      .catch(e=>authErr(friendly(e)));
+      .then(cred=>{ justRegistered=true;
+        return db.collection('users').doc(cred.user.uid).set({name,email,created:Date.now(),teamId:null,role:null},{merge:true}); })
+      .catch(e=>{ authReset(); authErr(friendly(e)); });
   } else {
-    auth.signInWithEmailAndPassword(email,pw).catch(e=>authErr(friendly(e)));
+    authBusy('Signing in…');
+    auth.signInWithEmailAndPassword(email,pw).catch(e=>{ authReset(); authErr(friendly(e)); });
   }
 };
-function friendly(e){ const c=e.code||''; 
-  if(c.includes('email-already-in-use')) return 'That email is already registered. Try signing in.';
+function friendly(e){ const c=(e&&e.code)||''; const m=(e&&e.message)||'';
+  if(c.includes('email-already-in-use')) return 'That email is already registered — switch to “Sign in”.';
   if(c.includes('invalid-email')) return 'That email address looks invalid.';
-  if(c.includes('wrong-password')||c.includes('invalid-credential')) return 'Wrong email or password.';
-  if(c.includes('user-not-found')) return 'No account with that email. Create one below.';
-  if(c.includes('weak-password')) return 'Password is too weak (min 6 characters).';
+  if(c.includes('missing-password')) return 'Please enter your password.';
+  if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login-credentials')) return 'Wrong email or password. Try again, or create an account.';
+  if(c.includes('user-not-found')) return 'No account with that email — switch to “Create account”.';
+  if(c.includes('user-disabled')) return 'This account has been disabled.';
+  if(c.includes('too-many-requests')) return 'Too many attempts — wait a moment and try again.';
+  if(c.includes('weak-password')) return 'Password is too weak (use at least 6 characters).';
   if(c.includes('network')) return 'Network error — check your connection.';
-  return e.message||'Something went wrong.'; }
+  if(isPermErr(e)) return '🔒 Database rules need updating before this works (see setup steps).';
+  return m||'Something went wrong. Please try again.'; }
+function isPermErr(e){ const c=(e&&e.code)||''; return c.includes('permission-denied')||/insufficient permissions/i.test((e&&e.message)||''); }
 
 auth.onAuthStateChanged(user=>{
-  if(!user){ uid=null; me=null; team=null; teamId=null; show('auth'); return; }
+  if(!user){ uid=null; me=null; team=null; teamId=null; setMode(false); $('email').value=''; $('password').value=''; show('auth'); return; }
   uid=user.uid;
   db.collection('users').doc(uid).get().then(doc=>{
     me = doc.exists ? doc.data() : null;
     if(!me){ me={name:user.displayName||user.email,email:user.email,teamId:null,role:null};
-      db.collection('users').doc(uid).set(me).catch(e=>console.error('user doc write blocked:',e)); }
+      db.collection('users').doc(uid).set(me,{merge:true}).catch(e=>console.error('user write blocked:',e)); }
     if(!me.teamId){ showOnboard(); }
-    else { loadTeam(me.teamId).then(()=>bootApp()).catch(()=>showOnboard()); }
-  }).catch(e=>{ console.error('user read blocked:',e); me={name:user.email,email:user.email,teamId:null,role:null}; showOnboard(); });
+    else { loadTeam(me.teamId).then(()=>bootApp()).catch(e=>{
+        if(isPermErr(e)){ showOnboard(); obErr(fbErr(e,'load your partnership')); }
+        else { db.collection('users').doc(uid).set({teamId:null},{merge:true}).catch(()=>{}); me.teamId=null; showOnboard(); } }); }
+  }).catch(e=>{ console.error('user read blocked:',e); me={name:user.email,email:user.email,teamId:null,role:null};
+    showOnboard(); if(isPermErr(e)) obErr(fbErr(e,'read your account')); });
 });
 
 function loadTeam(tid){ return db.collection('teams').doc(tid).get().then(doc=>{
@@ -865,10 +901,14 @@ $('logoutBtn').onclick=()=>auth.signOut();
    ONBOARDING
 ========================================================= */
 let obDrives=true;
-function showOnboard(){ show('ob'); obShow('choose'); $('obTitle').textContent='Welcome, '+(me.name||'driver').split(' ')[0]+'!';
-  $('obSub').textContent='Set up your partnership'; obErr(''); }
+function showOnboard(){ show('ob'); obShow('choose');
+  $('obTitle').textContent='Welcome, '+(((me&&me.name)||'driver').split(' ')[0])+'!';
+  $('obSub').textContent='Set up your partnership';
+  if(justRegistered){ obOk('✅ Account created — ready to use! Now set up your partnership below.'); justRegistered=false; }
+  else { obOk('✅ Signed in'+((me&&me.email)?' as '+me.email:'')+'. Set up or join a partnership to start.'); } }
+function obOk(m){ const e=$('obOk'); e.textContent=m; e.style.display=m?'block':'none'; if(m)$('obErr').style.display='none'; }
 function obErr(m){ const e=$('obErr'); e.textContent=m; e.style.display=m?'block':'none';
-  if(m) e.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+  if(m){ $('obOk').style.display='none'; e.scrollIntoView({behavior:'smooth',block:'nearest'}); } }
 function obBusy(btn,txt){ btn.dataset.label=btn.textContent; btn.textContent=txt; btn.disabled=true; btn.style.opacity='.6'; }
 function obDone(btn,fallback){ btn.textContent=btn.dataset.label||fallback; btn.disabled=false; btn.style.opacity='1'; }
 function fbErr(e,action){ const c=(e&&e.code)||''; console.error('Firestore error:',e);
