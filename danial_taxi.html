@@ -519,6 +519,29 @@ body{
 .modal.wide{max-width:380px;text-align:left}
 .modal.wide .modal-t{text-align:center}
 .modal-scroll{max-height:62vh;overflow-y:auto;margin:4px -4px;padding:0 4px}
+.dcard{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r-sm);padding:13px;margin-bottom:10px}
+.dcard-top{display:flex;align-items:center;gap:10px}
+.dcard-top .mem-av{width:36px;height:36px}
+.net-badge{margin-left:auto;font-weight:800;font-size:11.5px;padding:7px 12px;border-radius:20px;white-space:nowrap}
+.net-badge.pay{color:#fca5a5;background:rgba(127,29,29,.32);border:1px solid rgba(153,27,27,.5)}
+.net-badge.get{color:#86efac;background:rgba(6,78,59,.42);border:1px solid rgba(16,185,129,.42)}
+.net-badge.even{color:var(--dim);background:var(--s3);border:1px solid var(--bd-2)}
+.dstat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:11px}
+.dstat .ds{background:var(--s3);border-radius:var(--r-xs);padding:9px 6px;text-align:center}
+.dstat .ds .k{font-size:8.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.3px;font-weight:700}
+.dstat .ds .v{font-size:13px;font-weight:800;color:var(--txt);margin-top:3px}
+.dstat .ds.exp .v{color:#f87171}
+.dstat .ds.share .v{color:var(--gold)}
+.big-net{text-align:center;padding:20px 16px;border-radius:var(--r-sm);margin:2px 0}
+.big-net.get{background:linear-gradient(150deg,rgba(16,185,129,.18),rgba(16,185,129,.04));border:1px solid rgba(16,185,129,.4)}
+.big-net.pay{background:linear-gradient(150deg,rgba(239,68,68,.16),rgba(239,68,68,.04));border:1px solid rgba(239,68,68,.4)}
+.big-net.even{background:var(--s2);border:1px solid var(--bd)}
+.big-net .bn-l{font-size:11.5px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.6px}
+.big-net .bn-v{font-size:36px;font-weight:800;margin:4px 0;line-height:1}
+.big-net.get .bn-v{color:#34d399}
+.big-net.pay .bn-v{color:#f87171}
+.big-net.even .bn-v{color:var(--gold)}
+.big-net .bn-s{font-size:12.5px;color:var(--dim);font-weight:600}
 </style>
 </head>
 <body>
@@ -613,16 +636,13 @@ body{
             <button data-shift="night">🌙 Night</button>
             <button data-shift="other">🕒 Full / Other</button>
           </div></div>
-        <div class="card"><div class="s-title">🚗 Transfers <span class="badge" id="tfCount">0 trips</span></div>
+        <div class="card"><div class="s-title">🚕 Taxi Meter <span class="badge" id="tfCount">0 trips</span></div>
           <div class="fgrid">
-            <div class="fld"><label class="lbl">Meter start</label><input type="number" id="mStart" class="in" placeholder="0" step="0.1" inputmode="decimal"></div>
-            <div class="fld"><label class="lbl">Meter end</label><input type="number" id="mEnd" class="in" placeholder="0" step="0.1" inputmode="decimal"></div>
-            <div class="fld"><label class="lbl">Amount</label><div class="in-money"><span class="cur">€</span><input type="number" id="tfAmt" class="in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
+            <div class="fld ffull"><label class="lbl">Meter amount</label><div class="in-money"><span class="cur">€</span><input type="number" id="tfAmt" class="in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
           </div>
           <div class="fld"><label class="lbl">Paid by</label>
             <div class="seg" id="tfMethod"><button data-m="cash" class="on">💵 Cash</button><button data-m="card">💳 Card</button></div></div>
-          <div class="meter-box"><span>Distance this trip</span><span class="km"><span id="mTotal" class="tnum">0.0</span> km</span></div>
-          <button class="btn-add" id="addTf">➕ Add transfer</button>
+          <button class="btn-add" id="addTf">➕ Add fare</button>
           <div class="list" id="tfList"></div>
         </div>
         <div class="card"><div class="s-title">💶 Income</div>
@@ -649,7 +669,7 @@ body{
             <div class="crow"><span class="cl">🚕 Uber / Bolt</span><span class="cv">€<span id="b1" class="tnum">0,00</span></span></div>
             <div class="crow"><span class="cl">💳 Card</span><span class="cv">€<span id="b2" class="tnum">0,00</span></span></div>
             <div class="crow"><span class="cl">💵 Cash</span><span class="cv">€<span id="b3" class="tnum">0,00</span></span></div>
-            <div class="crow"><span class="cl">🚗 Transfers</span><span class="cv">€<span id="b4" class="tnum">0,00</span></span></div>
+            <div class="crow"><span class="cl">🚕 Taxi Meter</span><span class="cv">€<span id="b4" class="tnum">0,00</span></span></div>
             <div class="crow"><span class="cl">🎁 Tips</span><span class="cv">€<span id="b5" class="tnum">0,00</span></span></div>
             <div class="crow total"><span class="cl">📈 Total income</span><span class="cv">€<span id="bTotal" class="tnum">0,00</span></span></div>
             <div class="crow sub"><span class="cl">↳ cash in hand</span><span class="cv">€<span id="bCash" class="tnum">0,00</span></span></div>
@@ -699,7 +719,7 @@ body{
       <div id="moneyBody"></div>
     </div>
 
-    <div class="foot">🚕 <span id="footBiz">Danial Taxi</span> · <b id="verStamp">v4.0</b> · gold standard</div>
+    <div class="foot">🚕 <span id="footBiz">Danial Taxi</span> · <b id="verStamp">v4.2</b> · gold standard</div>
   </div>
 </div>
 
@@ -714,7 +734,7 @@ body{
 <div class="modal-bg" id="sheetBg"><div class="modal wide"><div id="sheetBody"></div></div></div>
 
 <script>
-const APP_VERSION='v4.0';
+const APP_VERSION='v4.2';
 const firebaseConfig = {
   apiKey: "AIzaSyBlwF6FfIOXsxBHGF3U_Njp0mVYiOvMMD8",
   authDomain: "danial-taxi.firebaseapp.com",
@@ -964,16 +984,12 @@ document.querySelectorAll('#shiftSeg button').forEach(b=>b.onclick=()=>{ current
 let tfMethod='cash';
 document.querySelectorAll('#tfMethod button').forEach(b=>b.onclick=()=>{ tfMethod=b.dataset.m;
   document.querySelectorAll('#tfMethod button').forEach(x=>x.classList.toggle('on',x===b)); });
-function updMeter(){ const s=num($('mStart').value),e=num($('mEnd').value); $('mTotal').textContent=Math.max(0,e-s).toFixed(1); }
-$('mStart').addEventListener('input',updMeter); $('mEnd').addEventListener('input',updMeter);
-$('addTf').onclick=()=>{ const amt=num($('tfAmt').value),s=num($('mStart').value),e=num($('mEnd').value);
-  if(amt<=0) return toast('Enter the transfer amount','error');
-  currentDay.transfers.push({amount:amt,start:s,end:e,method:tfMethod});
-  $('tfAmt').value='';$('mStart').value='';$('mEnd').value='';updMeter(); renderTransfers(); recalc(); flushSave(); toast('🚗 Transfer added','success'); };
+$('addTf').onclick=()=>{ const amt=num($('tfAmt').value);
+  if(amt<=0) return toast('Enter the meter amount','error');
+  currentDay.transfers.push({amount:amt,method:tfMethod});
+  $('tfAmt').value=''; renderTransfers(); recalc(); flushSave(); toast('🚕 Fare added','success'); };
 function renderTransfers(){ const t=currentDay.transfers||[]; $('tfCount').textContent=t.length+(t.length===1?' trip':' trips');
-  $('tfList').innerHTML=t.length?t.map((x,i)=>{ const km=Math.max(0,num(x.end)-num(x.start));
-    return `<div class="item"><div><div class="ti">${x.method==='card'?'💳':'💵'} ${eur(num(x.amount))}</div><div class="su">${km>0?km.toFixed(1)+' km · ':''}${x.method}</div></div><div class="item-r"><button class="btn-del" onclick="delTf(${i})">✕</button></div></div>`;
-  }).join(''):'<div class="empty-list">No transfers yet</div>'; }
+  $('tfList').innerHTML=t.length?t.map((x,i)=>`<div class="item"><div><div class="ti">${x.method==='card'?'💳':'💵'} ${eur(num(x.amount))}</div><div class="su">${x.method==='card'?'Card':'Cash'}</div></div><div class="item-r"><button class="btn-del" onclick="delTf(${i})">✕</button></div></div>`).join(''):'<div class="empty-list">No fares yet</div>'; }
 window.delTf=i=>{ currentDay.transfers.splice(i,1); renderTransfers(); recalc(); flushSave(); };
 $('addEx').onclick=()=>{ const amt=num($('exAmt').value); if(amt<=0) return toast('Enter the expense amount','error');
   currentDay.expenses.push({type:$('exType').value,amount:amt,note:$('exNote').value.trim()});
@@ -1029,8 +1045,7 @@ function renderSummary(){ const body=$('sumBody'); if(!body) return;
     <div class="kpi"><div class="kpi-lbl">🏆 Best day</div><div class="kpi-val">${eur(best)}<br><small>${bestDay?'the '+bestDay:''}</small></div></div>
     <div class="kpi"><div class="kpi-lbl">💵 Cash in hand</div><div class="kpi-val">${eur(cih)}</div></div>
     <div class="kpi"><div class="kpi-lbl">🧾 Expenses</div><div class="kpi-val" style="color:#f87171">${eur(exp)}</div></div></div>
-    <div class="card"><div class="s-title">💰 Income by source</div>${bar('Uber / Bolt',uber,'🚕')}${bar('Card',card,'💳')}${bar('Cash',cash,'💵')}${bar('Transfers',tf,'🚗')}${bar('Tips',tips,'🎁')}</div>
-    <div class="card"><div class="s-title">📍 Distance</div><div class="kpi" style="grid-column:1/-1"><div class="kpi-lbl">Total km</div><div class="kpi-val">${km.toFixed(1)} <small>km</small></div></div></div>`; }
+    <div class="card"><div class="s-title">💰 Income by source</div>${bar('Uber / Bolt',uber,'📱')}${bar('Card',card,'💳')}${bar('Cash',cash,'💵')}${bar('Taxi Meter',tf,'🚕')}${bar('Tips',tips,'🎁')}</div>`; }
 
 /* =================== CARS =================== */
 function driversOfCar(carId){ return allDrivers.filter(d=>d.carId===carId); }
@@ -1169,9 +1184,9 @@ function minimizeTransfers(rows){ const debt=rows.filter(r=>r.pos>0.01).map(r=>(
   const cred=rows.filter(r=>r.pos<-0.01).map(r=>({name:r.name,amt:-r.pos})).sort((a,b)=>b.amt-a.amt);
   const out=[]; let i=0,j=0; while(i<debt.length&&j<cred.length){ const m=Math.min(debt[i].amt,cred[j].amt);
     out.push({from:debt[i].name,to:cred[j].name,amt:m}); debt[i].amt-=m; cred[j].amt-=m; if(debt[i].amt<0.01)i++; if(cred[j].amt<0.01)j++; } return out; }
-function aggFor(driverUid,carId){ let income=0,exp=0; const ym=monthKey(viewY,viewM);
-  ownerEntries.forEach(e=>{ if(e.driverId===driverUid&&e.carId===carId&&e.ym===ym){ income+=num(e.income); exp+=num(e.expenseTotal); } });
-  return {income,exp}; }
+function aggFor(driverUid,carId){ let income=0,exp=0,cash=0,days=0; const ym=monthKey(viewY,viewM);
+  ownerEntries.forEach(e=>{ if(e.driverId===driverUid&&e.carId===carId&&e.ym===ym){ income+=num(e.income); exp+=num(e.expenseTotal); cash+=num(e.cashInHand); days++; } });
+  return {income,exp,cash,days}; }
 function carSettlement(car){ const ds=driversOfCar(car.id), n=ds.length;
   let totalIncome=0,pooledExp=0; const agg={};
   ds.forEach(d=>{ const a=aggFor(d.uid,car.id); agg[d.uid]=a; totalIncome+=a.income; pooledExp+=a.exp; });
@@ -1186,25 +1201,60 @@ function loadMoney(){ syncLabels();
     .then(snap=>{ settleCache={}; snap.forEach(d=>{ const s=d.data(); if(s.ym===monthKey(viewY,viewM)) settleCache[s.carId]=s; }); renderMoney(); })
     .catch(()=>{ settleCache={}; renderMoney(); }); }
 
-function renderMoney(){ const body=$('moneyBody'); if(!body) return;
-  let myCars = isOwner() ? cars : (myCar?[myCar]:[]);
-  if(!myCars.length){ body.innerHTML=emptyState('🤝', isOwner()?'No cars yet':'No car assigned', isOwner()?'Add a car and drivers to see the split.':'Ask your admin to assign you a car.'); return; }
-  body.innerHTML=myCars.map(car=>{ const s=carSettlement(car); const settled=settleCache[car.id]&&settleCache[car.id].settled;
-    const hasData=s.totalIncome>0||s.pooledExp>0;
-    let who; if(!hasData) who=`<div class="note">No income logged for this car yet.</div>`;
-      else if(!s.transfers.length) who=`<div class="allsq"><div class="ico">✅</div><div class="t">All square</div><div class="s">Everyone holds exactly their share.</div></div>`;
+function renderMoney(){ const body=$('moneyBody'); if(!body) return; if(isOwner()) renderMoneyOwner(body); else renderMoneyDriver(body); }
+
+function statGrid(a,pct,share){ const kept=a.income-a.exp, avg=a.days?a.income/a.days:0;
+  return `<div class="dstat">
+    <div class="ds"><div class="k">Made</div><div class="v">${eur(a.income)}</div></div>
+    <div class="ds exp"><div class="k">Spent</div><div class="v">${eur(a.exp)}</div></div>
+    <div class="ds"><div class="k">Kept</div><div class="v">${eur(kept)}</div></div>
+    <div class="ds"><div class="k">Cash</div><div class="v">${eur(a.cash)}</div></div>
+    <div class="ds share"><div class="k">${Math.round(pct)}% share</div><div class="v">${eur(share)}</div></div>
+    <div class="ds"><div class="k">Avg / day</div><div class="v">${eur(avg)}</div></div>
+  </div>`; }
+
+/* ---- DRIVER: only their own data ---- */
+function renderMoneyDriver(body){ const car=myCar;
+  if(!car){ body.innerHTML=emptyState('🤝','No car assigned','Ask your admin to assign you a car.'); return; }
+  const s=carSettlement(car), meRow=s.rows.find(r=>r.uid===uid);
+  if(!meRow){ body.innerHTML=emptyState('🤝','Nothing yet','Log your days to see your split.'); return; }
+  const a=aggFor(uid,car.id); const settled=settleCache[car.id]&&settleCache[car.id].settled;
+  let net;
+  if(meRow.pos<-0.01){ const t=s.transfers.find(x=>x.to===meRow.name);
+    net=`<div class="big-net get"><div class="bn-l">✅ You receive</div><div class="bn-v">${eur(-meRow.pos)}</div>${t?`<div class="bn-s">from ${esc(t.from)}</div>`:''}</div>`; }
+  else if(meRow.pos>0.01){ const t=s.transfers.find(x=>x.from===meRow.name);
+    net=`<div class="big-net pay"><div class="bn-l">You pay</div><div class="bn-v">${eur(meRow.pos)}</div>${t?`<div class="bn-s">to ${esc(t.to)}</div>`:''}</div>`; }
+  else net=`<div class="big-net even"><div class="bn-l">All settled</div><div class="bn-v">€0,00</div><div class="bn-s">you’re even</div></div>`;
+  body.innerHTML=`<div class="card card-gold"><div class="s-title">🚗 ${esc(car.number)} · ${MONTHS[viewM]} ${viewY}</div>
+      ${net}${settled?`<div class="settled-badge" style="margin-top:8px">🤝 Settled by admin</div>`:''}</div>
+    <div class="card"><div class="s-title">📊 Your numbers</div>${statGrid(a,meRow.pct,meRow.share)}
+      <div class="note" style="margin-top:11px">💡 You keep the cash you collect. ${meRow.pos<-0.01?'The amount above is owed to you.':meRow.pos>0.01?'Pay the amount above to settle up.':'You’re holding exactly your share.'}</div></div>
+    <button class="btn-wide btn-month" onclick='shareCarSettle(${JSON.stringify(car.id)},true)'>📤 Share my split</button>`; }
+
+/* ---- OWNER: combined, everything at a glance ---- */
+function renderMoneyOwner(body){
+  if(!cars.length){ body.innerHTML=emptyState('🤝','No cars yet','Add a car and drivers, then log days to see the split.'); return; }
+  body.innerHTML=cars.map(car=>{ const s=carSettlement(car), hasData=s.totalIncome>0||s.pooledExp>0;
+    const settled=settleCache[car.id]&&settleCache[car.id].settled;
+    let who; if(!hasData) who='';
+      else if(!s.transfers.length) who=`<div class="allsq"><div class="ico">✅</div><div class="t">All square</div><div class="s">Everyone holds their share.</div></div>`;
       else who=s.transfers.map(t=>`<div class="who-card"><span class="who-from">${esc(t.from)}</span><span class="who-arrow">→</span><span class="who-to">${esc(t.to)}</span><span class="who-amt">${eur(t.amt)}</span></div>`).join('')+`<div class="note">💡 Cash stays with whoever collected it — only the difference moves.</div>`;
-    const pool=hasData?`<div class="pool-grid"><div class="pool-box"><div class="pool-lbl">💰 Income</div><div class="pool-val">${eur(s.totalIncome)}</div></div>
+    const pool=hasData?`<div class="pool-grid">
+      <div class="pool-box"><div class="pool-lbl">💰 Income</div><div class="pool-val">${eur(s.totalIncome)}</div></div>
       <div class="pool-box exp"><div class="pool-lbl">🧾 Expenses</div><div class="pool-val">${eur(s.pooledExp)}</div></div>
-      <div class="pool-box net"><div class="pool-lbl">📈 Net profit to split</div><div class="pool-val">${eur(s.net)}</div></div></div>`:'';
-    const splits=s.rows.map(r=>{ const cls=r.pos>0.01?'owes':r.pos<-0.01?'owed':'even', lbl=r.pos>0.01?'pays in':r.pos<-0.01?'receives':'even', you=r.uid===uid?'<span class="you-dot">YOU</span>':'';
-      return `<div class="split-row"><div class="split-av">${initials(r.name)}</div><div class="split-mid"><div class="split-nm">${esc(r.name)} ${you}</div><div class="split-meta">${Math.round(r.pct)}% · earned ${eur(r.income)}${r.expenses>0?' · spent '+eur(r.expenses):''}</div></div><div class="split-pos ${cls}"><div class="pv">${r.pos>0.01?'−':r.pos<-0.01?'+':''}${eur(Math.abs(r.pos))}</div><div class="pl">${lbl}</div></div></div>`; }).join('');
-    const actions = isOwner()&&hasData ? (settled
-        ? `<div class="settled-badge" style="margin-top:10px">🤝 Settled${settleCache[car.id].byName?' by '+esc(settleCache[car.id].byName):''}</div><button class="btn-settle reopen" onclick="reopenCar('${car.id}')">🔓 Reopen</button>`
-        : `<button class="btn-settle mark" onclick="settleCar('${car.id}')">🤝 Mark settled & lock</button>`) : (settled?`<div class="settled-badge" style="margin-top:10px">🤝 Settled</div>`:'');
-    const share = hasData?`<button class="btn-wide btn-month" onclick='shareCarSettle(${JSON.stringify(car.id)})'>📤 Share split</button>`:'';
-    return `<div class="card card-gold"><div class="s-title">🚗 ${esc(car.number)} · ${MONTHS[viewM].slice(0,3)}</div>${who}${pool}</div>
-      ${hasData?`<div class="card"><div class="s-title">👥 Each driver</div>${splits}</div>`:''}${actions}${share}`; }).join(''); }
+      <div class="pool-box net"><div class="pool-lbl">📈 Net profit to split</div><div class="pool-val">${eur(s.net)}</div></div></div>`:'<div class="empty-list">No income logged for this car yet.</div>';
+    const drv=hasData?s.rows.map(r=>{ const a=aggFor(r.uid,car.id);
+      const cls=r.pos>0.01?'pay':r.pos<-0.01?'get':'even', lbl=r.pos>0.01?('pays '+eur(r.pos)):r.pos<-0.01?('gets '+eur(-r.pos)):'even';
+      const you=r.uid===uid?'<span class="you-dot">YOU</span>':'';
+      return `<div class="dcard"><div class="dcard-top"><div class="mem-av">${initials(r.name)}</div>
+        <div style="flex:1;min-width:0"><div class="drv-name">${esc(r.name)} ${you}</div><div class="drv-sub">${a.days} day${a.days===1?'':'s'} worked</div></div>
+        <div class="net-badge ${cls}">${lbl}</div></div>${statGrid(a,r.pct,r.share)}</div>`; }).join(''):'';
+    const actions=hasData?(settled
+      ? `<div class="settled-badge" style="margin-top:10px">🤝 Settled${settleCache[car.id].byName?' by '+esc(settleCache[car.id].byName):''}</div><button class="btn-settle reopen" onclick="reopenCar('${car.id}')">🔓 Reopen</button>`
+      : `<button class="btn-settle mark" onclick="settleCar('${car.id}')">🤝 Mark settled & lock</button>`):'';
+    const share=hasData?`<button class="btn-wide btn-month" onclick='shareCarSettle(${JSON.stringify(car.id)})'>📤 Share split</button>`:'';
+    return `<div class="card card-gold"><div class="s-title">🚗 ${esc(car.number)} · ${MONTHS[viewM]} ${viewY}</div>${who}${pool}</div>
+      ${drv?`<div class="card"><div class="s-title">👥 Each driver — full view</div>${drv}</div>`:''}${actions}${share}`; }).join(''); }
 
 window.settleCar=cid=>{ const car=cars.find(c=>c.id===cid); const s=carSettlement(car);
   confirmModal({ico:'🤝',title:'Settle '+car.number+'?',msg:'Locks '+MONTHS[viewM]+' '+viewY+' for this car.',confirm:'Settle & lock',gold:true,onConfirm:()=>{
@@ -1213,9 +1263,13 @@ window.settleCar=cid=>{ const car=cars.find(c=>c.id===cid); const s=carSettlemen
     db.collection('settlements').doc(cid+'_'+monthKey(viewY,viewM)).set(rec).then(()=>{ settleCache[cid]=rec; toast('🤝 Settled & locked','gold'); renderMoney(); }).catch(e=>toast(fbErr(e,'settle'),'error')); } }); };
 window.reopenCar=cid=>{ confirmModal({ico:'🔓',title:'Reopen month?',msg:'Drivers can edit again.',confirm:'Reopen',gold:true,onConfirm:()=>{
     db.collection('settlements').doc(cid+'_'+monthKey(viewY,viewM)).set({settled:false},{merge:true}).then(()=>{ if(settleCache[cid])settleCache[cid].settled=false; toast('Reopened','success'); renderMoney(); }); } }); };
-window.shareCarSettle=cid=>{ const car=cars.find(c=>c.id===cid)||myCar; const s=carSettlement(car);
+window.shareCarSettle=(cid,driverOnly)=>{ const car=cars.find(c=>c.id===cid)||myCar; const s=carSettlement(car);
+  if(driverOnly){ const r=s.rows.find(x=>x.uid===uid); if(!r) return;
+    let m=`🚕 *${biz}* — ${me.name} · 🚗 ${car.number}\n📅 ${MONTHS[viewM]} ${viewY}\n\n💰 Made: ${eur(r.income)}\n🧾 Spent: ${eur(r.expenses)}\n📊 My ${Math.round(r.pct)}% share: ${eur(r.share)}\n━━━━━━━━━━\n`;
+    m+= r.pos<-0.01?`✅ I receive: ${eur(-r.pos)}`:r.pos>0.01?`💸 I pay: ${eur(r.pos)}`:'✅ All square';
+    return window.open('https://wa.me/?text='+encodeURIComponent(m),'_blank'); }
   let m=`🚕 *${biz}* — 🚗 ${car.number}\n📅 ${MONTHS[viewM]} ${viewY}\n\n💰 Income: ${eur(s.totalIncome)}\n🧾 Expenses: ${eur(s.pooledExp)}\n📈 Net: ${eur(s.net)}\n\n`;
-  s.rows.forEach(r=>{ m+=`👤 ${r.name} (${Math.round(r.pct)}%): earned ${eur(r.income)} → share ${eur(r.share)}\n`; });
+  s.rows.forEach(r=>{ m+=`👤 ${r.name} (${Math.round(r.pct)}%): made ${eur(r.income)} → share ${eur(r.share)}\n`; });
   m+=`\n━━━━━━━━━━\n`; if(!s.transfers.length) m+='✅ All square.'; else { m+='💸 *Settle up:*\n'; s.transfers.forEach(t=>m+=`   ${t.from} → ${t.to}: ${eur(t.amt)}\n`); }
   window.open('https://wa.me/?text='+encodeURIComponent(m),'_blank'); };
 
@@ -1224,7 +1278,7 @@ $('shareBtn').onclick=()=>{ const c=computeDay(currentDay); if(!dayHasData(curre
   const dt=new Date(viewY,viewM,selDay);
   let m=`🚕 *${biz}* — ${me.name}${myCar?(' · 🚗 '+myCar.number):''}\n📅 ${DOW[dt.getDay()]}, ${selDay} ${MONTHS[viewM]} ${viewY}\n`;
   if(currentDay.shift) m+=`🕒 ${currentDay.shift}\n`;
-  m+=`\n🚕 Uber/Bolt: ${eur(c.uber)}\n💳 Card: ${eur(c.card)}\n💵 Cash: ${eur(c.cash)}\n🚗 Transfers: ${eur(c.transfers)}\n🎁 Tips: ${eur(c.tips)}\n━━━━━━━━━━\n📈 *Total: ${eur(c.total)}*\n💵 Cash in hand: ${eur(c.cashInHand)}\n`;
+  m+=`\n🚕 Uber/Bolt: ${eur(c.uber)}\n💳 Card: ${eur(c.card)}\n💵 Cash: ${eur(c.cash)}\n🚕 Taxi Meter: ${eur(c.transfers)}\n🎁 Tips: ${eur(c.tips)}\n━━━━━━━━━━\n📈 *Total: ${eur(c.total)}*\n💵 Cash in hand: ${eur(c.cashInHand)}\n`;
   if(c.expenses>0) m+=`🧾 Expenses: ${eur(c.expenses)}\n✅ Kept: ${eur(c.net)}\n`;
   window.open('https://wa.me/?text='+encodeURIComponent(m),'_blank'); };
 $('shareMonthBtn').onclick=()=>{ const keys=Object.keys(monthEntries).filter(k=>dayHasData(monthEntries[k])); if(!keys.length) return toast('No entries','error');
