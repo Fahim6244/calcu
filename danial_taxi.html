@@ -465,6 +465,60 @@ body{
 .hint{font-size:10.5px;color:var(--faint);font-weight:600;margin-top:6px}
 .auth-seg{margin-bottom:18px}
 .auth-seg button{padding:11px}
+
+/* ---------- v4.0 OWNER / CARS / DRIVERS ---------- */
+.car-card{background:var(--s2);border:1px solid var(--bd);border-left:3px solid var(--gold);border-radius:var(--r-sm);
+  padding:14px;margin-bottom:11px}
+.car-head{display:flex;align-items:center;gap:11px;margin-bottom:11px}
+.car-num{background:var(--grad-gold);color:#1a1300;font-weight:800;font-size:15px;padding:7px 13px;border-radius:9px;
+  letter-spacing:.5px;box-shadow:var(--shadow-gold);white-space:nowrap}
+.car-meta{font-size:11px;color:var(--dim);font-weight:600}
+.car-edit{margin-left:auto;background:var(--s3);border:1px solid var(--bd-2);color:var(--gold);font-weight:700;
+  font-size:11px;padding:6px 12px;border-radius:20px;cursor:pointer}
+.car-drivers{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+.dchip{display:inline-flex;align-items:center;gap:6px;background:var(--s3);border:1px solid var(--bd-gold);
+  border-radius:20px;padding:5px 11px;font-size:11.5px;font-weight:700;color:var(--txt)}
+.dchip .pc{color:var(--gold);font-weight:800}
+.dchip.empty{color:var(--faint);border-style:dashed;border-color:var(--bd-2)}
+
+.cred-box{background:var(--s2);border:1.5px solid var(--bd-gold);border-radius:var(--r-sm);padding:14px;margin:6px 0 12px}
+.cred-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd)}
+.cred-row:last-child{border-bottom:none}
+.cred-k{font-size:10.5px;color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.cred-v{font-weight:800;font-size:13px;color:var(--gold-2);font-family:'SF Mono',Menlo,monospace;word-break:break-all;text-align:right}
+
+.drv-card{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r-sm);padding:12px 13px;margin-bottom:9px;
+  display:flex;align-items:center;gap:11px}
+.drv-card .mem-av{width:38px;height:38px}
+.drv-info{flex:1;min-width:0}
+.drv-name{font-weight:800;font-size:14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.drv-sub{font-size:10.5px;color:var(--dim);font-weight:600;margin-top:2px;word-break:break-all}
+.drv-go{background:var(--s3);border:1px solid var(--bd-2);color:var(--gold);font-weight:700;font-size:11px;
+  padding:7px 12px;border-radius:20px;cursor:pointer;white-space:nowrap}
+
+.assign-grid{display:flex;flex-direction:column;gap:8px;margin:4px 0 12px}
+.assign-opt{display:flex;align-items:center;gap:10px;background:var(--s2);border:1.5px solid var(--bd-2);
+  border-radius:var(--r-sm);padding:11px 13px;cursor:pointer;transition:.15s}
+.assign-opt.on{border-color:var(--gold);background:rgba(212,175,55,.07)}
+.assign-opt .rad{width:20px;height:20px;border-radius:50%;border:2px solid var(--bd-2);flex-shrink:0;position:relative}
+.assign-opt.on .rad{border-color:var(--gold)}
+.assign-opt.on .rad::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--grad-gold)}
+.assign-nm{font-weight:700;font-size:13px}
+
+.fab-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.big-btn{background:var(--grad-gold);color:#1a1300;border:none;border-radius:var(--r-sm);padding:15px;font-size:14px;
+  font-weight:800;cursor:pointer;box-shadow:var(--shadow-gold);display:flex;flex-direction:column;align-items:center;gap:3px}
+.big-btn.ghost{background:var(--s2);color:var(--gold);border:1px solid var(--bd-gold);box-shadow:none}
+.big-btn .bb-ic{font-size:22px}
+.empty-hint{text-align:center;color:var(--dim);font-size:12.5px;font-weight:600;padding:22px 16px;
+  background:var(--s2);border:1px dashed var(--bd-2);border-radius:var(--r-sm);margin-bottom:12px}
+.split-pick{display:flex;gap:8px;margin-bottom:12px}
+.split-pick button{flex:1;padding:11px;border-radius:var(--r-xs);border:1.5px solid var(--bd-2);background:var(--s2);
+  color:var(--dim);font-weight:800;font-size:12.5px;cursor:pointer}
+.split-pick button.on{border-color:var(--gold);background:var(--grad-gold);color:#1a1300}
+.modal.wide{max-width:380px;text-align:left}
+.modal.wide .modal-t{text-align:center}
+.modal-scroll{max-height:62vh;overflow-y:auto;margin:4px -4px;padding:0 4px}
 </style>
 </head>
 <body>
@@ -474,11 +528,11 @@ body{
   <div class="auth-box">
     <div class="brand-badge">🚕</div>
     <div class="auth-title">Danial Taxi</div>
-    <div class="auth-sub" id="authSub">Partnership income & settlement</div>
+    <div class="auth-sub" id="authSub">Driver income & settlement</div>
 
     <div class="seg auth-seg" id="authSeg">
       <button data-mode="login" class="on">🔑 Sign in</button>
-      <button data-mode="register">✨ Create account</button>
+      <button data-mode="register">👑 Owner sign up</button>
     </div>
 
     <div id="errMsg" class="err-msg"></div>
@@ -488,6 +542,10 @@ body{
       <div class="fld" id="nameFld" style="display:none">
         <label class="lbl">Your name</label>
         <input type="text" id="fName" class="in" placeholder="e.g. Fahim Ahmad" autocomplete="name">
+      </div>
+      <div class="fld" id="bizFld" style="display:none">
+        <label class="lbl">Business name</label>
+        <input type="text" id="fBiz" class="in" placeholder="e.g. Danial Taxi" autocomplete="organization">
       </div>
       <div class="fld">
         <label class="lbl">Email</label>
@@ -502,61 +560,7 @@ body{
         <div class="hint" id="pwHint" style="display:none">Use at least 6 characters</div>
       </div>
       <button class="btn-primary" id="loginBtn">Sign in</button>
-    </div>
-  </div>
-</div>
-
-<!-- ============ ONBOARDING (choose / create / join) ============ -->
-<div class="auth-screen" id="obScreen" style="display:none">
-  <div class="auth-box">
-    <div class="brand-badge">🤝</div>
-    <div class="auth-title" id="obTitle">Welcome</div>
-    <div class="auth-sub" id="obSub">Set up your partnership</div>
-    <div id="obOk" class="ok-msg"></div>
-    <div id="obErr" class="err-msg"></div>
-
-    <!-- choose -->
-    <div id="obChoose">
-      <div class="ob-choice">
-        <div class="ob-card" id="obCreateCard">
-          <div class="ob-ic">➕</div>
-          <div><div class="ob-tt">Create a partnership</div>
-            <div class="ob-ss">You'll be the admin. Invite drivers with a code.</div></div>
-        </div>
-        <div class="ob-card" id="obJoinCard">
-          <div class="ob-ic">🔑</div>
-          <div><div class="ob-tt">Join with a code</div>
-            <div class="ob-ss">Got a code from your admin? Enter it here.</div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- create -->
-    <div id="obCreate" style="display:none">
-      <div class="fld">
-        <label class="lbl">Partnership name</label>
-        <input type="text" id="obTeamName" class="in" placeholder="e.g. Danial Taxi">
-      </div>
-      <div class="fld">
-        <label class="lbl">Do you also drive?</label>
-        <div class="driver-select" style="margin-bottom:0">
-          <button class="driver-btn active" id="obDriveYes"><span class="dot">🧑‍✈️</span>Yes, I drive</button>
-          <button class="driver-btn" id="obDriveNo"><span class="dot">🧑‍💼</span>Admin only</button>
-        </div>
-      </div>
-      <button class="btn-primary" id="obCreateBtn">Create partnership 🚀</button>
-      <button class="back-link" data-back>‹ Back</button>
-    </div>
-
-    <!-- join -->
-    <div id="obJoin" style="display:none">
-      <div class="fld">
-        <label class="lbl">Partnership code</label>
-        <input type="text" id="obCode" class="in" placeholder="ABC123" maxlength="6"
-          style="text-transform:uppercase;letter-spacing:4px;font-weight:800;text-align:center">
-      </div>
-      <button class="btn-primary" id="obJoinBtn">Join partnership 🤝</button>
-      <button class="back-link" data-back>‹ Back</button>
+      <div class="hint" id="drvHint" style="text-align:center;margin-top:14px">Drivers: use the login your admin gave you.</div>
     </div>
   </div>
 </div>
@@ -564,11 +568,10 @@ body{
 <!-- ============ APP ============ -->
 <div class="app" id="app">
   <div class="wrap">
-    <!-- HEADER -->
     <div class="header">
       <div class="header-top">
         <div>
-          <div class="header-title">🚕 <span id="hTeam">Danial Taxi</span></div>
+          <div class="header-title">🚕 <span id="hBiz">Danial Taxi</span></div>
           <div class="header-meta" id="hMeta">—</div>
         </div>
         <button class="btn-exit" id="logoutBtn">Exit ⏏︎</button>
@@ -576,150 +579,95 @@ body{
       <div class="header-body">
         <div class="ring-wrap">
           <svg class="ring" viewBox="0 0 36 36">
-            <defs><linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#f4d35e"/><stop offset="100%" stop-color="#b8932e"/>
-            </linearGradient></defs>
             <circle class="ring-bg" cx="18" cy="18" r="15.915"/>
             <circle class="ring-fg" id="ringFg" cx="18" cy="18" r="15.915" stroke-dasharray="0 100"/>
           </svg>
-          <div class="ring-txt"><div class="ring-pct" id="ringPct">0%</div><div class="ring-cap">of goal</div></div>
+          <div class="ring-txt"><div class="ring-pct" id="ringPct">0%</div><div class="ring-cap" id="ringCap">income</div></div>
         </div>
-        <div class="header-stats">
-          <div class="hstat">
-            <div class="hstat-lbl">My income · this month</div>
-            <div class="hstat-val">€<span id="hIncome" class="tnum">0,00</span></div>
-          </div>
-          <div class="hstat">
-            <div class="hstat-lbl">Days I worked</div>
-            <div class="hstat-val"><span id="hDays" class="tnum">0</span> <small id="hDaysSub">days</small></div>
-          </div>
-        </div>
+        <div class="header-stats" id="headerStats"></div>
       </div>
     </div>
 
-    <!-- TABS -->
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="entry"><span class="ic">✍️</span>Entry</button>
-      <button class="tab-btn" data-tab="history"><span class="ic">📅</span>History</button>
-      <button class="tab-btn" data-tab="summary"><span class="ic">📊</span>Summary</button>
-      <button class="tab-btn" data-tab="settle"><span class="ic">🤝</span>Settle</button>
-    </div>
+    <div class="tabs" id="tabs"></div>
 
-    <!-- ===== ENTRY ===== -->
+    <!-- ENTRY -->
     <div id="entryPanel" class="panel active">
-      <div class="card card-gold">
-        <div class="mswitch">
-          <button class="mnav" id="calPrev">‹</button>
-          <div class="mlabel" id="calMonth">—</div>
-          <button class="mnav" id="calNext">›</button>
-        </div>
-        <div class="cal-grid" id="calGrid"></div>
-        <div class="cal-legend">
-          <div class="leg"><span class="leg-dot" style="background:var(--grad-gold)"></span>Logged</div>
-          <div class="leg"><span class="leg-dot" style="border:2px solid var(--blue)"></span>Today</div>
-          <div class="leg"><span class="leg-dot" style="background:var(--s2);border:1px solid var(--bd)"></span>Empty</div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="date-strip">
-          <div>
-            <div class="big" id="selDate">Today</div>
-            <div class="meta" id="selMeta">—</div>
-          </div>
-          <div id="selPill"></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="s-title">🕒 Shift</div>
-        <div class="seg shift" id="shiftSeg">
-          <button data-shift="morning">🌅 Morning</button>
-          <button data-shift="night">🌙 Night</button>
-          <button data-shift="other">🕒 Other</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="s-title">🚗 Transfers <span class="badge" id="tfCount">0 trips</span></div>
-        <div class="fgrid">
-          <div class="fld"><label class="lbl">Meter start</label><input type="number" id="mStart" class="in" placeholder="0" step="0.1" inputmode="decimal"></div>
-          <div class="fld"><label class="lbl">Meter end</label><input type="number" id="mEnd" class="in" placeholder="0" step="0.1" inputmode="decimal"></div>
-          <div class="fld"><label class="lbl">Amount</label><div class="in-money"><span class="cur">€</span><input type="number" id="tfAmt" class="in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
-        </div>
-        <div class="fld">
-          <label class="lbl">Paid by</label>
-          <div class="seg" id="tfMethod">
-            <button data-m="cash" class="on">💵 Cash</button>
-            <button data-m="card">💳 Card</button>
+      <div id="noCarMsg" style="display:none"></div>
+      <div id="entryInner">
+        <div class="card card-gold">
+          <div class="mswitch"><button class="mnav" id="calPrev">‹</button>
+            <div class="mlabel" id="calMonth">—</div><button class="mnav" id="calNext">›</button></div>
+          <div class="cal-grid" id="calGrid"></div>
+          <div class="cal-legend">
+            <div class="leg"><span class="leg-dot" style="background:var(--grad-gold)"></span>Logged</div>
+            <div class="leg"><span class="leg-dot" style="border:2px solid var(--blue)"></span>Today</div>
+            <div class="leg"><span class="leg-dot" style="background:var(--s2);border:1px solid var(--bd)"></span>Empty</div>
           </div>
         </div>
-        <div class="meter-box"><span>Distance this trip</span><span class="km"><span id="mTotal" class="tnum">0.0</span> km</span></div>
-        <button class="btn-add" id="addTf">➕ Add transfer</button>
-        <div class="list" id="tfList"></div>
-      </div>
-
-      <div class="card">
-        <div class="s-title">💶 Platform income</div>
-        <div class="fgrid">
-          <div class="fld ffull"><label class="lbl">Uber / Bolt total</label><div class="in-money"><span class="cur">€</span><input type="number" id="fUber" class="in money-in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
-          <div class="fld"><label class="lbl">Cash (in hand)</label><div class="in-money"><span class="cur">€</span><input type="number" id="fCash" class="in money-in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
-          <div class="fld"><label class="lbl">Card (terminal)</label><div class="in-money"><span class="cur">€</span><input type="number" id="fCard" class="in money-in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
-          <div class="fld ffull"><label class="lbl">🎁 Tips</label><div class="in-money"><span class="cur">€</span><input type="number" id="fTips" class="in money-in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="s-title">🧾 My expenses <span class="badge" id="exCount">0 items</span></div>
-        <div class="fgrid">
-          <div class="fld">
-            <label class="lbl">Type</label>
-            <select id="exType" class="sel">
-              <option value="⛽ Fuel">⛽ Fuel</option>
-              <option value="🔧 Repair">🔧 Repair</option>
-              <option value="🧼 Wash">🧼 Wash</option>
-              <option value="🅿️ Parking">🅿️ Parking</option>
-              <option value="🛣️ Toll">🛣️ Toll</option>
-              <option value="📦 Other">📦 Other</option>
-            </select>
+        <div class="card"><div class="date-strip">
+          <div><div class="big" id="selDate">Today</div><div class="meta" id="selMeta">—</div></div>
+          <div id="selPill"></div></div></div>
+        <div class="card"><div class="s-title">🕒 Shift</div>
+          <div class="seg shift" id="shiftSeg">
+            <button data-shift="morning">🌅 Morning</button>
+            <button data-shift="night">🌙 Night</button>
+            <button data-shift="other">🕒 Full / Other</button>
+          </div></div>
+        <div class="card"><div class="s-title">🚗 Transfers <span class="badge" id="tfCount">0 trips</span></div>
+          <div class="fgrid">
+            <div class="fld"><label class="lbl">Meter start</label><input type="number" id="mStart" class="in" placeholder="0" step="0.1" inputmode="decimal"></div>
+            <div class="fld"><label class="lbl">Meter end</label><input type="number" id="mEnd" class="in" placeholder="0" step="0.1" inputmode="decimal"></div>
+            <div class="fld"><label class="lbl">Amount</label><div class="in-money"><span class="cur">€</span><input type="number" id="tfAmt" class="in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
           </div>
-          <div class="fld"><label class="lbl">Amount</label><div class="in-money"><span class="cur">€</span><input type="number" id="exAmt" class="in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
-          <div class="fld ffull"><label class="lbl">Note</label><input type="text" id="exNote" class="in" placeholder="e.g. Shell station, airport parking"></div>
+          <div class="fld"><label class="lbl">Paid by</label>
+            <div class="seg" id="tfMethod"><button data-m="cash" class="on">💵 Cash</button><button data-m="card">💳 Card</button></div></div>
+          <div class="meter-box"><span>Distance this trip</span><span class="km"><span id="mTotal" class="tnum">0.0</span> km</span></div>
+          <button class="btn-add" id="addTf">➕ Add transfer</button>
+          <div class="list" id="tfList"></div>
         </div>
-        <button class="btn-add" id="addEx">➕ Add expense</button>
-        <div class="list" id="exList"></div>
-      </div>
-
-      <div class="card card-gold">
-        <div class="s-title">🧮 My day breakdown</div>
-        <div class="calc">
-          <div class="crow"><span class="cl">🚕 Uber / Bolt</span><span class="cv">€<span id="b1" class="tnum">0,00</span></span></div>
-          <div class="crow"><span class="cl">💳 Card</span><span class="cv">€<span id="b2" class="tnum">0,00</span></span></div>
-          <div class="crow"><span class="cl">💵 Cash</span><span class="cv">€<span id="b3" class="tnum">0,00</span></span></div>
-          <div class="crow"><span class="cl">🚗 Transfers</span><span class="cv">€<span id="b4" class="tnum">0,00</span></span></div>
-          <div class="crow"><span class="cl">🎁 Tips</span><span class="cv">€<span id="b5" class="tnum">0,00</span></span></div>
-          <div class="crow total"><span class="cl">📈 Total income</span><span class="cv">€<span id="bTotal" class="tnum">0,00</span></span></div>
-          <div class="crow sub"><span class="cl">↳ cash in hand</span><span class="cv">€<span id="bCash" class="tnum">0,00</span></span></div>
-          <div class="crow sub"><span class="cl">↳ expenses paid</span><span class="cv">€<span id="bExp" class="tnum">0,00</span></span></div>
-          <div class="crow sub"><span class="cl">↳ kept after expenses</span><span class="cv">€<span id="bNet" class="tnum">0,00</span></span></div>
+        <div class="card"><div class="s-title">💶 Income</div>
+          <div class="fgrid">
+            <div class="fld ffull"><label class="lbl">Uber / Bolt total</label><div class="in-money"><span class="cur">€</span><input type="number" id="fUber" class="in money-in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
+            <div class="fld"><label class="lbl">Cash (in hand)</label><div class="in-money"><span class="cur">€</span><input type="number" id="fCash" class="in money-in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
+            <div class="fld"><label class="lbl">Card (terminal)</label><div class="in-money"><span class="cur">€</span><input type="number" id="fCard" class="in money-in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
+            <div class="fld ffull"><label class="lbl">🎁 Tips</label><div class="in-money"><span class="cur">€</span><input type="number" id="fTips" class="in money-in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
+          </div></div>
+        <div class="card"><div class="s-title">🧾 Expenses <span class="badge" id="exCount">0 items</span></div>
+          <div class="fgrid">
+            <div class="fld"><label class="lbl">Type</label><select id="exType" class="sel">
+              <option value="⛽ Fuel">⛽ Fuel</option><option value="🔧 Repair">🔧 Repair</option>
+              <option value="🧼 Wash">🧼 Wash</option><option value="🅿️ Parking">🅿️ Parking</option>
+              <option value="🛣️ Toll">🛣️ Toll</option><option value="📦 Other">📦 Other</option></select></div>
+            <div class="fld"><label class="lbl">Amount</label><div class="in-money"><span class="cur">€</span><input type="number" id="exAmt" class="in" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>
+            <div class="fld ffull"><label class="lbl">Note</label><input type="text" id="exNote" class="in" placeholder="optional"></div>
+          </div>
+          <button class="btn-add" id="addEx">➕ Add expense</button>
+          <div class="list" id="exList"></div>
         </div>
+        <div class="card card-gold"><div class="s-title">🧮 My day</div>
+          <div class="calc">
+            <div class="crow"><span class="cl">🚕 Uber / Bolt</span><span class="cv">€<span id="b1" class="tnum">0,00</span></span></div>
+            <div class="crow"><span class="cl">💳 Card</span><span class="cv">€<span id="b2" class="tnum">0,00</span></span></div>
+            <div class="crow"><span class="cl">💵 Cash</span><span class="cv">€<span id="b3" class="tnum">0,00</span></span></div>
+            <div class="crow"><span class="cl">🚗 Transfers</span><span class="cv">€<span id="b4" class="tnum">0,00</span></span></div>
+            <div class="crow"><span class="cl">🎁 Tips</span><span class="cv">€<span id="b5" class="tnum">0,00</span></span></div>
+            <div class="crow total"><span class="cl">📈 Total income</span><span class="cv">€<span id="bTotal" class="tnum">0,00</span></span></div>
+            <div class="crow sub"><span class="cl">↳ cash in hand</span><span class="cv">€<span id="bCash" class="tnum">0,00</span></span></div>
+            <div class="crow sub"><span class="cl">↳ expenses</span><span class="cv">€<span id="bExp" class="tnum">0,00</span></span></div>
+            <div class="crow sub"><span class="cl">↳ kept after expenses</span><span class="cv">€<span id="bNet" class="tnum">0,00</span></span></div>
+          </div></div>
+        <div class="autosave" id="autoSave"></div>
+        <div class="act-grid">
+          <button class="btn-save" id="saveBtn">💾 Save day</button>
+          <button class="btn-share" id="shareBtn">🟢 Share day</button>
+        </div>
+        <button class="btn-wide btn-month" id="shareMonthBtn">📤 Share my month</button>
       </div>
-
-      <div class="autosave" id="autoSave"></div>
-      <div class="act-grid">
-        <button class="btn-save" id="saveBtn">💾 Save day</button>
-        <button class="btn-share" id="shareBtn">🟢 Share day</button>
-      </div>
-      <button class="btn-wide btn-month" id="shareMonthBtn">📤 Share my month</button>
     </div>
 
-    <!-- ===== HISTORY ===== -->
+    <!-- HISTORY -->
     <div id="historyPanel" class="panel">
-      <div class="mswitch">
-        <button class="mnav" id="hPrev">‹</button>
-        <div class="mlabel" id="hMonth">—</div>
-        <button class="mnav" id="hNext">›</button>
-      </div>
+      <div class="mswitch"><button class="mnav" id="hPrev">‹</button><div class="mlabel" id="hMonth">—</div><button class="mnav" id="hNext">›</button></div>
       <div class="hsummary">
         <div class="hsum-box"><div class="hsum-lbl">My income</div><div class="hsum-val">€<span id="hsTotal" class="tnum">0,00</span></div></div>
         <div class="hsum-box"><div class="hsum-lbl">Days worked</div><div class="hsum-val tnum" id="hsDays">0</div></div>
@@ -727,47 +675,46 @@ body{
       <div id="histList"></div>
     </div>
 
-    <!-- ===== SUMMARY ===== -->
+    <!-- SUMMARY -->
     <div id="summaryPanel" class="panel">
-      <div class="mswitch">
-        <button class="mnav" id="sPrev">‹</button>
-        <div class="mlabel" id="sMonth">—</div>
-        <button class="mnav" id="sNext">›</button>
-      </div>
+      <div class="mswitch"><button class="mnav" id="sPrev">‹</button><div class="mlabel" id="sMonth">—</div><button class="mnav" id="sNext">›</button></div>
       <div id="sumBody"></div>
     </div>
 
-    <!-- ===== SETTLEMENT ===== -->
-    <div id="settlePanel" class="panel">
-      <div class="mswitch">
-        <button class="mnav" id="setPrev">‹</button>
-        <div class="mlabel" id="setMonth">—</div>
-        <button class="mnav" id="setNext">›</button>
-      </div>
-      <div id="settleBody"></div>
+    <!-- CARS (owner) -->
+    <div id="carsPanel" class="panel">
+      <button class="big-btn" id="addCarBtn" style="width:100%;margin-bottom:14px"><span class="bb-ic">🚗</span>Add a car</button>
+      <div id="carsList"></div>
     </div>
 
-    <div class="foot">🚕 Danial Taxi · <b id="verStamp">v3.2</b> · gold standard</div>
+    <!-- DRIVERS (owner) -->
+    <div id="driversPanel" class="panel">
+      <button class="big-btn" id="addDrvBtn" style="width:100%;margin-bottom:14px"><span class="bb-ic">🪪</span>Create driver login</button>
+      <div id="driversList"></div>
+    </div>
+
+    <!-- MONEY / SETTLEMENT -->
+    <div id="moneyPanel" class="panel">
+      <div class="mswitch"><button class="mnav" id="setPrev">‹</button><div class="mlabel" id="setMonth">—</div><button class="mnav" id="setNext">›</button></div>
+      <div id="moneyBody"></div>
+    </div>
+
+    <div class="foot">🚕 <span id="footBiz">Danial Taxi</span> · <b id="verStamp">v4.0</b> · gold standard</div>
   </div>
 </div>
 
-<!-- toasts + modal -->
+<!-- toasts + modals -->
 <div class="toast-c" id="toastC"></div>
-<div class="modal-bg" id="modalBg">
-  <div class="modal">
-    <div class="modal-ico" id="mIco">⚠️</div>
-    <div class="modal-t" id="mTitle">Are you sure?</div>
-    <div class="modal-m" id="mMsg">This cannot be undone.</div>
-    <div class="modal-acts">
-      <button class="modal-btn cancel" id="mCancel">Cancel</button>
-      <button class="modal-btn confirm" id="mConfirm">Confirm</button>
-    </div>
-  </div>
-</div>
+<div class="modal-bg" id="modalBg"><div class="modal">
+  <div class="modal-ico" id="mIco">⚠️</div><div class="modal-t" id="mTitle">Are you sure?</div>
+  <div class="modal-m" id="mMsg"></div>
+  <div class="modal-acts"><button class="modal-btn cancel" id="mCancel">Cancel</button>
+  <button class="modal-btn confirm" id="mConfirm">Confirm</button></div>
+</div></div>
+<div class="modal-bg" id="sheetBg"><div class="modal wide"><div id="sheetBody"></div></div></div>
 
 <script>
-const APP_VERSION='v3.2';
-/* ---------- Firebase ---------- */
+const APP_VERSION='v4.0';
 const firebaseConfig = {
   apiKey: "AIzaSyBlwF6FfIOXsxBHGF3U_Njp0mVYiOvMMD8",
   authDomain: "danial-taxi.firebaseapp.com",
@@ -780,61 +727,61 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-/* ---------- helpers ---------- */
+/* helpers */
 const $ = id => document.getElementById(id);
-const num = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
-const eur = n => '€' + (Math.round(n*100)/100).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2});
-const eur0 = n => '€' + Math.round(n).toLocaleString('es-ES');
+const num = v => { const n=parseFloat(v); return isNaN(n)?0:n; };
+const eur = n => '€'+(Math.round(n*100)/100).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2});
 const pad = n => String(n).padStart(2,'0');
-const dateKey = (y,m,d)=> `${y}-${pad(m+1)}-${pad(d)}`;
-const monthKey = (y,m)=> `${y}-${pad(m+1)}`;
+const dateKey = (y,m,d)=>`${y}-${pad(m+1)}-${pad(d)}`;
+const monthKey = (y,m)=>`${y}-${pad(m+1)}`;
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DOW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-const escapeHtml = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const initials = nm => (nm||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+function withTimeout(p,ms){ return Promise.race([p,new Promise((_,r)=>setTimeout(()=>r({code:'timeout'}),ms||12000))]); }
 
-function toast(msg,type){ const c=$('toastC'); const t=document.createElement('div');
-  t.className='toast '+(type||''); t.textContent=msg; c.appendChild(t);
-  requestAnimationFrame(()=>t.classList.add('show'));
+function toast(msg,type){ const t=document.createElement('div'); t.className='toast '+(type||''); t.textContent=msg;
+  $('toastC').appendChild(t); requestAnimationFrame(()=>t.classList.add('show'));
   setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>t.remove(),320); },2600); }
-
-let _confirmCb=null;
-function confirmModal(opts){ $('mIco').textContent=opts.ico||'⚠️'; $('mTitle').textContent=opts.title||'Are you sure?';
-  $('mMsg').textContent=opts.msg||''; const cf=$('mConfirm'); cf.textContent=opts.confirm||'Confirm';
-  cf.className='modal-btn confirm'+(opts.gold?' gold':''); _confirmCb=opts.onConfirm; $('modalBg').classList.add('show'); }
+let _cb=null;
+function confirmModal(o){ $('mIco').textContent=o.ico||'⚠️'; $('mTitle').textContent=o.title||'Are you sure?';
+  $('mMsg').textContent=o.msg||''; const c=$('mConfirm'); c.textContent=o.confirm||'Confirm';
+  c.className='modal-btn confirm'+(o.gold?' gold':''); _cb=o.onConfirm; $('modalBg').classList.add('show'); }
 $('mCancel').onclick=()=>$('modalBg').classList.remove('show');
-$('mConfirm').onclick=()=>{ $('modalBg').classList.remove('show'); if(_confirmCb)_confirmCb(); };
+$('mConfirm').onclick=()=>{ $('modalBg').classList.remove('show'); if(_cb)_cb(); };
+function openSheet(html){ $('sheetBody').innerHTML=html; $('sheetBg').classList.add('show'); }
+function closeSheet(){ $('sheetBg').classList.remove('show'); }
+$('sheetBg').onclick=e=>{ if(e.target===$('sheetBg')) closeSheet(); };
 
-/* ---------- state ---------- */
-let uid=null, me=null, team=null, teamId=null;
+/* state */
+let uid=null, me=null, ownerId=null, biz='Danial Taxi';
+let allDrivers=[], cars=[], myCar=null;
 let viewY,viewM,selDay;
-let monthEntries={};   // my entries this month {date:doc}
-let allMonth={};       // settlement: {uid:{date:doc}}
-let currentDay=blankDay();
-let saveTimer=null;
+let monthEntries={}, ownerEntries=[], currentDay=blankDay(), saveTimer=null;
 let isRegister=false;
-
 function blankDay(){ return {uber:0,card:0,cash:0,tips:0,shift:'',transfers:[],expenses:[]}; }
+function isOwner(){ return me&&me.role==='owner'; }
+function fbErr(e,a){ const c=(e&&e.code)||''; console.error('FB:',e);
+  if(c==='timeout') return '⏱️ Database not responding. In Firebase, open Firestore Database → Create database, publish rules, try again.';
+  if(c.includes('permission-denied')||/insufficient permissions/i.test((e&&e.message)||'')) return '🔒 Database blocked it — publish your Firestore rules, then retry.';
+  if(c.includes('email-already-in-use')) return 'That email is already used by another account.';
+  if(c.includes('invalid-email')) return 'That email looks invalid.';
+  if(c.includes('weak-password')) return 'Password too weak (min 6 characters).';
+  return 'Could not '+(a||'continue')+': '+((e&&e.message)||'error')+'.'; }
 
-/* =========================================================
-   AUTH
-========================================================= */
+/* =================== AUTH =================== */
 $('pwToggle').onclick=()=>{ const p=$('password'); p.type=p.type==='password'?'text':'password'; $('pwToggle').textContent=p.type==='password'?'👁️':'🙈'; };
-
-function authErr(m){ const e=$('errMsg'); e.textContent=m; e.style.display=m?'block':'none';
-  if(m){ $('okMsg').style.display='none'; e.scrollIntoView({behavior:'smooth',block:'nearest'}); } }
+function authErr(m){ const e=$('errMsg'); e.textContent=m; e.style.display=m?'block':'none'; if(m){$('okMsg').style.display='none'; e.scrollIntoView({behavior:'smooth',block:'nearest'});} }
 function authOk(m){ const e=$('okMsg'); e.textContent=m; e.style.display=m?'block':'none'; if(m)$('errMsg').style.display='none'; }
-function authBusy(t){ const b=$('loginBtn'); b.textContent=t; b.disabled=true; b.style.opacity='.6'; }
-function authReset(){ $('loginBtn').textContent=isRegister?'Create account ✨':'Sign in 🔑'; $('loginBtn').disabled=false; $('loginBtn').style.opacity='1'; }
-
+function authBusy(t){ $('loginBtn').textContent=t; $('loginBtn').disabled=true; $('loginBtn').style.opacity='.6'; }
+function authReset(){ $('loginBtn').textContent=isRegister?'Create owner account 👑':'Sign in 🔑'; $('loginBtn').disabled=false; $('loginBtn').style.opacity='1'; }
 function setMode(reg){ isRegister=reg;
   document.querySelectorAll('#authSeg button').forEach(x=>x.classList.toggle('on',(x.dataset.mode==='register')===reg));
-  $('nameFld').style.display=reg?'block':'none';
-  $('pwHint').style.display=reg?'block':'none';
-  $('loginBtn').textContent=reg?'Create account ✨':'Sign in 🔑';
-  $('authSub').textContent=reg?'Create your driver account':'Partnership income & settlement';
-  $('password').setAttribute('autocomplete',reg?'new-password':'current-password');
-  authErr(''); authOk(''); }
+  $('nameFld').style.display=reg?'block':'none'; $('bizFld').style.display=reg?'block':'none';
+  $('pwHint').style.display=reg?'block':'none'; $('drvHint').style.display=reg?'none':'block';
+  $('loginBtn').textContent=reg?'Create owner account 👑':'Sign in 🔑';
+  $('authSub').textContent=reg?'Set up your taxi business':'Driver income & settlement';
+  $('password').setAttribute('autocomplete',reg?'new-password':'current-password'); authErr(''); authOk(''); }
 document.querySelectorAll('#authSeg button').forEach(b=>b.onclick=()=>setMode(b.dataset.mode==='register'));
 
 const EMAILRE=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -845,586 +792,445 @@ $('loginBtn').onclick=()=>{
   if(!EMAILRE.test(email)) return authErr('That email doesn’t look right — check for typos.');
   if(!pw) return authErr('Please enter your password.');
   if(isRegister){
-    const name=$('fName').value.trim();
+    const name=$('fName').value.trim(), business=$('fBiz').value.trim();
     if(!name) return authErr('Please enter your name.');
+    if(!business) return authErr('Please enter your business name.');
     if(pw.length<6) return authErr('Password must be at least 6 characters.');
-    authBusy('Creating account…');
-    auth.createUserWithEmailAndPassword(email,pw)
-      .then(cred=>{ justRegistered=true;
-        return db.collection('users').doc(cred.user.uid).set({name,email,created:Date.now(),teamId:null,role:null},{merge:true}); })
-      .catch(e=>{ authReset(); authErr(friendly(e)); });
-  } else {
-    authBusy('Signing in…');
-    auth.signInWithEmailAndPassword(email,pw).catch(e=>{ authReset(); authErr(friendly(e)); });
-  }
+    authBusy('Creating…');
+    auth.createUserWithEmailAndPassword(email,pw).then(cred=>{ justRegistered=true;
+      return db.collection('users').doc(cred.user.uid).set({name,email,business,role:'owner',ownerId:cred.user.uid,carId:null,created:Date.now()},{merge:true});
+    }).catch(e=>{ authReset(); authErr(fbErr(e,'create your account')); });
+  } else { authBusy('Signing in…');
+    auth.signInWithEmailAndPassword(email,pw).catch(e=>{ authReset(); authErr(signinErr(e)); }); }
 };
-function friendly(e){ const c=(e&&e.code)||''; const m=(e&&e.message)||'';
-  if(c.includes('email-already-in-use')) return 'That email is already registered — switch to “Sign in”.';
-  if(c.includes('invalid-email')) return 'That email address looks invalid.';
-  if(c.includes('missing-password')) return 'Please enter your password.';
-  if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login-credentials')) return 'Wrong email or password. Try again, or create an account.';
-  if(c.includes('user-not-found')) return 'No account with that email — switch to “Create account”.';
-  if(c.includes('user-disabled')) return 'This account has been disabled.';
-  if(c.includes('too-many-requests')) return 'Too many attempts — wait a moment and try again.';
-  if(c.includes('weak-password')) return 'Password is too weak (use at least 6 characters).';
+function signinErr(e){ const c=(e&&e.code)||'';
+  if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password. Drivers: use the login your admin gave you.';
+  if(c.includes('user-not-found')) return 'No account with that email.';
+  if(c.includes('too-many-requests')) return 'Too many attempts — wait a moment.';
   if(c.includes('network')) return 'Network error — check your connection.';
-  if(isPermErr(e)) return '🔒 Database rules need updating before this works (see setup steps).';
-  return m||'Something went wrong. Please try again.'; }
-function isPermErr(e){ const c=(e&&e.code)||''; return c.includes('permission-denied')||/insufficient permissions/i.test((e&&e.message)||''); }
+  return fbErr(e,'sign in'); }
 
 auth.onAuthStateChanged(user=>{
-  if(!user){ uid=null; me=null; team=null; teamId=null; setMode(false); $('email').value=''; $('password').value=''; show('auth'); return; }
+  if(!user){ uid=null; me=null; setMode(false); $('email').value=''; $('password').value=''; show('auth'); return; }
   uid=user.uid;
   db.collection('users').doc(uid).get().then(doc=>{
-    me = doc.exists ? doc.data() : null;
-    if(!me){ me={name:user.displayName||user.email,email:user.email,teamId:null,role:null};
-      db.collection('users').doc(uid).set(me,{merge:true}).catch(e=>console.error('user write blocked:',e)); }
-    if(!me.teamId){ showOnboard(); }
-    else { loadTeam(me.teamId).then(()=>bootApp()).catch(e=>{
-        if(isPermErr(e)){ showOnboard(); obErr(fbErr(e,'load your partnership')); }
-        else { db.collection('users').doc(uid).set({teamId:null},{merge:true}).catch(()=>{}); me.teamId=null; showOnboard(); } }); }
-  }).catch(e=>{ console.error('user read blocked:',e); me={name:user.email,email:user.email,teamId:null,role:null};
-    showOnboard(); if(isPermErr(e)) obErr(fbErr(e,'read your account')); });
+    if(!doc.exists){ authErr('No profile found for this login. Ask your admin to recreate your account.'); auth.signOut(); return; }
+    me=doc.data();
+    biz=me.business||'Danial Taxi'; ownerId=me.ownerId||uid;
+    if(justRegistered){ justRegistered=false; toast('🎉 Account created — ready to use!','gold'); }
+    if(me.role==='owner') bootOwner(); else bootDriver();
+  }).catch(e=>{ console.error(e); authErr(fbErr(e,'load your account')); auth.signOut(); });
 });
-
-function loadTeam(tid){ return db.collection('teams').doc(tid).get().then(doc=>{
-  if(!doc.exists) throw new Error('team gone'); teamId=tid; team=doc.data();
-  if(!team.members) team.members={}; }); }
-
-function show(which){ $('authScreen').style.display=which==='auth'?'flex':'none';
-  $('obScreen').style.display=which==='ob'?'flex':'none';
-  $('app').classList.toggle('active',which==='app'); }
-
 $('logoutBtn').onclick=()=>auth.signOut();
+function show(which){ $('authScreen').style.display=which==='auth'?'flex':'none'; $('app').classList.toggle('active',which==='app'); }
 
-/* =========================================================
-   ONBOARDING
-========================================================= */
-let obDrives=true;
-function showOnboard(){ show('ob'); obShow('choose');
-  $('obTitle').textContent='Welcome, '+(((me&&me.name)||'driver').split(' ')[0])+'!';
-  $('obSub').textContent='Set up your partnership';
-  if(justRegistered){ obOk('✅ Account created — ready to use! Now set up your partnership below.'); justRegistered=false; }
-  else { obOk('✅ Signed in'+((me&&me.email)?' as '+me.email:'')+'. Set up or join a partnership to start.'); } }
-function obOk(m){ const e=$('obOk'); e.textContent=m; e.style.display=m?'block':'none'; if(m)$('obErr').style.display='none'; }
-function obErr(m){ const e=$('obErr'); e.textContent=m; e.style.display=m?'block':'none';
-  if(m){ $('obOk').style.display='none'; e.scrollIntoView({behavior:'smooth',block:'nearest'}); } }
-function obBusy(btn,txt){ btn.dataset.label=btn.textContent; btn.textContent=txt; btn.disabled=true; btn.style.opacity='.6'; }
-function obDone(btn,fallback){ btn.textContent=btn.dataset.label||fallback; btn.disabled=false; btn.style.opacity='1'; }
-function fbErr(e,action){ const c=(e&&e.code)||''; console.error('Firestore error:',e);
-  if(c.includes('permission-denied')||/insufficient permissions/i.test(e&&e.message||''))
-    return '🔒 Database blocked the write. Your Firestore Security Rules need updating — see the steps your developer gave you, then try again.';
-  if(c.includes('unavailable')||c.includes('network')) return '📡 Network problem — check your connection and try again.';
-  if(c.includes('not-found')) return 'Database not found. Make sure Firestore is enabled in Firebase.';
-  return 'Could not '+(action||'continue')+': '+((e&&e.message)||'unknown error')+'.'; }
-function obShow(s){ $('obChoose').style.display=s==='choose'?'block':'none';
-  $('obCreate').style.display=s==='create'?'block':'none';
-  $('obJoin').style.display=s==='join'?'block':'none'; obErr(''); }
-$('obCreateCard').onclick=()=>{ obShow('create'); $('obTeamName').value=''; };
-$('obJoinCard').onclick=()=>{ obShow('join'); $('obCode').value=''; };
-document.querySelectorAll('[data-back]').forEach(b=>b.onclick=()=>obShow('choose'));
-$('obDriveYes').onclick=()=>{ obDrives=true; $('obDriveYes').classList.add('active'); $('obDriveNo').classList.remove('active'); };
-$('obDriveNo').onclick=()=>{ obDrives=false; $('obDriveNo').classList.add('active'); $('obDriveYes').classList.remove('active'); };
+/* =================== BOOT =================== */
+function nowInit(){ const n=new Date(); viewY=n.getFullYear(); viewM=n.getMonth(); selDay=n.getDate(); }
 
-function genCode(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<6;i++)s+=c[Math.floor(Math.random()*c.length)]; return s; }
-
-$('obCreateBtn').onclick=()=>{
-  if(!uid){ return obErr('Not signed in — please reload and sign in again.'); }
-  const btn=$('obCreateBtn'); if(btn.disabled) return;
-  const tname=$('obTeamName').value.trim()||'Danial Taxi';
-  const tid=db.collection('teams').doc().id;
-  const code=genCode();
-  const role=obDrives?'admindriver':'admin';
-  const members={}; members[uid]={name:me.name||'Driver',pct:100,sharesExpenses:true,role,active:true,joinedAt:Date.now()};
-  const tdoc={name:tname,code,adminUid:uid,target:6000,created:Date.now(),members};
-  obBusy(btn,'Creating…'); obErr('');
-  // set+merge on the user doc (works even if the user doc doesn't exist yet)
-  db.collection('teams').doc(tid).set(tdoc)
-    .then(()=>db.collection('users').doc(uid).set({teamId:tid,role},{merge:true}))
-    .then(()=>{ me.teamId=tid; me.role=role; teamId=tid; team=tdoc; toast('🎉 Partnership created','gold'); bootApp(); })
-    .catch(e=>{ obDone(btn,'Create partnership 🚀'); obErr(fbErr(e,'create your partnership')); });
-};
-
-$('obJoinBtn').onclick=()=>{
-  if(!uid){ return obErr('Not signed in — please reload and sign in again.'); }
-  const btn=$('obJoinBtn'); if(btn.disabled) return;
-  const code=$('obCode').value.trim().toUpperCase();
-  if(code.length!==6) return obErr('Enter the 6-character code.');
-  obBusy(btn,'Joining…'); obErr('');
-  db.collection('teams').where('code','==',code).limit(1).get().then(snap=>{
-    if(snap.empty){ obDone(btn,'Join partnership 🤝'); return obErr('No partnership found for that code.'); }
-    const doc=snap.docs[0]; const tid=doc.id; const tdoc=doc.data();
-    const members=tdoc.members||{};
-    if(!members[uid]) members[uid]={name:me.name||'Driver',pct:0,sharesExpenses:true,role:'driver',active:true,joinedAt:Date.now()};
-    return db.collection('teams').doc(tid).set({members},{merge:true})
-      .then(()=>db.collection('users').doc(uid).set({teamId:tid,role:'driver'},{merge:true}))
-      .then(()=>{ me.teamId=tid; me.role='driver'; teamId=tid; team={...tdoc,members};
-        toast('🤝 Joined '+(tdoc.name||'partnership'),'success'); bootApp(); });
-  }).catch(e=>{ obDone(btn,'Join partnership 🤝'); obErr(fbErr(e,'join the partnership')); });
-};
-
-/* =========================================================
-   APP BOOT
-========================================================= */
-function myMember(){ return (team.members&&team.members[uid])||{name:me.name,pct:0,sharesExpenses:true,role:me.role,active:true}; }
-function isAdmin(){ const r=myMember().role||me.role; return r==='admin'||r==='admindriver'; }
-function activeMembers(){ return Object.entries(team.members||{}).filter(([,m])=>m.active!==false)
-  .map(([u,m])=>({uid:u,...m})); }
-
-function bootApp(){
-  const now=new Date(); viewY=now.getFullYear(); viewM=now.getMonth(); selDay=now.getDate();
-  $('verStamp').textContent=APP_VERSION;
-  $('hTeam').textContent=team.name||'Danial Taxi';
-  show('app');
-  loadMonthData().then(()=>{ selectDay(selDay); renderAll(); });
+function bootDriver(){
+  nowInit(); $('verStamp').textContent=APP_VERSION; $('hBiz').textContent=biz; $('footBiz').textContent=biz;
+  buildTabs(['entry','history','summary','money']);
+  const carP = me.carId ? db.collection('cars').doc(me.carId).get().then(d=>{ myCar=d.exists?{id:d.id,...d.data()}:null; }) : Promise.resolve(myCar=null);
+  Promise.all([carP, loadOwnerRoster()]).then(()=>{ show('app'); loadMyMonth().then(()=>{ selectDay(selDay); renderAllDriver(); }); });
+}
+function bootOwner(){
+  nowInit(); $('verStamp').textContent=APP_VERSION; $('hBiz').textContent=biz; $('footBiz').textContent=biz;
+  loadOwnerRoster().then(()=>{
+    const tabs=['cars','drivers','money']; if(me.carId){ tabs.unshift('entry'); }
+    buildTabs(tabs);
+    if(me.carId) db.collection('cars').doc(me.carId).get().then(d=>{ myCar=d.exists?{id:d.id,...d.data()}:null; });
+    show('app');
+    loadOwnerMonth().then(()=>{ if(me.carId){ loadMyMonth().then(()=>selectDay(selDay)); } renderAllOwner(); });
+  });
 }
 
-function entriesCol(){ return db.collection('teams').doc(teamId).collection('entries'); }
-function myDocId(date){ return uid+'_'+date; }
-
-function loadMonthData(){
-  const s=monthKey(viewY,viewM)+'-01', e=monthKey(viewY,viewM)+'-31';
-  return entriesCol().where('date','>=',s).where('date','<=',e).get().then(snap=>{
-    allMonth={}; monthEntries={};
-    snap.forEach(doc=>{ const d=doc.data(); if(!d.uid||!d.date) return;
-      (allMonth[d.uid]=allMonth[d.uid]||{})[d.date]=d;
-      if(d.uid===uid) monthEntries[d.date]=d; });
-  }).catch(err=>{ console.error(err); toast('⚠️ Could not load data','error'); });
+function loadOwnerRoster(){ // all users under this owner (drivers + owner)
+  return db.collection('users').where('ownerId','==',ownerId).get().then(snap=>{
+    allDrivers=[]; snap.forEach(d=>allDrivers.push({uid:d.id,...d.data()}));
+    return db.collection('cars').where('ownerId','==',ownerId).get();
+  }).then(snap=>{ cars=[]; snap.forEach(d=>cars.push({id:d.id,...d.data()})); cars.sort((a,b)=>(a.number||'').localeCompare(b.number||'')); })
+  .catch(e=>{ console.error(e); toast(fbErr(e,'load data'),'error'); });
 }
 
-function renderAll(){ syncMonthLabels(); renderCalendar(); renderHeader(); renderHistory(); renderSummary(); renderSettlement(); }
+/* =================== TABS =================== */
+const TABMETA={entry:['✍️','Entry'],history:['📅','History'],summary:['📊','Summary'],
+  cars:['🚗','Cars'],drivers:['🪪','Drivers'],money:['🤝','Money']};
+function buildTabs(list){ $('tabs').innerHTML=list.map((t,i)=>`<button class="tab-btn${i===0?' active':''}" data-tab="${t}"><span class="ic">${TABMETA[t][0]}</span>${TABMETA[t][1]}</button>`).join('');
+  document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+  ['entry','history','summary','cars','drivers','money'].forEach(p=>{ const el=$(p+'Panel'); if(el) el.classList.toggle('active',list[0]===p); });
+}
+function switchTab(tab){ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  ['entry','history','summary','cars','drivers','money'].forEach(p=>{ const el=$(p+'Panel'); if(el) el.classList.toggle('active',p===tab); });
+  if(tab==='money') loadMoney();
+  if(tab==='cars') renderCars();
+  if(tab==='drivers') renderDrivers();
+  window.scrollTo({top:0,behavior:'smooth'}); }
 
-function changeMonth(delta){ viewM+=delta; if(viewM<0){viewM=11;viewY--;} if(viewM>11){viewM=0;viewY++;}
-  selDay=1; loadMonthData().then(()=>{ selectDay(1); renderAll(); }); }
-['calPrev','hPrev','sPrev','setPrev'].forEach(id=>$(id).onclick=()=>changeMonth(-1));
-['calNext','hNext','sNext','setNext'].forEach(id=>$(id).onclick=()=>changeMonth(1));
+/* =================== HEADER =================== */
+function renderHeaderDriver(){
+  let inc=0,days=0; Object.values(monthEntries).forEach(d=>{ const c=computeDay(d); if(dayHasData(d)){inc+=c.total;days++;} });
+  const r=me.role==='owner'?'<span class="role-pill adm">Admin</span> <span class="role-pill drv">Driver</span>':'<span class="role-pill drv">Driver</span>';
+  $('hMeta').innerHTML=esc(me.name)+' · '+MONTHS[viewM]+' '+viewY+' '+r;
+  $('headerStats').innerHTML=`<div class="hstat"><div class="hstat-lbl">My income · ${MONTHS[viewM].slice(0,3)}</div><div class="hstat-val">${eur(inc)}</div></div>
+    <div class="hstat"><div class="hstat-lbl">Days worked</div><div class="hstat-val tnum">${days}</div></div>`;
+  const car=myCar?('🚗 '+myCar.number):'no car yet';
+  $('ringCap').textContent='days'; const goal=22; const pct=Math.min(100,days/goal*100);
+  $('ringFg').setAttribute('stroke-dasharray',`${pct} ${100-pct}`); $('ringPct').textContent=days;
+  $('hMeta').innerHTML+=` · ${car}`;
+}
+function renderHeaderOwner(){
+  const r='<span class="role-pill adm">Owner</span>'+(me.carId?' <span class="role-pill drv">Driver</span>':'');
+  $('hMeta').innerHTML=esc(me.name)+' · '+MONTHS[viewM]+' '+viewY+' '+r;
+  let inc=0; ownerEntries.filter(e=>e.ym===monthKey(viewY,viewM)).forEach(e=>inc+=num(e.income));
+  $('headerStats').innerHTML=`<div class="hstat"><div class="hstat-lbl">All income · ${MONTHS[viewM].slice(0,3)}</div><div class="hstat-val">${eur(inc)}</div></div>
+    <div class="hstat"><div class="hstat-lbl">Cars · Drivers</div><div class="hstat-val tnum">${cars.length} · ${allDrivers.filter(d=>d.role!=='owner').length}</div></div>`;
+  $('ringCap').textContent='cars'; $('ringPct').textContent=cars.length;
+  const pct=Math.min(100,cars.length*20); $('ringFg').setAttribute('stroke-dasharray',`${pct} ${100-pct}`);
+}
 
-function syncMonthLabels(){ const lbl=MONTHS[viewM]+' '+viewY;
-  ['calMonth','hMonth','sMonth','setMonth'].forEach(id=>{ if($(id))$(id).textContent=lbl; });
-  const r=myMember().role; const pill=r==='admin'?'<span class="role-pill adm">Admin</span>':
-    r==='admindriver'?'<span class="role-pill adm">Admin</span> <span class="role-pill drv">Driver</span>':
-    '<span class="role-pill drv">Driver</span>';
-  $('hMeta').innerHTML=escapeHtml(me.name)+' · '+lbl+' '+pill; }
+/* =================== DATA LOAD =================== */
+function entriesCol(){ return db.collection('entries'); }
+function loadMyMonth(){ return entriesCol().where('driverId','==',uid).get().then(snap=>{
+    monthEntries={}; snap.forEach(d=>{ const e=d.data(); if(e.ym===monthKey(viewY,viewM)) monthEntries[e.date]=e; });
+  }).catch(e=>{ console.error(e); toast(fbErr(e,'load entries'),'error'); }); }
+function loadOwnerMonth(){ return entriesCol().where('ownerId','==',ownerId).get().then(snap=>{
+    ownerEntries=[]; snap.forEach(d=>ownerEntries.push(d.data()));
+  }).catch(e=>{ console.error(e); toast(fbErr(e,'load entries'),'error'); }); }
 
-/* =========================================================
-   DAY COMPUTE
-========================================================= */
-function computeDay(d){
-  if(!d) return {uber:0,card:0,cash:0,tips:0,transfers:0,total:0,cashInHand:0,digital:0,expenses:0,km:0,net:0};
+function renderAllDriver(){ syncLabels(); renderHeaderDriver(); renderCalendar(); renderHistory(); renderSummary(); }
+function renderAllOwner(){ syncLabels(); renderHeaderOwner(); if(me.carId){ renderCalendar(); } renderCars(); renderDrivers(); }
+function syncLabels(){ const l=MONTHS[viewM]+' '+viewY; ['calMonth','hMonth','sMonth','setMonth'].forEach(id=>{ if($(id))$(id).textContent=l; }); }
+
+function changeMonth(delta){ viewM+=delta; if(viewM<0){viewM=11;viewY--;} if(viewM>11){viewM=0;viewY++;} selDay=1;
+  const p = isOwner()&&!me.carId ? loadOwnerMonth() : Promise.all([loadMyMonth(), isOwner()?loadOwnerMonth():Promise.resolve()]);
+  p.then(()=>{ if($('entryInner')&&!isOwner()||me.carId) selectDay(1); if(isOwner()) renderAllOwner(); else renderAllDriver();
+    if($('moneyPanel').classList.contains('active')) loadMoney(); }); }
+['calPrev','hPrev','sPrev','setPrev'].forEach(id=>{ const el=$(id); if(el) el.onclick=()=>changeMonth(-1); });
+['calNext','hNext','sNext','setNext'].forEach(id=>{ const el=$(id); if(el) el.onclick=()=>changeMonth(1); });
+
+/* =================== DAY COMPUTE =================== */
+function computeDay(d){ if(!d) return {uber:0,card:0,cash:0,tips:0,transfers:0,total:0,cashInHand:0,digital:0,expenses:0,km:0,net:0};
   const uber=num(d.uber),card=num(d.card),cash=num(d.cash),tips=num(d.tips);
-  let tf=0,tfCash=0,tfCard=0,km=0;
-  (d.transfers||[]).forEach(t=>{ const a=num(t.amount); tf+=a;
-    if(t.method==='card') tfCard+=a; else tfCash+=a;
-    km+=Math.max(0,num(t.end)-num(t.start)); });
+  let tf=0,tfCash=0,tfCard=0,km=0; (d.transfers||[]).forEach(t=>{ const a=num(t.amount); tf+=a;
+    if(t.method==='card')tfCard+=a; else tfCash+=a; km+=Math.max(0,num(t.end)-num(t.start)); });
   let exp=0; (d.expenses||[]).forEach(e=>exp+=num(e.amount));
   const total=uber+card+cash+tips+tf;
-  const cashInHand=cash+tfCash;
-  const digital=uber+card+tips+tfCard;
-  return {uber,card,cash,tips,transfers:tf,total,cashInHand,digital,expenses:exp,km,net:total-exp};
-}
+  return {uber,card,cash,tips,transfers:tf,total,cashInHand:cash+tfCash,digital:uber+card+tips+tfCard,expenses:exp,km,net:total-exp}; }
 function dayHasData(d){ const c=computeDay(d); return c.total>0||c.expenses>0||(d&&(d.transfers||[]).length); }
 
-/* =========================================================
-   HEADER
-========================================================= */
-function renderHeader(){
-  let inc=0,days=0; Object.values(monthEntries).forEach(d=>{ const c=computeDay(d);
-    if(dayHasData(d)){ inc+=c.total; days++; } });
-  $('hIncome').textContent=eur(inc).slice(1);
-  $('hDays').textContent=days; $('hDaysSub').textContent=days===1?'day':'days';
-  const goal=num(team.target)||6000; const pct=Math.min(100,goal?inc/goal*100:0);
-  $('ringFg').setAttribute('stroke-dasharray',`${pct} ${100-pct}`); $('ringPct').textContent=Math.round(pct)+'%';
-}
-
-/* =========================================================
-   CALENDAR
-========================================================= */
-function renderCalendar(){
-  const grid=$('calGrid'); grid.innerHTML='';
+/* =================== CALENDAR + ENTRY =================== */
+function canEnter(){ return !!me.carId || !!myCar; }
+function renderCalendar(){ const grid=$('calGrid'); if(!grid) return; grid.innerHTML='';
   ['S','M','T','W','T','F','S'].forEach(h=>{ const e=document.createElement('div'); e.className='cal-h'; e.textContent=h; grid.appendChild(e); });
-  const first=new Date(viewY,viewM,1).getDay();
-  const days=new Date(viewY,viewM+1,0).getDate();
-  const today=new Date(); const isThisMonth=today.getFullYear()===viewY&&today.getMonth()===viewM;
+  const first=new Date(viewY,viewM,1).getDay(), days=new Date(viewY,viewM+1,0).getDate();
+  const today=new Date(), tm=today.getFullYear()===viewY&&today.getMonth()===viewM;
   for(let i=0;i<first;i++){ const e=document.createElement('div'); e.className='cal-d muted'; grid.appendChild(e); }
-  for(let d=1;d<=days;d++){
-    const el=document.createElement('div'); el.className='cal-d';
+  for(let d=1;d<=days;d++){ const el=document.createElement('div'); el.className='cal-d';
     const entry=monthEntries[dateKey(viewY,viewM,d)];
-    if(dayHasData(entry)){ const c=computeDay(entry); el.classList.add('logged');
-      el.innerHTML=`${d}<span class="cal-amt">€${Math.round(c.total)}</span>`; }
+    if(dayHasData(entry)){ const c=computeDay(entry); el.classList.add('logged'); el.innerHTML=`${d}<span class="cal-amt">€${Math.round(c.total)}</span>`; }
     else el.textContent=d;
-    if(isThisMonth&&d===today.getDate()) el.classList.add('today');
+    if(tm&&d===today.getDate()) el.classList.add('today');
     if(d===selDay) el.classList.add('selected');
-    el.onclick=()=>{ selDay=d; renderCalendar(); selectDay(d); };
-    grid.appendChild(el);
-  }
-}
+    el.onclick=()=>{ selDay=d; selectDay(d); };
+    grid.appendChild(el); } }
 
-/* =========================================================
-   ENTRY FORM
-========================================================= */
 function curKey(){ return dateKey(viewY,viewM,selDay); }
-function selectDay(d){
-  selDay=d;
-  const dt=new Date(viewY,viewM,d); const today=new Date();
-  const isToday=dt.toDateString()===today.toDateString();
+function selectDay(d){ selDay=d;
+  const noCar=$('noCarMsg');
+  if(!canEnter()){ $('entryInner').style.display='none'; noCar.style.display='block';
+    noCar.innerHTML=`<div class="empty-hint">🚗 Your admin hasn’t assigned you to a car yet.<br>Ask them to assign you, then you can log your days.</div>`; return; }
+  $('entryInner').style.display='block'; noCar.style.display='none';
+  const dt=new Date(viewY,viewM,d), today=new Date(), isToday=dt.toDateString()===today.toDateString();
   $('selDate').textContent=isToday?'Today':`${d} ${MONTHS[viewM].slice(0,3)}`;
   $('selMeta').textContent=`${DOW[dt.getDay()]}, ${d} ${MONTHS[viewM]}`;
   const stored=monthEntries[curKey()];
-  $('selPill').innerHTML = stored&&dayHasData(stored) ? '<span class="pill-saved">✓ Saved</span>'
-    : isToday ? '<span class="pill-today">Today</span>' : '';
-  currentDay = stored ? JSON.parse(JSON.stringify(stored)) : blankDay();
-  if(!currentDay.transfers) currentDay.transfers=[];
-  if(!currentDay.expenses) currentDay.expenses=[];
-  loadDayIntoForm();
-  renderCalendar();
-}
-function loadDayIntoForm(){
-  $('fUber').value=currentDay.uber||''; $('fCard').value=currentDay.card||'';
+  $('selPill').innerHTML=stored&&dayHasData(stored)?'<span class="pill-saved">✓ Saved</span>':isToday?'<span class="pill-today">Today</span>':'';
+  currentDay=stored?JSON.parse(JSON.stringify(stored)):blankDay();
+  currentDay.transfers=currentDay.transfers||[]; currentDay.expenses=currentDay.expenses||[];
+  loadDayIntoForm(); renderCalendar(); }
+function loadDayIntoForm(){ $('fUber').value=currentDay.uber||''; $('fCard').value=currentDay.card||'';
   $('fCash').value=currentDay.cash||''; $('fTips').value=currentDay.tips||'';
   document.querySelectorAll('#shiftSeg button').forEach(b=>b.classList.toggle('on',b.dataset.shift===currentDay.shift));
-  renderTransfers(); renderExpenses(); recalc(); setAutoSave('','');
-}
-function recalc(){
-  currentDay.uber=num($('fUber').value); currentDay.card=num($('fCard').value);
-  currentDay.cash=num($('fCash').value); currentDay.tips=num($('fTips').value);
-  const c=computeDay(currentDay);
-  $('b1').textContent=eur(c.uber).slice(1); $('b2').textContent=eur(c.card).slice(1);
-  $('b3').textContent=eur(c.cash).slice(1); $('b4').textContent=eur(c.transfers).slice(1);
-  $('b5').textContent=eur(c.tips).slice(1); $('bTotal').textContent=eur(c.total).slice(1);
-  $('bCash').textContent=eur(c.cashInHand).slice(1); $('bExp').textContent=eur(c.expenses).slice(1);
-  $('bNet').textContent=eur(c.net).slice(1);
-}
+  renderTransfers(); renderExpenses(); recalc(); setAutoSave('',''); }
+function recalc(){ currentDay.uber=num($('fUber').value); currentDay.card=num($('fCard').value);
+  currentDay.cash=num($('fCash').value); currentDay.tips=num($('fTips').value); const c=computeDay(currentDay);
+  $('b1').textContent=eur(c.uber).slice(1); $('b2').textContent=eur(c.card).slice(1); $('b3').textContent=eur(c.cash).slice(1);
+  $('b4').textContent=eur(c.transfers).slice(1); $('b5').textContent=eur(c.tips).slice(1); $('bTotal').textContent=eur(c.total).slice(1);
+  $('bCash').textContent=eur(c.cashInHand).slice(1); $('bExp').textContent=eur(c.expenses).slice(1); $('bNet').textContent=eur(c.net).slice(1); }
 ['fUber','fCard','fCash','fTips'].forEach(id=>$(id).addEventListener('input',()=>{ recalc(); scheduleSave(); }));
-document.querySelectorAll('#shiftSeg button').forEach(b=>b.onclick=()=>{
-  currentDay.shift=b.dataset.shift;
+document.querySelectorAll('#shiftSeg button').forEach(b=>b.onclick=()=>{ currentDay.shift=b.dataset.shift;
   document.querySelectorAll('#shiftSeg button').forEach(x=>x.classList.toggle('on',x===b)); scheduleSave(); });
 
-/* transfers */
 let tfMethod='cash';
 document.querySelectorAll('#tfMethod button').forEach(b=>b.onclick=()=>{ tfMethod=b.dataset.m;
   document.querySelectorAll('#tfMethod button').forEach(x=>x.classList.toggle('on',x===b)); });
 function updMeter(){ const s=num($('mStart').value),e=num($('mEnd').value); $('mTotal').textContent=Math.max(0,e-s).toFixed(1); }
 $('mStart').addEventListener('input',updMeter); $('mEnd').addEventListener('input',updMeter);
-$('addTf').onclick=()=>{
-  const amt=num($('tfAmt').value), s=num($('mStart').value), e=num($('mEnd').value);
+$('addTf').onclick=()=>{ const amt=num($('tfAmt').value),s=num($('mStart').value),e=num($('mEnd').value);
   if(amt<=0) return toast('Enter the transfer amount','error');
   currentDay.transfers.push({amount:amt,start:s,end:e,method:tfMethod});
-  $('tfAmt').value=''; $('mStart').value=''; $('mEnd').value=''; updMeter();
-  renderTransfers(); recalc(); flushSave(); toast('🚗 Transfer added','success');
-};
-function renderTransfers(){
-  const list=$('tfList'); const t=currentDay.transfers||[];
-  $('tfCount').textContent=t.length+(t.length===1?' trip':' trips');
-  if(!t.length){ list.innerHTML='<div class="empty-list">No transfers yet</div>'; return; }
-  list.innerHTML=t.map((x,i)=>{ const km=Math.max(0,num(x.end)-num(x.start));
-    return `<div class="item"><div><div class="ti">${x.method==='card'?'💳':'💵'} ${eur(num(x.amount))}</div>
-      <div class="su">${km>0?km.toFixed(1)+' km · ':''}${x.method}</div></div>
-      <div class="item-r"><button class="btn-del" onclick="delTf(${i})">✕</button></div></div>`; }).join('');
-}
+  $('tfAmt').value='';$('mStart').value='';$('mEnd').value='';updMeter(); renderTransfers(); recalc(); flushSave(); toast('🚗 Transfer added','success'); };
+function renderTransfers(){ const t=currentDay.transfers||[]; $('tfCount').textContent=t.length+(t.length===1?' trip':' trips');
+  $('tfList').innerHTML=t.length?t.map((x,i)=>{ const km=Math.max(0,num(x.end)-num(x.start));
+    return `<div class="item"><div><div class="ti">${x.method==='card'?'💳':'💵'} ${eur(num(x.amount))}</div><div class="su">${km>0?km.toFixed(1)+' km · ':''}${x.method}</div></div><div class="item-r"><button class="btn-del" onclick="delTf(${i})">✕</button></div></div>`;
+  }).join(''):'<div class="empty-list">No transfers yet</div>'; }
 window.delTf=i=>{ currentDay.transfers.splice(i,1); renderTransfers(); recalc(); flushSave(); };
-
-/* expenses */
-$('addEx').onclick=()=>{
-  const amt=num($('exAmt').value); if(amt<=0) return toast('Enter the expense amount','error');
+$('addEx').onclick=()=>{ const amt=num($('exAmt').value); if(amt<=0) return toast('Enter the expense amount','error');
   currentDay.expenses.push({type:$('exType').value,amount:amt,note:$('exNote').value.trim()});
-  $('exAmt').value=''; $('exNote').value='';
-  renderExpenses(); recalc(); flushSave(); toast('🧾 Expense added','success');
-};
-function renderExpenses(){
-  const list=$('exList'); const x=currentDay.expenses||[];
-  $('exCount').textContent=x.length+(x.length===1?' item':' items');
-  if(!x.length){ list.innerHTML='<div class="empty-list">No expenses yet</div>'; return; }
-  list.innerHTML=x.map((e,i)=>`<div class="item" style="border-left-color:var(--red)"><div>
-    <div class="ti">${escapeHtml(e.type)}</div>${e.note?`<div class="su">${escapeHtml(e.note)}</div>`:''}</div>
-    <div class="item-r"><span class="amt" style="color:#f87171">${eur(num(e.amount))}</span>
-    <button class="btn-del" onclick="delEx(${i})">✕</button></div></div>`).join('');
-}
+  $('exAmt').value='';$('exNote').value=''; renderExpenses(); recalc(); flushSave(); toast('🧾 Expense added','success'); };
+function renderExpenses(){ const x=currentDay.expenses||[]; $('exCount').textContent=x.length+(x.length===1?' item':' items');
+  $('exList').innerHTML=x.length?x.map((e,i)=>`<div class="item" style="border-left-color:var(--red)"><div><div class="ti">${esc(e.type)}</div>${e.note?`<div class="su">${esc(e.note)}</div>`:''}</div><div class="item-r"><span class="amt" style="color:#f87171">${eur(num(e.amount))}</span><button class="btn-del" onclick="delEx(${i})">✕</button></div></div>`).join(''):'<div class="empty-list">No expenses yet</div>'; }
 window.delEx=i=>{ currentDay.expenses.splice(i,1); renderExpenses(); recalc(); flushSave(); };
 
-/* save */
 function setAutoSave(cls,txt){ const el=$('autoSave'); el.className='autosave '+cls; el.textContent=txt; }
 function scheduleSave(){ setAutoSave('saving','💾 Saving…'); clearTimeout(saveTimer); saveTimer=setTimeout(()=>persistDay(),900); }
 function flushSave(cb){ clearTimeout(saveTimer); persistDay(cb); }
-function persistDay(cb){
-  recalc(); const c=computeDay(currentDay); const date=curKey();
-  const rec={ uid, driverName:me.name, date, shift:currentDay.shift||'',
-    uber:num(currentDay.uber), card:num(currentDay.card), cash:num(currentDay.cash), tips:num(currentDay.tips),
-    transfers:currentDay.transfers||[], expenses:currentDay.expenses||[],
-    income:c.total, cashInHand:c.cashInHand, digital:c.digital, expenseTotal:c.expenses, kmTotal:c.km,
-    updatedAt:Date.now() };
-  if(!dayHasData(currentDay)){
-    entriesCol().doc(myDocId(date)).delete().catch(()=>{}); delete monthEntries[date]; delete (allMonth[uid]||{})[date];
-    setAutoSave('','—'); afterPersist(); if(cb)cb(); return;
-  }
-  entriesCol().doc(myDocId(date)).set(rec).then(()=>{
-    monthEntries[date]=rec; (allMonth[uid]=allMonth[uid]||{})[date]=rec;
+function persistDay(cb){ if(!canEnter()) return; recalc(); const c=computeDay(currentDay), date=curKey();
+  const carId=me.carId||(myCar&&myCar.id)||null;
+  const rec={ driverId:uid, driverName:me.name, ownerId, carId, date, ym:monthKey(viewY,viewM), shift:currentDay.shift||'',
+    uber:num(currentDay.uber),card:num(currentDay.card),cash:num(currentDay.cash),tips:num(currentDay.tips),
+    transfers:currentDay.transfers||[],expenses:currentDay.expenses||[],
+    income:c.total,cashInHand:c.cashInHand,digital:c.digital,expenseTotal:c.expenses,kmTotal:c.km,updatedAt:Date.now() };
+  const id=uid+'_'+date;
+  if(!dayHasData(currentDay)){ entriesCol().doc(id).delete().catch(()=>{}); delete monthEntries[date];
+    ownerEntries=ownerEntries.filter(e=>!(e.driverId===uid&&e.date===date)); setAutoSave('','—'); afterPersist(); if(cb)cb(); return; }
+  withTimeout(entriesCol().doc(id).set(rec)).then(()=>{ monthEntries[date]=rec;
+    ownerEntries=ownerEntries.filter(e=>!(e.driverId===uid&&e.date===date)); ownerEntries.push(rec);
     setAutoSave('saved','✓ Saved'); afterPersist(); if(cb)cb();
-  }).catch(e=>{ console.error(e); setAutoSave('','⚠️ Save failed'); toast('⚠️ Could not save','error'); });
-}
-function afterPersist(){
-  const stored=monthEntries[curKey()];
-  $('selPill').innerHTML = stored&&dayHasData(stored) ? '<span class="pill-saved">✓ Saved</span>'
-    : (new Date(viewY,viewM,selDay).toDateString()===new Date().toDateString()?'<span class="pill-today">Today</span>':'');
-  renderCalendar(); renderHeader(); renderHistory(); renderSummary(); renderSettlement();
-}
+  }).catch(e=>{ setAutoSave('','⚠️ Save failed'); toast(fbErr(e,'save'),'error'); }); }
+function afterPersist(){ const stored=monthEntries[curKey()];
+  $('selPill').innerHTML=stored&&dayHasData(stored)?'<span class="pill-saved">✓ Saved</span>':(new Date(viewY,viewM,selDay).toDateString()===new Date().toDateString()?'<span class="pill-today">Today</span>':'');
+  renderCalendar(); if(isOwner()) renderHeaderOwner(); else renderHeaderDriver(); renderHistory(); renderSummary(); }
 $('saveBtn').onclick=()=>flushSave(()=>toast('💾 Day saved','gold'));
 
-/* =========================================================
-   HISTORY
-========================================================= */
-function renderHistory(){
-  const keys=Object.keys(monthEntries).filter(k=>dayHasData(monthEntries[k])).sort().reverse();
+/* =================== HISTORY + SUMMARY =================== */
+function emptyState(i,t,s){ return `<div class="empty"><div class="ico">${i}</div><div class="et">${t}</div><div class="es">${s}</div></div>`; }
+function renderHistory(){ const keys=Object.keys(monthEntries).filter(k=>dayHasData(monthEntries[k])).sort().reverse();
   let tot=0; keys.forEach(k=>tot+=computeDay(monthEntries[k]).total);
-  $('hsTotal').textContent=eur(tot).slice(1); $('hsDays').textContent=keys.length;
-  const list=$('histList');
-  if(!keys.length){ list.innerHTML=emptyState('📭','No entries yet','Log a day in the Entry tab to see it here.'); return; }
-  list.innerHTML=keys.map(k=>{ const d=monthEntries[k],c=computeDay(d); const day=parseInt(k.slice(-2),10);
-    const dt=new Date(viewY,viewM,day);
+  if($('hsTotal')){ $('hsTotal').textContent=eur(tot).slice(1); $('hsDays').textContent=keys.length; }
+  const list=$('histList'); if(!list) return;
+  if(!keys.length){ list.innerHTML=emptyState('📭','No entries yet','Log a day in the Entry tab.'); return; }
+  list.innerHTML=keys.map(k=>{ const d=monthEntries[k],c=computeDay(d),day=parseInt(k.slice(-2),10),dt=new Date(viewY,viewM,day);
     const sh=d.shift==='morning'?'🌅':d.shift==='night'?'🌙':'';
-    return `<div class="hrow" onclick="jumpTo(${day})">
-      <div class="hrow-date"><div class="hrow-day">${day}</div><div class="hrow-dow">${DOW[dt.getDay()].slice(0,3)}</div></div>
-      <div class="hrow-mid"><div class="hrow-tot">${eur(c.total)} ${sh}</div>
-        <div class="hrow-tags"><span class="tag cash">💵 ${eur(c.cashInHand)}</span>
-        ${c.expenses>0?`<span class="tag exp">🧾 ${eur(c.expenses)}</span>`:''}
-        ${c.km>0?`<span class="tag km">📍 ${c.km.toFixed(0)}km</span>`:''}</div></div>
-      <div class="hrow-go">›</div></div>`; }).join('');
-}
+    return `<div class="hrow" onclick="jumpTo(${day})"><div class="hrow-date"><div class="hrow-day">${day}</div><div class="hrow-dow">${DOW[dt.getDay()].slice(0,3)}</div></div>
+      <div class="hrow-mid"><div class="hrow-tot">${eur(c.total)} ${sh}</div><div class="hrow-tags"><span class="tag cash">💵 ${eur(c.cashInHand)}</span>${c.expenses>0?`<span class="tag exp">🧾 ${eur(c.expenses)}</span>`:''}${c.km>0?`<span class="tag km">📍 ${c.km.toFixed(0)}km</span>`:''}</div></div><div class="hrow-go">›</div></div>`;
+  }).join(''); }
 window.jumpTo=d=>{ switchTab('entry'); selDay=d; selectDay(d); window.scrollTo({top:0,behavior:'smooth'}); };
-function emptyState(ico,t,s){ return `<div class="empty"><div class="ico">${ico}</div><div class="et">${t}</div><div class="es">${s}</div></div>`; }
-
-/* =========================================================
-   SUMMARY (personal)
-========================================================= */
-function renderSummary(){
+function renderSummary(){ const body=$('sumBody'); if(!body) return;
   const keys=Object.keys(monthEntries).filter(k=>dayHasData(monthEntries[k]));
-  const body=$('sumBody');
-  if(!keys.length){ body.innerHTML=emptyState('📊','Nothing to summarise','Log some days and your stats appear here.'); return; }
+  if(!keys.length){ body.innerHTML=emptyState('📊','Nothing yet','Log some days to see stats.'); return; }
   let inc=0,uber=0,card=0,cash=0,tips=0,tf=0,exp=0,km=0,cih=0,best=0,bestDay='';
-  keys.forEach(k=>{ const c=computeDay(monthEntries[k]); inc+=c.total; uber+=c.uber; card+=c.card;
-    cash+=c.cash; tips+=c.tips; tf+=c.transfers; exp+=c.expenses; km+=c.km; cih+=c.cashInHand;
-    if(c.total>best){best=c.total;bestDay=k.slice(-2);} });
-  const days=keys.length, avg=inc/days, max=Math.max(uber,card,cash,tips,tf,1);
-  const bar=(lbl,val,emo)=>`<div class="bar-row"><div class="bar-top"><span class="bar-lbl">${emo} ${lbl}</span>
-    <span class="bar-amt">${eur(val)}</span></div><div class="bar-track"><div class="bar-fill" style="width:${val/max*100}%"></div></div></div>`;
-  body.innerHTML=`
-    <div class="kpi-grid">
-      <div class="kpi span"><div class="kpi-lbl">📈 My income</div><div class="kpi-val">${eur(inc)}</div></div>
-      <div class="kpi"><div class="kpi-lbl">📅 Avg / day</div><div class="kpi-val">${eur(avg)}</div></div>
-      <div class="kpi"><div class="kpi-lbl">🏆 Best day</div><div class="kpi-val">${eur(best)}<br><small>${bestDay?'on the '+bestDay:''}</small></div></div>
-      <div class="kpi"><div class="kpi-lbl">💵 Cash in hand</div><div class="kpi-val">${eur(cih)}</div></div>
-      <div class="kpi"><div class="kpi-lbl">🧾 Expenses</div><div class="kpi-val" style="color:#f87171">${eur(exp)}</div></div>
-    </div>
-    <div class="card"><div class="s-title">💰 Income by source</div>
-      ${bar('Uber / Bolt',uber,'🚕')}${bar('Card',card,'💳')}${bar('Cash',cash,'💵')}${bar('Transfers',tf,'🚗')}${bar('Tips',tips,'🎁')}
-    </div>
-    <div class="card"><div class="s-title">📍 Distance</div>
-      <div class="kpi" style="grid-column:1/-1"><div class="kpi-lbl">Total km this month</div><div class="kpi-val">${km.toFixed(1)} <small>km</small></div></div>
-    </div>`;
-}
+  keys.forEach(k=>{ const c=computeDay(monthEntries[k]); inc+=c.total;uber+=c.uber;card+=c.card;cash+=c.cash;tips+=c.tips;tf+=c.transfers;exp+=c.expenses;km+=c.km;cih+=c.cashInHand; if(c.total>best){best=c.total;bestDay=k.slice(-2);} });
+  const days=keys.length,avg=inc/days,max=Math.max(uber,card,cash,tips,tf,1);
+  const bar=(l,v,e)=>`<div class="bar-row"><div class="bar-top"><span class="bar-lbl">${e} ${l}</span><span class="bar-amt">${eur(v)}</span></div><div class="bar-track"><div class="bar-fill" style="width:${v/max*100}%"></div></div></div>`;
+  body.innerHTML=`<div class="kpi-grid">
+    <div class="kpi span"><div class="kpi-lbl">📈 My income</div><div class="kpi-val">${eur(inc)}</div></div>
+    <div class="kpi"><div class="kpi-lbl">📅 Avg / day</div><div class="kpi-val">${eur(avg)}</div></div>
+    <div class="kpi"><div class="kpi-lbl">🏆 Best day</div><div class="kpi-val">${eur(best)}<br><small>${bestDay?'the '+bestDay:''}</small></div></div>
+    <div class="kpi"><div class="kpi-lbl">💵 Cash in hand</div><div class="kpi-val">${eur(cih)}</div></div>
+    <div class="kpi"><div class="kpi-lbl">🧾 Expenses</div><div class="kpi-val" style="color:#f87171">${eur(exp)}</div></div></div>
+    <div class="card"><div class="s-title">💰 Income by source</div>${bar('Uber / Bolt',uber,'🚕')}${bar('Card',card,'💳')}${bar('Cash',cash,'💵')}${bar('Transfers',tf,'🚗')}${bar('Tips',tips,'🎁')}</div>
+    <div class="card"><div class="s-title">📍 Distance</div><div class="kpi" style="grid-column:1/-1"><div class="kpi-lbl">Total km</div><div class="kpi-val">${km.toFixed(1)} <small>km</small></div></div></div>`; }
 
-/* =========================================================
-   SETTLEMENT (team-wide)
-========================================================= */
-function computeSettlement(){
-  const members=activeMembers();
-  let totalIncome=0, pooledExp=0, totalExp=0;
-  const agg={};
-  members.forEach(m=>{ const days=allMonth[m.uid]||{}; let inc=0,ex=0;
-    Object.values(days).forEach(d=>{ inc+=num(d.income); ex+=num(d.expenseTotal); });
-    agg[m.uid]={inc,ex}; totalIncome+=inc; totalExp+=ex; if(m.sharesExpenses!==false) pooledExp+=ex; });
-  const net=totalIncome-pooledExp;
-  const totalPct=members.reduce((s,m)=>s+num(m.pct),0);
-  const rows=members.map(m=>{ const a=agg[m.uid]; const share=net*(num(m.pct)/100);
-    const holding=m.sharesExpenses!==false ? (a.inc-a.ex) : a.inc;  // non-sharer absorbs own expense personally
-    const pos=holding-share;  // >0 holds too much (owes), <0 owed
-    return {uid:m.uid,name:m.name,pct:num(m.pct),sharesExpenses:m.sharesExpenses!==false,role:m.role,
-      income:a.inc,expenses:a.ex,share,holding,pos}; });
-  const transfers=minimizeTransfers(rows);
-  return {members,rows,totalIncome,totalExp,pooledExp,net,totalPct,transfers};
-}
-function minimizeTransfers(rows){
-  const debt=rows.filter(r=>r.pos>0.01).map(r=>({name:r.name,amt:r.pos})).sort((a,b)=>b.amt-a.amt);
+/* =================== CARS =================== */
+function driversOfCar(carId){ return allDrivers.filter(d=>d.carId===carId); }
+function pctFor(car,driverUid,n){ if(!car||car.splitMode!=='custom') return n>0?100/n:0;
+  const s=(car.shares||{})[driverUid]; return (s==null)?(n>0?100/n:0):num(s); }
+
+function renderCars(){ const list=$('carsList'); if(!list) return;
+  if(!cars.length){ list.innerHTML=`<div class="empty-hint">🚗 No cars yet.<br>Add your first car, then create drivers and assign them.</div>`; return; }
+  list.innerHTML=cars.map(car=>{ const ds=driversOfCar(car.id), n=ds.length;
+    const chips=ds.length?ds.map(d=>`<span class="dchip">${esc(d.name)} <span class="pc">${Math.round(pctFor(car,d.uid,n))}%</span></span>`).join(''):'<span class="dchip empty">No drivers assigned</span>';
+    return `<div class="car-card"><div class="car-head"><span class="car-num">🚗 ${esc(car.number)}</span>
+      <span class="car-meta">${n} driver${n===1?'':'s'} · ${car.splitMode==='custom'?'custom split':'even split'}</span>
+      <button class="car-edit" onclick="editCar('${car.id}')">⚙️ Edit</button></div>
+      <div class="car-drivers">${chips}</div></div>`; }).join(''); }
+
+$('addCarBtn')&&($('addCarBtn').onclick=()=>{ openSheet(`<div class="modal-t">🚗 Add a car</div>
+  <div class="fld"><label class="lbl">Car number / plate</label><input type="text" id="shCarNum" class="in" placeholder="e.g. 1234-ABC" style="text-transform:uppercase"></div>
+  <div class="modal-acts"><button class="modal-btn cancel" onclick="closeSheet()">Cancel</button><button class="modal-btn confirm gold" onclick="saveNewCar()">Add car</button></div>`);
+  setTimeout(()=>$('shCarNum').focus(),100); });
+window.saveNewCar=()=>{ const number=($('shCarNum').value||'').trim().toUpperCase(); if(!number) return toast('Enter a car number','error');
+  withTimeout(db.collection('cars').add({ownerId,number,splitMode:'even',shares:{},created:Date.now()})).then(ref=>{
+    cars.push({id:ref.id,number,splitMode:'even',shares:{},ownerId}); cars.sort((a,b)=>(a.number||'').localeCompare(b.number||''));
+    closeSheet(); toast('🚗 Car added','gold'); renderCars(); renderHeaderOwner();
+  }).catch(e=>toast(fbErr(e,'add car'),'error')); };
+
+window.editCar=cid=>{ const car=cars.find(c=>c.id===cid); if(!car) return; const ds=driversOfCar(cid), n=ds.length;
+  const custom=car.splitMode==='custom';
+  const rows=ds.length?ds.map(d=>`<div class="mem-row"><div class="mem-top"><div class="mem-av">${initials(d.name)}</div>
+      <div style="flex:1"><div class="mem-nm">${esc(d.name)}</div><div class="mem-sub">${esc(d.email||'')}</div></div></div>
+      <div class="mem-ctrl"><div class="pct-fld"><span class="pl">Share</span>
+      <input type="number" id="cs_${d.uid}" value="${Math.round(pctFor(car,d.uid,n))}" min="0" max="100" ${custom?'':'disabled'}><span class="pc">%</span></div></div></div>`).join('')
+    :'<div class="empty-list">No drivers assigned. Assign them from the Drivers tab.</div>';
+  openSheet(`<div class="modal-t">🚗 ${esc(car.number)}</div>
+    <div class="modal-scroll">
+    <div class="fld"><label class="lbl">Car number / plate</label><input type="text" id="shCarNum" class="in" value="${esc(car.number)}" style="text-transform:uppercase"></div>
+    <label class="lbl">How to split this car’s profit</label>
+    <div class="split-pick"><button id="spEven" class="${custom?'':'on'}" onclick="pickSplit(false)">⚖️ Even (50/50)</button>
+      <button id="spCustom" class="${custom?'on':''}" onclick="pickSplit(true)">✏️ Custom %</button></div>
+    <div id="shareRows">${rows}</div>
+    </div>
+    <div class="modal-acts"><button class="modal-btn cancel" onclick="askDeleteCar('${cid}')" style="color:#fca5a5">🗑️ Delete</button>
+      <button class="modal-btn confirm gold" onclick="saveCar('${cid}')">Save</button></div>`); };
+let _pendCustom=null;
+window.pickSplit=cust=>{ _pendCustom=cust; $('spEven').classList.toggle('on',!cust); $('spCustom').classList.toggle('on',cust);
+  document.querySelectorAll('#shareRows input').forEach(i=>i.disabled=!cust); };
+window.saveCar=cid=>{ const car=cars.find(c=>c.id===cid); const number=($('shCarNum').value||'').trim().toUpperCase();
+  const custom=_pendCustom==null?(car.splitMode==='custom'):_pendCustom; const shares={};
+  if(custom){ let sum=0; driversOfCar(cid).forEach(d=>{ const v=num(($('cs_'+d.uid)||{}).value); shares[d.uid]=v; sum+=v; });
+    if(Math.abs(sum-100)>0.5) return toast('Custom shares must total 100% (now '+sum+'%)','error'); }
+  const upd={number,splitMode:custom?'custom':'even',shares}; _pendCustom=null;
+  withTimeout(db.collection('cars').doc(cid).set(upd,{merge:true})).then(()=>{ Object.assign(car,upd);
+    cars.sort((a,b)=>(a.number||'').localeCompare(b.number||'')); closeSheet(); toast('✓ Car saved','gold'); renderCars();
+  }).catch(e=>toast(fbErr(e,'save car'),'error')); };
+window.askDeleteCar=cid=>{ const car=cars.find(c=>c.id===cid); const ds=driversOfCar(cid);
+  confirmModal({ico:'🗑️',title:'Delete car '+car.number+'?',msg:ds.length?('Its '+ds.length+' driver(s) will be unassigned. Past entries are kept.'):'Past entries are kept.',
+    confirm:'Delete',onConfirm:()=>{ const ups=ds.map(d=>db.collection('users').doc(d.uid).set({carId:null},{merge:true}));
+      Promise.all([db.collection('cars').doc(cid).delete(),...ups]).then(()=>{ cars=cars.filter(c=>c.id!==cid);
+        ds.forEach(d=>{ const m=allDrivers.find(x=>x.uid===d.uid); if(m)m.carId=null; });
+        closeSheet(); toast('Car deleted','success'); renderCars(); renderDrivers(); renderHeaderOwner();
+      }).catch(e=>toast(fbErr(e,'delete car'),'error')); } }); };
+
+/* =================== DRIVERS =================== */
+function renderDrivers(){ const list=$('driversList'); if(!list) return;
+  const drivers=allDrivers.filter(d=>d.role!=='owner');
+  const ownerSelf=allDrivers.find(d=>d.uid===ownerId);
+  let html='';
+  if(ownerSelf){ const carName=ownerSelf.carId?(cars.find(c=>c.id===ownerSelf.carId)||{}).number:null;
+    html+=`<div class="drv-card"><div class="mem-av">${initials(ownerSelf.name)}</div>
+      <div class="drv-info"><div class="drv-name">${esc(ownerSelf.name)} <span class="role-pill adm">You · Owner</span></div>
+      <div class="drv-sub">${carName?('🚗 '+esc(carName)):'Not driving — tap to assign a car if you drive'}</div></div>
+      <button class="drv-go" onclick="assignSheet('${ownerId}')">${carName?'Change':'Drive?'}</button></div>`; }
+  if(!drivers.length){ html+=`<div class="empty-hint">🪪 No drivers yet.<br>Create a driver login and share it with them on WhatsApp.</div>`; }
+  else html+=drivers.map(d=>{ const carName=d.carId?(cars.find(c=>c.id===d.carId)||{}).number:null;
+    return `<div class="drv-card"><div class="mem-av">${initials(d.name)}</div>
+      <div class="drv-info"><div class="drv-name">${esc(d.name)}</div><div class="drv-sub">📧 ${esc(d.email||'')} · ${carName?('🚗 '+esc(carName)):'<span style="color:#fca5a5">no car</span>'}</div></div>
+      <button class="drv-go" onclick="assignSheet('${d.uid}')">Assign</button></div>`; }).join('');
+  list.innerHTML=html; }
+
+$('addDrvBtn')&&($('addDrvBtn').onclick=()=>{ openSheet(`<div class="modal-t">🪪 Create driver login</div>
+  <div class="fld"><label class="lbl">Driver name</label><input type="text" id="ndName" class="in" placeholder="e.g. Ali Khan"></div>
+  <div class="fld"><label class="lbl">Email (their login)</label><input type="email" id="ndEmail" class="in" placeholder="ali@example.com" inputmode="email"></div>
+  <div class="fld"><label class="lbl">Password</label><input type="text" id="ndPass" class="in" placeholder="min 6 characters">
+    <div class="hint">They’ll sign in with this email + password. You can share it on WhatsApp next.</div></div>
+  <div id="ndErr" class="err-msg"></div>
+  <div class="modal-acts"><button class="modal-btn cancel" onclick="closeSheet()">Cancel</button>
+    <button class="modal-btn confirm gold" id="ndBtn" onclick="createDriver()">Create login</button></div>`);
+  setTimeout(()=>$('ndName').focus(),100); });
+function ndErr(m){ const e=$('ndErr'); if(e){ e.textContent=m; e.style.display=m?'block':'none'; } }
+window.createDriver=()=>{ const name=($('ndName').value||'').trim(), email=($('ndEmail').value||'').trim(), pass=$('ndPass').value;
+  if(!name) return ndErr('Enter the driver’s name.');
+  if(!EMAILRE.test(email)) return ndErr('Enter a valid email.');
+  if(!pass||pass.length<6) return ndErr('Password must be at least 6 characters.');
+  const btn=$('ndBtn'); btn.disabled=true; btn.style.opacity='.6'; btn.textContent='Creating…'; ndErr('');
+  let sec; try{ sec=firebase.app('sec'); }catch(e){ sec=firebase.initializeApp(firebaseConfig,'sec'); }
+  withTimeout(sec.auth().createUserWithEmailAndPassword(email,pass).then(cred=>{ const did=cred.user.uid;
+    return db.collection('users').doc(did).set({name,email,role:'driver',ownerId,carId:null,created:Date.now()})
+      .then(()=>sec.auth().signOut().catch(()=>{})).then(()=>did); }))
+  .then(did=>{ allDrivers.push({uid:did,name,email,role:'driver',ownerId,carId:null}); showCreds(name,email,pass); renderDrivers(); renderHeaderOwner(); })
+  .catch(e=>{ btn.disabled=false; btn.style.opacity='1'; btn.textContent='Create login'; ndErr(fbErr(e,'create driver')); }); };
+
+function showCreds(name,email,pass){ const link=location.origin+location.pathname;
+  const msg=`🚕 *${biz} — Driver Login*\n\nHi ${name}! Your account is ready.\n\n*App:* ${link}\n*Email:* ${email}\n*Password:* ${pass}\n\nOpen the link and sign in. See you on the road! 🚗`;
+  openSheet(`<div class="modal-t">✅ Driver created!</div>
+    <p style="font-size:12px;color:var(--dim);text-align:center;margin-bottom:6px">Share these login details with ${esc(name)}:</p>
+    <div class="cred-box">
+      <div class="cred-row"><span class="cred-k">👤 Name</span><span class="cred-v">${esc(name)}</span></div>
+      <div class="cred-row"><span class="cred-k">📧 Email</span><span class="cred-v">${esc(email)}</span></div>
+      <div class="cred-row"><span class="cred-k">🔑 Password</span><span class="cred-v">${esc(pass)}</span></div>
+    </div>
+    <button class="btn-wide btn-month" style="margin-bottom:8px" onclick="waCreds(${JSON.stringify(msg).replace(/"/g,'&quot;')})">📱 Send on WhatsApp</button>
+    <div class="modal-acts"><button class="modal-btn cancel" onclick="copyCreds('${esc(email)}','${esc(pass)}','${esc(link)}')">📋 Copy</button>
+      <button class="modal-btn confirm gold" onclick="closeSheet()">Done</button></div>`); }
+window.waCreds=msg=>window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+window.copyCreds=(e,p,l)=>{ navigator.clipboard?.writeText(`App: ${l}\nEmail: ${e}\nPassword: ${p}`).then(()=>toast('📋 Copied','success'),()=>toast('Copy failed','error')); };
+
+window.assignSheet=duid=>{ const drv=allDrivers.find(d=>d.uid===duid); if(!drv) return;
+  const opts=[`<div class="assign-opt ${!drv.carId?'on':''}" onclick="pickCar(this,'')"><div class="rad"></div><div class="assign-nm">🚫 No car</div></div>`]
+    .concat(cars.map(c=>`<div class="assign-opt ${drv.carId===c.id?'on':''}" onclick="pickCar(this,'${c.id}')"><div class="rad"></div><div class="assign-nm">🚗 ${esc(c.number)}</div></div>`));
+  _pendCar=drv.carId||'';
+  openSheet(`<div class="modal-t">Assign ${esc(drv.name)}</div>
+    ${cars.length?'<label class="lbl">Choose a car</label>':'<div class="empty-hint">Add a car first in the Cars tab.</div>'}
+    <div class="assign-grid">${opts.join('')}</div>
+    <div class="modal-acts"><button class="modal-btn cancel" onclick="closeSheet()">Cancel</button>
+      <button class="modal-btn confirm gold" onclick="saveAssign('${duid}')">Save</button></div>`); };
+let _pendCar='';
+window.pickCar=(el,cid)=>{ _pendCar=cid; document.querySelectorAll('.assign-opt').forEach(o=>o.classList.remove('on')); el.classList.add('on'); };
+window.saveAssign=duid=>{ withTimeout(db.collection('users').doc(duid).set({carId:_pendCar||null},{merge:true})).then(()=>{
+    const d=allDrivers.find(x=>x.uid===duid); if(d)d.carId=_pendCar||null;
+    if(duid===uid){ me.carId=_pendCar||null; } closeSheet(); toast('✓ Saved','gold'); renderDrivers(); renderCars();
+    if(duid===uid){ // owner assigned self -> may need entry tab; simplest is reload
+      toast('Reloading to apply…','success'); setTimeout(()=>location.reload(),700); }
+  }).catch(e=>toast(fbErr(e,'assign'),'error')); };
+
+/* =================== MONEY / SETTLEMENT =================== */
+function minimizeTransfers(rows){ const debt=rows.filter(r=>r.pos>0.01).map(r=>({name:r.name,amt:r.pos})).sort((a,b)=>b.amt-a.amt);
   const cred=rows.filter(r=>r.pos<-0.01).map(r=>({name:r.name,amt:-r.pos})).sort((a,b)=>b.amt-a.amt);
-  const out=[]; let i=0,j=0;
-  while(i<debt.length&&j<cred.length){ const m=Math.min(debt[i].amt,cred[j].amt);
-    out.push({from:debt[i].name,to:cred[j].name,amt:m});
-    debt[i].amt-=m; cred[j].amt-=m; if(debt[i].amt<0.01)i++; if(cred[j].amt<0.01)j++; }
-  return out;
-}
+  const out=[]; let i=0,j=0; while(i<debt.length&&j<cred.length){ const m=Math.min(debt[i].amt,cred[j].amt);
+    out.push({from:debt[i].name,to:cred[j].name,amt:m}); debt[i].amt-=m; cred[j].amt-=m; if(debt[i].amt<0.01)i++; if(cred[j].amt<0.01)j++; } return out; }
+function aggFor(driverUid,carId){ let income=0,exp=0; const ym=monthKey(viewY,viewM);
+  ownerEntries.forEach(e=>{ if(e.driverId===driverUid&&e.carId===carId&&e.ym===ym){ income+=num(e.income); exp+=num(e.expenseTotal); } });
+  return {income,exp}; }
+function carSettlement(car){ const ds=driversOfCar(car.id), n=ds.length;
+  let totalIncome=0,pooledExp=0; const agg={};
+  ds.forEach(d=>{ const a=aggFor(d.uid,car.id); agg[d.uid]=a; totalIncome+=a.income; pooledExp+=a.exp; });
+  const net=totalIncome-pooledExp;
+  const rows=ds.map(d=>{ const pct=pctFor(car,d.uid,n), share=net*pct/100, a=agg[d.uid], holding=a.income-a.exp, pos=holding-share;
+    return {uid:d.uid,name:d.name,pct,income:a.income,expenses:a.exp,share,holding,pos}; });
+  return {car,drivers:ds,totalIncome,pooledExp,net,rows,transfers:minimizeTransfers(rows)}; }
 
-let settleState={settled:false};
-function settleRef(){ return db.collection('teams').doc(teamId).collection('settlements').doc(monthKey(viewY,viewM)); }
-function loadSettleState(){ return settleRef().get().then(doc=>{ settleState=doc.exists?doc.data():{settled:false}; }); }
+let settleCache={};
+function loadMoney(){ syncLabels();
+  loadOwnerMonth().then(()=>db.collection('settlements').where('ownerId','==',ownerId).get())
+    .then(snap=>{ settleCache={}; snap.forEach(d=>{ const s=d.data(); if(s.ym===monthKey(viewY,viewM)) settleCache[s.carId]=s; }); renderMoney(); })
+    .catch(()=>{ settleCache={}; renderMoney(); }); }
 
-function renderSettlement(){
-  const body=$('settleBody'); const s=computeSettlement();
-  const admin=isAdmin();
-  const hasData=s.totalIncome>0||s.rows.some(r=>r.income>0);
+function renderMoney(){ const body=$('moneyBody'); if(!body) return;
+  let myCars = isOwner() ? cars : (myCar?[myCar]:[]);
+  if(!myCars.length){ body.innerHTML=emptyState('🤝', isOwner()?'No cars yet':'No car assigned', isOwner()?'Add a car and drivers to see the split.':'Ask your admin to assign you a car.'); return; }
+  body.innerHTML=myCars.map(car=>{ const s=carSettlement(car); const settled=settleCache[car.id]&&settleCache[car.id].settled;
+    const hasData=s.totalIncome>0||s.pooledExp>0;
+    let who; if(!hasData) who=`<div class="note">No income logged for this car yet.</div>`;
+      else if(!s.transfers.length) who=`<div class="allsq"><div class="ico">✅</div><div class="t">All square</div><div class="s">Everyone holds exactly their share.</div></div>`;
+      else who=s.transfers.map(t=>`<div class="who-card"><span class="who-from">${esc(t.from)}</span><span class="who-arrow">→</span><span class="who-to">${esc(t.to)}</span><span class="who-amt">${eur(t.amt)}</span></div>`).join('')+`<div class="note">💡 Cash stays with whoever collected it — only the difference moves.</div>`;
+    const pool=hasData?`<div class="pool-grid"><div class="pool-box"><div class="pool-lbl">💰 Income</div><div class="pool-val">${eur(s.totalIncome)}</div></div>
+      <div class="pool-box exp"><div class="pool-lbl">🧾 Expenses</div><div class="pool-val">${eur(s.pooledExp)}</div></div>
+      <div class="pool-box net"><div class="pool-lbl">📈 Net profit to split</div><div class="pool-val">${eur(s.net)}</div></div></div>`:'';
+    const splits=s.rows.map(r=>{ const cls=r.pos>0.01?'owes':r.pos<-0.01?'owed':'even', lbl=r.pos>0.01?'pays in':r.pos<-0.01?'receives':'even', you=r.uid===uid?'<span class="you-dot">YOU</span>':'';
+      return `<div class="split-row"><div class="split-av">${initials(r.name)}</div><div class="split-mid"><div class="split-nm">${esc(r.name)} ${you}</div><div class="split-meta">${Math.round(r.pct)}% · earned ${eur(r.income)}${r.expenses>0?' · spent '+eur(r.expenses):''}</div></div><div class="split-pos ${cls}"><div class="pv">${r.pos>0.01?'−':r.pos<-0.01?'+':''}${eur(Math.abs(r.pos))}</div><div class="pl">${lbl}</div></div></div>`; }).join('');
+    const actions = isOwner()&&hasData ? (settled
+        ? `<div class="settled-badge" style="margin-top:10px">🤝 Settled${settleCache[car.id].byName?' by '+esc(settleCache[car.id].byName):''}</div><button class="btn-settle reopen" onclick="reopenCar('${car.id}')">🔓 Reopen</button>`
+        : `<button class="btn-settle mark" onclick="settleCar('${car.id}')">🤝 Mark settled & lock</button>`) : (settled?`<div class="settled-badge" style="margin-top:10px">🤝 Settled</div>`:'');
+    const share = hasData?`<button class="btn-wide btn-month" onclick='shareCarSettle(${JSON.stringify(car.id)})'>📤 Share split</button>`:'';
+    return `<div class="card card-gold"><div class="s-title">🚗 ${esc(car.number)} · ${MONTHS[viewM].slice(0,3)}</div>${who}${pool}</div>
+      ${hasData?`<div class="card"><div class="s-title">👥 Each driver</div>${splits}</div>`:''}${actions}${share}`; }).join(''); }
 
-  // who-pays-who
-  let whoHtml;
-  if(!hasData){ whoHtml=emptyState('🤝','No income logged yet','Once drivers log their days, the split appears here.'); }
-  else if(!s.transfers.length){ whoHtml=`<div class="allsq"><div class="ico">✅</div><div class="t">All square!</div>
-      <div class="s">Everyone is holding exactly their share.</div></div>`; }
-  else { whoHtml=s.transfers.map(t=>`<div class="who-card">
-      <span class="who-from">${escapeHtml(t.from)}</span><span class="who-arrow">→</span>
-      <span class="who-to">${escapeHtml(t.to)}</span><span class="who-amt">${eur(t.amt)}</span></div>`).join('')
-      + `<div class="note">💡 Cash stays with whoever collected it — only the difference above changes hands.</div>`; }
+window.settleCar=cid=>{ const car=cars.find(c=>c.id===cid); const s=carSettlement(car);
+  confirmModal({ico:'🤝',title:'Settle '+car.number+'?',msg:'Locks '+MONTHS[viewM]+' '+viewY+' for this car.',confirm:'Settle & lock',gold:true,onConfirm:()=>{
+    const rec={ownerId,carId:cid,carNumber:car.number,ym:monthKey(viewY,viewM),settled:true,settledAt:Date.now(),byName:me.name,
+      totalIncome:s.totalIncome,pooledExp:s.pooledExp,net:s.net,rows:s.rows.map(r=>({name:r.name,pct:r.pct,income:r.income,pos:r.pos})),transfers:s.transfers};
+    db.collection('settlements').doc(cid+'_'+monthKey(viewY,viewM)).set(rec).then(()=>{ settleCache[cid]=rec; toast('🤝 Settled & locked','gold'); renderMoney(); }).catch(e=>toast(fbErr(e,'settle'),'error')); } }); };
+window.reopenCar=cid=>{ confirmModal({ico:'🔓',title:'Reopen month?',msg:'Drivers can edit again.',confirm:'Reopen',gold:true,onConfirm:()=>{
+    db.collection('settlements').doc(cid+'_'+monthKey(viewY,viewM)).set({settled:false},{merge:true}).then(()=>{ if(settleCache[cid])settleCache[cid].settled=false; toast('Reopened','success'); renderMoney(); }); } }); };
+window.shareCarSettle=cid=>{ const car=cars.find(c=>c.id===cid)||myCar; const s=carSettlement(car);
+  let m=`🚕 *${biz}* — 🚗 ${car.number}\n📅 ${MONTHS[viewM]} ${viewY}\n\n💰 Income: ${eur(s.totalIncome)}\n🧾 Expenses: ${eur(s.pooledExp)}\n📈 Net: ${eur(s.net)}\n\n`;
+  s.rows.forEach(r=>{ m+=`👤 ${r.name} (${Math.round(r.pct)}%): earned ${eur(r.income)} → share ${eur(r.share)}\n`; });
+  m+=`\n━━━━━━━━━━\n`; if(!s.transfers.length) m+='✅ All square.'; else { m+='💸 *Settle up:*\n'; s.transfers.forEach(t=>m+=`   ${t.from} → ${t.to}: ${eur(t.amt)}\n`); }
+  window.open('https://wa.me/?text='+encodeURIComponent(m),'_blank'); };
 
-  // pool summary
-  const poolHtml=hasData?`<div class="pool-grid">
-    <div class="pool-box"><div class="pool-lbl">💰 Total income</div><div class="pool-val">${eur(s.totalIncome)}</div></div>
-    <div class="pool-box exp"><div class="pool-lbl">🧾 Shared expenses</div><div class="pool-val">${eur(s.pooledExp)}</div></div>
-    <div class="pool-box net"><div class="pool-lbl">📈 Net profit to split</div><div class="pool-val">${eur(s.net)}</div></div>
-  </div>`:'';
-
-  // per-driver split
-  let splitHtml='';
-  if(hasData){ splitHtml=`<div class="card"><div class="s-title">👥 Each driver</div>`+
-    s.rows.map(r=>{ const cls=r.pos>0.01?'owes':r.pos<-0.01?'owed':'even';
-      const lbl=r.pos>0.01?'pays in':r.pos<-0.01?'receives':'even';
-      const you=r.uid===uid?'<span class="you-dot">YOU</span>':'';
-      return `<div class="split-row">
-        <div class="split-av">${initials(r.name)}</div>
-        <div class="split-mid"><div class="split-nm">${escapeHtml(r.name)} ${you}</div>
-          <div class="split-meta">${r.pct}% share · earned ${eur(r.income)}${r.expenses>0?' · spent '+eur(r.expenses):''}${r.sharesExpenses?'':' · own costs'}</div></div>
-        <div class="split-pos ${cls}"><div class="pv">${r.pos>0.01?'−':r.pos<-0.01?'+':''}${eur(Math.abs(r.pos))}</div><div class="pl">${lbl}</div></div>
-      </div>`; }).join('')+`</div>`;
-  }
-
-  // settle handshake
-  let actHtml='';
-  if(hasData){
-    if(settleState.settled){
-      actHtml=`<div class="set-net owner"><div class="set-net-cap">Settled</div>
-        <div class="set-net-amt">✓</div><div class="set-net-dir">This month is closed & locked</div>
-        <div class="settled-badge">🤝 Settled${settleState.settledByName?' by '+escapeHtml(settleState.settledByName):''}</div></div>`;
-      if(admin) actHtml+=`<button class="btn-settle reopen" id="reopenBtn">🔓 Reopen month</button>`;
-    } else if(admin){
-      actHtml=`<button class="btn-settle mark" id="settleBtn">🤝 Mark settled & lock</button>`;
-    }
-    actHtml+=`<button class="btn-wide btn-month" id="shareSettleBtn">📤 Share settlement</button>`;
-  }
-
-  // roster (admin)
-  let rosterHtml='';
-  if(admin){
-    const all=Object.entries(team.members||{}).map(([u,m])=>({uid:u,...m}));
-    const totalPct=all.filter(m=>m.active!==false).reduce((a,m)=>a+num(m.pct),0);
-    const pctOk=Math.abs(totalPct-100)<0.01;
-    rosterHtml=`<div class="card card-gold"><div class="s-title">👥 Partnership roster
-        <span class="badge">${all.filter(m=>m.active!==false).length} active</span></div>
-      <div class="code-box"><div class="cl">Invite code</div><div class="code">${team.code}</div>
-        <button class="code-copy" onclick="copyCode()">📋 Copy code</button></div>
-      ${pctOk?`<div class="pct-ok">✓ Shares total 100%</div>`
-        :`<div class="pct-warn">⚠️ Shares total ${totalPct}% — must equal 100%
-          <button class="btn-bal" onclick="autoBalance()">Split evenly</button></div>`}
-      ${all.map(m=>memberRow(m)).join('')}
-      <div class="card" style="margin:12px 0 0;background:var(--s2)">
-        <div class="s-title">⚙️ Monthly goal</div>
-        <div class="in-money" style="margin-bottom:10px"><span class="cur">€</span>
-          <input type="number" id="cfgTarget" class="in money-in" value="${num(team.target)||6000}" step="100"></div>
-        <button class="btn-add" id="cfgSave" style="margin-bottom:0">💾 Save goal</button>
-      </div>
-    </div>`;
-  }
-
-  body.innerHTML=`<div class="card card-gold"><div class="s-title">🤝 Who pays who · ${MONTHS[viewM]}</div>${whoHtml}${poolHtml}</div>
-    ${splitHtml}${actHtml}${rosterHtml}`;
-
-  // wire
-  if($('settleBtn')) $('settleBtn').onclick=doSettle;
-  if($('reopenBtn')) $('reopenBtn').onclick=()=>confirmModal({ico:'🔓',title:'Reopen month?',
-    msg:'Drivers will be able to edit entries again.',confirm:'Reopen',gold:true,onConfirm:()=>{
-      settleRef().set({settled:false},{merge:true}).then(()=>{ settleState.settled=false; toast('Month reopened','success'); renderSettlement(); }); }});
-  if($('shareSettleBtn')) $('shareSettleBtn').onclick=()=>shareSettlement(s);
-  if($('cfgSave')) $('cfgSave').onclick=()=>{ team.target=num($('cfgTarget').value)||6000;
-    db.collection('teams').doc(teamId).set({target:team.target},{merge:true})
-      .then(()=>{ toast('⚙️ Goal saved','gold'); renderHeader(); }); };
-}
-
-function memberRow(m){
-  const archived=m.active===false;
-  return `<div class="mem-row${archived?' archived':''}">
-    <div class="mem-top"><div class="mem-av">${initials(m.name)}</div>
-      <div style="flex:1"><div class="mem-nm">${escapeHtml(m.name)}
-        ${m.uid===uid?'<span class="you-dot">YOU</span>':''}
-        ${m.role==='admin'||m.role==='admindriver'?'<span class="role-pill adm">Admin</span>':'<span class="role-pill drv">Driver</span>'}</div>
-        <div class="mem-sub">${archived?'Archived':'Active'} · joined ${new Date(m.joinedAt||Date.now()).toLocaleDateString('es-ES')}</div></div>
-      <button class="mem-arch${archived?' restore':''}" onclick="toggleArchive('${m.uid}')">${archived?'♻️ Restore':'🗄️ Archive'}</button>
-    </div>
-    <div class="mem-ctrl">
-      <div class="pct-fld"><span class="pl">Share</span>
-        <input type="number" value="${num(m.pct)}" min="0" max="100" step="1" onchange="setPct('${m.uid}',this.value)"><span class="pc">%</span></div>
-      <div class="tgl${m.sharesExpenses!==false?' on':''}" onclick="toggleExp('${m.uid}')"><span class="sw"></span>Shares expenses</div>
-    </div></div>`;
-}
-window.copyCode=()=>{ navigator.clipboard?.writeText(team.code).then(()=>toast('📋 Code copied','success'),()=>toast(team.code,'gold')); };
-window.setPct=(u,v)=>{ team.members[u].pct=num(v); saveRoster(()=>renderSettlement()); };
-window.toggleExp=u=>{ team.members[u].sharesExpenses=!(team.members[u].sharesExpenses!==false); saveRoster(()=>renderSettlement()); };
-window.toggleArchive=u=>{ const m=team.members[u]; const arch=m.active!==false;
-  if(arch&&u===team.adminUid) return toast('You can’t archive the admin','error');
-  confirmModal({ico:arch?'🗄️':'♻️',title:arch?'Archive '+m.name+'?':'Restore '+m.name+'?',
-    msg:arch?'Their past entries stay, but they’re left out of new settlements.':'They’ll be included in settlements again.',
-    confirm:arch?'Archive':'Restore',gold:!arch,onConfirm:()=>{ m.active=arch?false:true; saveRoster(()=>{ toast(arch?'Archived':'Restored','success'); renderSettlement(); }); }}); };
-window.autoBalance=()=>{ const act=Object.values(team.members).filter(m=>m.active!==false); const each=Math.floor(100/act.length);
-  let rem=100-each*act.length; Object.keys(team.members).forEach(u=>{ const m=team.members[u];
-    if(m.active!==false){ m.pct=each+(rem>0?1:0); if(rem>0)rem--; } });
-  saveRoster(()=>{ toast('⚖️ Split evenly','gold'); renderSettlement(); }); };
-function saveRoster(cb){ db.collection('teams').doc(teamId).set({members:team.members},{merge:true})
-  .then(()=>{ if(cb)cb(); }).catch(e=>toast('⚠️ Could not save roster','error')); }
-
-function doSettle(){
-  const s=computeSettlement();
-  confirmModal({ico:'🤝',title:'Settle this month?',msg:'This locks '+MONTHS[viewM]+' '+viewY+' so entries can’t change.',
-    confirm:'Settle & lock',gold:true,onConfirm:()=>{
-      const rec={month:monthKey(viewY,viewM),settled:true,settledAt:Date.now(),settledByName:me.name,
-        totalIncome:s.totalIncome,pooledExp:s.pooledExp,net:s.net,
-        rows:s.rows.map(r=>({name:r.name,pct:r.pct,income:r.income,expenses:r.expenses,share:r.share,pos:r.pos})),
-        transfers:s.transfers};
-      settleRef().set(rec).then(()=>{ settleState=rec; toast('🤝 Month settled & locked','gold'); renderSettlement(); }); }});
-}
-
-/* =========================================================
-   WHATSAPP SHARE
-========================================================= */
-function waShare(msg){ window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank'); }
-$('shareBtn').onclick=()=>{
-  const c=computeDay(currentDay); if(!dayHasData(currentDay)) return toast('Nothing to share yet','error');
+/* =================== SHARE (driver day/month) =================== */
+$('shareBtn').onclick=()=>{ const c=computeDay(currentDay); if(!dayHasData(currentDay)) return toast('Nothing to share','error');
   const dt=new Date(viewY,viewM,selDay);
-  let m=`🚕 *${team.name}* — ${me.name}\n📅 ${DOW[dt.getDay()]}, ${selDay} ${MONTHS[viewM]} ${viewY}\n`;
-  if(currentDay.shift) m+=`🕒 ${currentDay.shift} shift\n`;
-  m+=`\n🚕 Uber/Bolt: ${eur(c.uber)}\n💳 Card: ${eur(c.card)}\n💵 Cash: ${eur(c.cash)}\n🚗 Transfers: ${eur(c.transfers)}\n🎁 Tips: ${eur(c.tips)}\n`;
-  m+=`━━━━━━━━━━\n📈 *Total: ${eur(c.total)}*\n💵 Cash in hand: ${eur(c.cashInHand)}\n`;
+  let m=`🚕 *${biz}* — ${me.name}${myCar?(' · 🚗 '+myCar.number):''}\n📅 ${DOW[dt.getDay()]}, ${selDay} ${MONTHS[viewM]} ${viewY}\n`;
+  if(currentDay.shift) m+=`🕒 ${currentDay.shift}\n`;
+  m+=`\n🚕 Uber/Bolt: ${eur(c.uber)}\n💳 Card: ${eur(c.card)}\n💵 Cash: ${eur(c.cash)}\n🚗 Transfers: ${eur(c.transfers)}\n🎁 Tips: ${eur(c.tips)}\n━━━━━━━━━━\n📈 *Total: ${eur(c.total)}*\n💵 Cash in hand: ${eur(c.cashInHand)}\n`;
   if(c.expenses>0) m+=`🧾 Expenses: ${eur(c.expenses)}\n✅ Kept: ${eur(c.net)}\n`;
-  waShare(m);
-};
-$('shareMonthBtn').onclick=()=>{
-  const keys=Object.keys(monthEntries).filter(k=>dayHasData(monthEntries[k]));
-  if(!keys.length) return toast('No entries this month','error');
-  let inc=0,cih=0,exp=0; keys.forEach(k=>{ const c=computeDay(monthEntries[k]); inc+=c.total; cih+=c.cashInHand; exp+=c.expenses; });
-  let m=`🚕 *${team.name}* — ${me.name}\n📅 ${MONTHS[viewM]} ${viewY}\n\n📈 Income: ${eur(inc)}\n📅 Days: ${keys.length}\n💵 Cash in hand: ${eur(cih)}\n🧾 Expenses: ${eur(exp)}\n✅ Kept: ${eur(inc-exp)}`;
-  waShare(m);
-};
-function shareSettlement(s){
-  let m=`🤝 *${team.name}* — Settlement\n📅 ${MONTHS[viewM]} ${viewY}\n\n💰 Income: ${eur(s.totalIncome)}\n🧾 Shared expenses: ${eur(s.pooledExp)}\n📈 Net profit: ${eur(s.net)}\n\n`;
-  s.rows.forEach(r=>{ m+=`👤 ${r.name} (${r.pct}%): earned ${eur(r.income)}, share ${eur(r.share)}\n`; });
-  m+=`\n━━━━━━━━━━\n`;
-  if(!s.transfers.length) m+=`✅ All square — nobody owes anyone.`;
-  else { m+=`💸 *To settle up:*\n`; s.transfers.forEach(t=>m+=`   ${t.from} → ${t.to}: ${eur(t.amt)}\n`); }
-  waShare(m);
-}
-
-/* =========================================================
-   TABS
-========================================================= */
-function switchTab(tab){
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-  ['entry','history','summary','settle'].forEach(t=>$(t+'Panel').classList.toggle('active',t===tab));
-  if(tab==='settle'){ loadSettleState().then(()=>renderSettlement()); }
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+  window.open('https://wa.me/?text='+encodeURIComponent(m),'_blank'); };
+$('shareMonthBtn').onclick=()=>{ const keys=Object.keys(monthEntries).filter(k=>dayHasData(monthEntries[k])); if(!keys.length) return toast('No entries','error');
+  let inc=0,cih=0,exp=0; keys.forEach(k=>{ const c=computeDay(monthEntries[k]); inc+=c.total;cih+=c.cashInHand;exp+=c.expenses; });
+  let m=`🚕 *${biz}* — ${me.name}\n📅 ${MONTHS[viewM]} ${viewY}\n\n📈 Income: ${eur(inc)}\n📅 Days: ${keys.length}\n💵 Cash in hand: ${eur(cih)}\n🧾 Expenses: ${eur(exp)}\n✅ Kept: ${eur(inc-exp)}`;
+  window.open('https://wa.me/?text='+encodeURIComponent(m),'_blank'); };
 </script>
 </body>
 </html>
