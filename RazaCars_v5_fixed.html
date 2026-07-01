@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- v25 — no duplicate entries per day -->
+<!-- v26 — Uber month closes last Sunday, Transfer month closes last calendar day -->
 <script>
 // Force fresh load — kills browser cache on every visit
 (function(){
   const key='rc_ver';
-  const ver='v25';;
+  const ver='v26';;
   if(sessionStorage.getItem(key)!==ver){
     sessionStorage.setItem(key,ver);
     // Add cache-busting param and reload if not already there
@@ -226,28 +226,63 @@ function calcDay(e,type,params){
   return{pT,cT,uA,uC,cC,tip,adj,rent,driverExp,transfers,income,phys,actualCash,totalInHand,salary,salTips,netSal,bal};
 }
 
+// Last Sunday of month y/m — Uber month close date
+function lastSundayOf(y,m){
+  const d=new Date(y,m,0); // last day of month (day 0 of next month)
+  return d.getDate()-d.getDay(); // getDay()=0 for Sunday
+}
+
 async function calcMonth(drv,y,m){
   const ym=`${y}-${pad(m)}`;
-  const q=query(collection(db,'entries'),where('driverId','==',drv.id),where('yearMonth','==',ym));
-  const s=await getDocs(q);
-  if(s.empty)return{pT:0,cT:0,uA:0,uC:0,cC:0,tip:0,adj:0,rent:0,driverExp:0,income:0,phys:0,actualCash:0,totalInHand:0,salary:0,netSal:0,bal:0,days:0};
+  const empty={pT:0,cT:0,uA:0,uC:0,cC:0,tip:0,adj:0,rent:0,driverExp:0,income:0,phys:0,actualCash:0,totalInHand:0,salary:0,netSal:0,bal:0,days:0};
 
-  // Accumulate raw fields first (not salary — salary depends on type)
-  let t={pT:0,cT:0,uA:0,uC:0,cC:0,tip:0,adj:0,rent:0,driverExp:0,income:0,phys:0,actualCash:0,totalInHand:0,salary:0,netSal:0,bal:0,days:0};
+  // Uber month closes on last Sunday of this month
+  const uberClose=lastSundayOf(y,m);
+  const uberCloseStr=`${y}-${pad(m)}-${pad(uberClose)}`; // e.g. "2026-06-28"
+
+  // Previous month — to pick up its Uber tail (days after its last Sunday)
+  let pM=m-1,pY=y; if(pM<1){pM=12;pY--;}
+  const prevYm=`${pY}-${pad(pM)}`;
+  const prevUberClose=lastSundayOf(pY,pM);
+  const prevCloseStr=`${pY}-${pad(pM)}-${pad(prevUberClose)}`;
+
+  // Fetch current month entries
+  const s=await getDocs(query(collection(db,'entries'),where('driverId','==',drv.id),where('yearMonth','==',ym)));
+  // Fetch previous month entries (for Uber carry-over)
+  const ps=await getDocs(query(collection(db,'entries'),where('driverId','==',drv.id),where('yearMonth','==',prevYm)));
+  const prevTail=ps.docs.map(d=>d.data()).filter(e=>e.date>prevCloseStr);
+
+  if(s.empty&&prevTail.length===0)return empty;
+
+  let t={...empty};
+
+  // Current month entries — split by Uber close date
   s.docs.forEach(d=>{
     const e=d.data();
-    t.pT+=+e.paidTrans||0; t.cT+=+e.cashTrans||0; t.uA+=+e.uberApp||0;
-    t.uC+=+e.uberCash||0;  t.cC+=+e.cardCash||0;  t.tip+=+e.tip||0;
-    t.adj+=+e.adjustment||0; t.rent+=+e.carRent||0;
+    const isUberTail=e.date>uberCloseStr; // after last Sunday → Uber goes to next month
+    t.pT+=+e.paidTrans||0; t.cT+=+e.cashTrans||0;
+    t.cC+=+e.cardCash||0; t.adj+=+e.adjustment||0; t.rent+=+e.carRent||0;
     t.driverExp+=(+e.driverExp||0)+(+e.cashFuel||0)+(+e.expenses||0);
     t.days++;
+    if(!isUberTail){
+      // Within Uber period → full inclusion
+      t.uA+=+e.uberApp||0; t.uC+=+e.uberCash||0; t.tip+=+e.tip||0;
+    }
+    // Uber tail days: Uber App/Cash/Tip excluded (they go to next month)
   });
+
+  // Carry-over: previous month's Uber tail → Uber income counts for THIS month
+  prevTail.forEach(e=>{
+    t.uA+=+e.uberApp||0; t.uC+=+e.uberCash||0; t.tip+=+e.tip||0;
+  });
+
+  // Compute derived totals
   t.income=t.pT+t.cT+t.uA;
   t.phys=t.uC+t.cT;
   t.actualCash=t.phys-t.cC;
-  t.totalInHand=t.phys; // tips not in hand — go to company Uber account
+  t.totalInHand=t.phys;
 
-  // Calculate salary ONCE on monthly totals (correct for base_bonus)
+  // Salary on full monthly income
   const p=drv.salParams||{};
   if(drv.salType==='base_bonus'){
     const base=+p.base||1600,thr=+p.thr||6000,bp=+p.bonusPct||40;
@@ -260,7 +295,6 @@ async function calcMonth(drv,y,m){
   }else if(drv.salType==='custom'){
     t.salary=(t.pT+t.cT)*(+p.tPct||35)/100+t.uA*(1-(+p.uberDeduct||10)/100)*((+p.uPct||35)/100);
   }
-
   t.netSal=t.salary+t.tip-t.rent+t.driverExp;
   t.bal=(t.actualCash-t.netSal)-t.adj;
   return t;
