@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- v26 — Uber month closes last Sunday, Transfer month closes last calendar day -->
+<!-- v28 — Uber month = driver-chosen locked date range, settable for current OR past months; Transfer month stays 1 → last calendar day -->
 <script>
 // Force fresh load — kills browser cache on every visit
 (function(){
   const key='rc_ver';
-  const ver='v26';;
+  const ver='v28';;
   if(sessionStorage.getItem(key)!==ver){
     sessionStorage.setItem(key,ver);
     // Add cache-busting param and reload if not already there
@@ -226,55 +226,91 @@ function calcDay(e,type,params){
   return{pT,cT,uA,uC,cC,tip,adj,rent,driverExp,transfers,income,phys,actualCash,totalInHand,salary,salTips,netSal,bal};
 }
 
-// Last Sunday of month y/m — Uber month close date
+// Last Sunday of month y/m — legacy fallback for Uber month close date
 function lastSundayOf(y,m){
   const d=new Date(y,m,0); // last day of month (day 0 of next month)
   return d.getDate()-d.getDay(); // getDay()=0 for Sunday
+}
+
+// ══════════════════════════════════════════════════════════
+// UBER MONTH CYCLE — driver picks the start & end date, then locks it.
+// Uber App / Uber Cash / Tips are counted ONLY inside that window.
+// Transfers, card cash, expenses, adjustments stay on the plain
+// calendar month (1 → 30/31). Nothing else changed.
+// ══════════════════════════════════════════════════════════
+const dAdd=(ds,n)=>{const p=String(ds).split('-');const d=new Date(+p[0],+p[1]-1,+p[2]);d.setDate(d.getDate()+n);return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;};
+const dFmt=ds=>{const p=String(ds||'').split('-');return p.length===3?`${p[2]} ${MNS[+p[1]-1]}`:'—';};
+// All yearMonth keys touched by an inclusive date range
+function ymsBetween(a,b){
+  const out=[];if(!a||!b||a>b)return out;
+  let y=+a.slice(0,4),m=+a.slice(5,7);const ey=+b.slice(0,4),em=+b.slice(5,7);let guard=0;
+  while((y<ey||(y===ey&&m<=em))&&guard++<36){out.push(`${y}-${pad(m)}`);m++;if(m>12){m=1;y++;}}
+  return out;
+}
+// Legacy default (identical to old behaviour): day after prev month's last Sunday → this month's last Sunday
+function defaultUberCycle(y,m){
+  let pM=m-1,pY=y;if(pM<1){pM=12;pY--;}
+  const start=dAdd(`${pY}-${pad(pM)}-${pad(lastSundayOf(pY,pM))}`,1);
+  const end=`${y}-${pad(m)}-${pad(lastSundayOf(y,m))}`;
+  return{start,end,locked:false,auto:true};
+}
+const ucKey=(did,y,m)=>`${did}_${y}-${pad(m)}`;
+let UCYC={}; // cache: key → cycle object
+window.ucClearCache=()=>{UCYC={};};
+async function getUberCycle(did,y,m){
+  const key=ucKey(did,y,m);
+  if(UCYC[key])return UCYC[key];
+  let c=null;
+  try{const d=await getDoc(doc(db,'ubercycles',key));if(d.exists())c=d.data();}catch(e){console.warn('getUberCycle:',e.message);}
+  if(!c||!c.start||!c.end||c.start>c.end)c=defaultUberCycle(y,m);
+  UCYC[key]=c;return c;
+}
+async function saveUberCycle(did,y,m,start,end,locked){
+  const key=ucKey(did,y,m);
+  const rec={driverId:did,yearMonth:`${y}-${pad(m)}`,start,end,locked:!!locked,auto:false,setAt:new Date().toISOString()};
+  await setDoc(doc(db,'ubercycles',key),rec);
+  UCYC[key]=rec;return rec;
 }
 
 async function calcMonth(drv,y,m){
   const ym=`${y}-${pad(m)}`;
   const empty={pT:0,cT:0,uA:0,uC:0,cC:0,tip:0,adj:0,rent:0,driverExp:0,income:0,phys:0,actualCash:0,totalInHand:0,salary:0,netSal:0,bal:0,days:0};
 
-  // Uber month closes on last Sunday of this month
-  const uberClose=lastSundayOf(y,m);
-  const uberCloseStr=`${y}-${pad(m)}-${pad(uberClose)}`; // e.g. "2026-06-28"
+  // Uber window for this month — driver-chosen if set, legacy last-Sunday rule if not
+  const cyc=await getUberCycle(drv.id,y,m);
+  const uStart=cyc.start,uEnd=cyc.end;
 
-  // Previous month — to pick up its Uber tail (days after its last Sunday)
-  let pM=m-1,pY=y; if(pM<1){pM=12;pY--;}
-  const prevYm=`${pY}-${pad(pM)}`;
-  const prevUberClose=lastSundayOf(pY,pM);
-  const prevCloseStr=`${pY}-${pad(pM)}-${pad(prevUberClose)}`;
+  // Every yearMonth we must read: the calendar month + whatever the Uber window spans
+  const need=[...new Set([ym,...ymsBetween(uStart,uEnd)])];
+  const byYm={};
+  for(const k of need){
+    const s=await getDocs(query(collection(db,'entries'),where('driverId','==',drv.id),where('yearMonth','==',k)));
+    byYm[k]=s.docs.map(d=>d.data());
+  }
 
-  // Fetch current month entries
-  const s=await getDocs(query(collection(db,'entries'),where('driverId','==',drv.id),where('yearMonth','==',ym)));
-  // Fetch previous month entries (for Uber carry-over)
-  const ps=await getDocs(query(collection(db,'entries'),where('driverId','==',drv.id),where('yearMonth','==',prevYm)));
-  const prevTail=ps.docs.map(d=>d.data()).filter(e=>e.date>prevCloseStr);
+  const cur=byYm[ym]||[];
+  // Uber-window entries — may sit in the previous and/or next calendar month
+  const uberRows=[];
+  need.forEach(k=>(byYm[k]||[]).forEach(e=>{if(e.date>=uStart&&e.date<=uEnd)uberRows.push(e);}));
 
-  if(s.empty&&prevTail.length===0)return empty;
+  if(!cur.length&&!uberRows.length)return{...empty,uStart,uEnd,uLocked:!!cyc.locked,uAuto:!!cyc.auto,uDays:0};
 
   let t={...empty};
+  t.uStart=uStart;t.uEnd=uEnd;t.uLocked=!!cyc.locked;t.uAuto=!!cyc.auto;
 
-  // Current month entries — split by Uber close date
-  s.docs.forEach(d=>{
-    const e=d.data();
-    const isUberTail=e.date>uberCloseStr; // after last Sunday → Uber goes to next month
+  // Calendar month 1 → 30/31: transfers, card cash, adjustments, expenses, day count
+  cur.forEach(e=>{
     t.pT+=+e.paidTrans||0; t.cT+=+e.cashTrans||0;
     t.cC+=+e.cardCash||0; t.adj+=+e.adjustment||0; t.rent+=+e.carRent||0;
     t.driverExp+=(+e.driverExp||0)+(+e.cashFuel||0)+(+e.expenses||0);
     t.days++;
-    if(!isUberTail){
-      // Within Uber period → full inclusion
-      t.uA+=+e.uberApp||0; t.uC+=+e.uberCash||0; t.tip+=+e.tip||0;
-    }
-    // Uber tail days: Uber App/Cash/Tip excluded (they go to next month)
   });
 
-  // Carry-over: previous month's Uber tail → Uber income counts for THIS month
-  prevTail.forEach(e=>{
+  // Uber window only: Uber App / Uber Cash / Tips
+  uberRows.forEach(e=>{
     t.uA+=+e.uberApp||0; t.uC+=+e.uberCash||0; t.tip+=+e.tip||0;
   });
+  t.uDays=uberRows.length;
 
   // Compute derived totals
   t.income=t.pT+t.cT+t.uA;
@@ -602,7 +638,7 @@ window.doRegister=async()=>{
   }
 };
 
-window.fbLogout=async()=>{_ownerEmail='';_ownerPass='';try{await signOut(auth);}catch(e){}};
+window.fbLogout=async()=>{_ownerEmail='';_ownerPass='';UCYC={};try{await signOut(auth);}catch(e){}};
 
 const OTABS_FIXED=[['dash','Board','📊'],['drvs','Drivers','👥'],['cars','Cars','🚗'],['appr','Approve','✅'],['debt','Debt','💰'],['rpts','Reports','📈'],['exps','Expenses','💸'],['hist','History','📋'],['sets','Settings','⚙️']];
 let oTab='dash';
@@ -1294,6 +1330,10 @@ async function renderOwnerHist(){
         </div>
         <button onclick="oHistChgM(1)" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:5px 15px;font-size:18px;font-weight:700;cursor:pointer">›</button>
       </div>
+      <div style="background:var(--bg4);border:1px solid var(--border);border-radius:11px;padding:8px 12px;margin-bottom:8px;font-size:11px;color:var(--text2)">
+        🚕 Uber window: <strong style="color:var(--text)">${dFmt(mt.uStart)} → ${dFmt(mt.uEnd)}</strong> ${mt.uLocked?'<span class="chip cg" style="font-size:9px">🔒 Locked</span>':(mt.uAuto?'<span class="chip co" style="font-size:9px">auto</span>':'<span class="chip cgr" style="font-size:9px">unlocked</span>')}
+        · Transfers 1 → ${dim(oHistY,oHistM)}
+      </div>
       <div class="card"><div class="ch" style="color:var(--gold)">📊 ${MN[oHistM-1]} ${oHistY} — Full Month Total</div><div class="cb">${summaryHTML}</div></div>
       ${expListHTML}
       <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0 5px">
@@ -1688,11 +1728,13 @@ async function renderSum(){
   const el=document.getElementById('dp-summary');el.innerHTML='<div class="spin" style="margin:40px auto"></div>';
   try{
   const t=await calcMonth(CD,svY,svM);const mBal=t?t.bal:0;const target=(CD.dailyTarget||300)*dim(svY,svM);
+  const cyc=await getUberCycle(CD.id,svY,svM);
   el.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between">
     <div style="font-size:15px;font-weight:700">My Summary</div>
     <div style="display:flex;gap:5px"><button onclick="chgSvm(-1)" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:7px;padding:3px 9px">‹</button>
     <button onclick="chgSvm(1)" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:7px;padding:3px 9px">›</button></div></div>
     <div style="font-size:11px;color:var(--text2)">${MN[svM-1]} ${svY}</div>`+
+    ucCardHTML(cyc,svY,svM)+
     (t&&t.days>0?`<div class="sg">
       <div class="sc"><div class="sv" style="color:var(--green)">${f2(t.income)}</div><div class="sl">Total Income</div></div>
       <div class="sc"><div class="sv" style="color:var(--blue)">${f2(t.netSal)}</div><div class="sl">Net Salary</div></div>
@@ -1715,6 +1757,51 @@ async function renderSum(){
   }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error loading summary: '+esc(e.message)+'</div>';console.error('renderSum:',e);}
 }
 window.chgSvm=d=>{svM+=d;if(svM>12){svM=1;svY++;}if(svM<1){svM=12;svY--;}renderSum();};
+
+// ── UBER MONTH CYCLE CARD (driver picks + locks the Uber window) ──
+function ucCardHTML(cyc,y,m){
+  const lk=!!cyc.locked, last=dim(y,m);
+  const isNow=(y===nowY()&&m===nowM());
+  return`<div class="card" style="border-color:${lk?'rgba(245,158,11,.45)':'rgba(59,130,246,.35)'}">
+    <div class="ch" style="color:var(--gold)">🚕 Uber Month · ${MN[m-1]} ${y} · ${lk?'🔒 Locked':(cyc.auto?'⚠️ Not set':'✏️ Unlocked')}</div>
+    <div class="cb" style="gap:8px">
+      <div class="brow">
+        <button class="btn bs bsm" onclick="chgSvm(-1)">‹ Previous</button>
+        <button class="btn ${isNow?'bb':'bs'} bsm" onclick="ucGoNow()">${isNow?'● This month':'This month'}</button>
+        <button class="btn bs bsm" onclick="chgSvm(1)">Next ›</button>
+      </div>
+      <div style="font-size:10px;color:var(--text2);line-height:1.5">Uber App, Uber Cash &amp; Tips count <strong>only</strong> between these two dates. Transfers, card cash &amp; expenses always stay <strong>1 → ${last} ${MN[m-1]}</strong>. Any month can be set or re-locked — current or past.</div>
+      <div style="display:flex;gap:8px">
+        <div class="field" style="flex:1"><label>Uber start</label><input type="date" id="ucStart" value="${cyc.start}" ${lk?'disabled':''}></div>
+        <div class="field" style="flex:1"><label>Uber end</label><input type="date" id="ucEnd" value="${cyc.end}" ${lk?'disabled':''}></div>
+      </div>
+      <div style="background:var(--bg4);border:1px solid var(--border);border-radius:10px;padding:8px 11px;font-size:11px;color:var(--text2)">
+        📅 Uber window: <strong style="color:var(--text)">${dFmt(cyc.start)} → ${dFmt(cyc.end)}</strong>${cyc.auto?' <span style="color:var(--orange)">(auto — please set &amp; lock)</span>':''}
+      </div>
+      ${lk?`<button class="btn bs bfull" onclick="ucUnlock(${y},${m})">🔓 Unlock &amp; change dates</button>`
+          :`<div class="brow"><button class="btn bs" onclick="ucSave(${y},${m},false)">💾 Save</button><button class="btn bor" onclick="ucSave(${y},${m},true)">🔒 Save &amp; Lock</button></div>`}
+    </div></div>`;
+}
+window.ucGoNow=()=>{svY=nowY();svM=nowM();renderSum();};
+window.ucSave=async(y,m,lock)=>{
+  const a=document.getElementById('ucStart'),b=document.getElementById('ucEnd');
+  if(!a||!b)return;
+  const s=a.value,e=b.value;
+  if(!s||!e){showToast('Pick both a start and an end date');return;}
+  if(s>e){showToast('Start date must be before the end date');return;}
+  if(lock&&!confirm(`Lock the Uber month for ${MN[m-1]} ${y}?\n\n${dFmt(s)} → ${dFmt(e)}\n\nYou can unlock it again later.`))return;
+  try{
+    await saveUberCycle(CD.id,y,m,s,e,lock);
+    showToast(lock?'🔒 Uber month locked':'💾 Uber month saved');
+    await renderSum();await renderDHdr();
+  }catch(err){showToast('Error: '+err.message);console.error('ucSave:',err);}
+};
+window.ucUnlock=async(y,m)=>{
+  if(!confirm(`Unlock the Uber month for ${MN[m-1]} ${y}?`))return;
+  const c=await getUberCycle(CD.id,y,m);
+  try{await saveUberCycle(CD.id,y,m,c.start,c.end,false);showToast('🔓 Unlocked — you can change the dates');await renderSum();}
+  catch(err){showToast('Error: '+err.message);console.error('ucUnlock:',err);}
+};
 window.shareMonth=async()=>{
   const t=await calcMonth(CD,svY,svM);if(!t)return;const debt=await getDebt(CD);
   const msg=`📊 MONTHLY — ${MN[svM-1]} ${svY}\n🚗 Raza Cars\n━━━━━━━━━━━━\nTotal Income: ${f2(t.income)}\nGross Salary: ${f2(t.salary)}${t.tip>0?'\n🎁 Tips: +'+f2(t.tip):''}${t.driverExp>0?'\n💸 Expenses (return): +'+f2(t.driverExp):''}\nNet Salary: ${f2(t.netSal)}\nActual Cash: ${f2(t.actualCash)}\nDays: ${t.days} · Avg: ${f2(t.days>0?t.income/t.days:0)}\n━━━━━━━━━━━━\n${debt<0?'✅ Co.owes: '+abs2(debt):'⚠️ You owe: '+abs2(debt)}`;
