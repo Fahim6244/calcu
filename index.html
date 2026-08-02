@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E1419">
+<title>Control de matrículas</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230E1419'/><rect x='3' y='11' width='26' height='10' fill='%23fff'/><rect x='3' y='11' width='6' height='10' fill='%23123C8C'/></svg>">
+<style>
+  :root{
+    --ink:#0E1419; --ink2:#39434D; --ink3:#727C86; --line:#C9CFD6;
+    --paper:#E6EAEE; --panel:#FFFFFF; --eu:#123C8C; --red:#C41E27;
+    --green:#0B6B45; --sign:#F5C518;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-text-size-adjust:100%}
+  .wrap{max-width:720px;margin:0 auto;padding:16px 14px 60px}
+  header{display:flex;gap:10px;margin-bottom:14px}
+  header .bar{width:6px;background:var(--sign);flex-shrink:0}
+  h1{font-size:20px;font-weight:800;margin:0;letter-spacing:-.01em}
+  .sub{font-size:11.5px;color:var(--ink3);margin:2px 0 0;line-height:1.45}
+  .stats{display:flex;gap:6px;flex-wrap:wrap}
+  .stat{flex:1 1 84px;background:var(--panel);border:1px solid var(--line);padding:8px 10px}
+  .stat b{display:block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:22px;line-height:1}
+  .stat span{display:block;font-size:10px;color:var(--ink3);letter-spacing:.08em;text-transform:uppercase;margin-top:4px}
+  .card{background:var(--panel);border:1px solid var(--line);padding:12px;margin-top:12px}
+  .drop{border:1px dashed var(--line);text-align:center}
+  button{font-family:inherit;border-radius:2px;cursor:pointer}
+  .main{background:var(--ink);color:#fff;border:none;padding:10px 16px;font-size:13px;font-weight:600}
+  .main:disabled{opacity:.55}
+  .ghost{background:transparent;color:var(--ink2);border:1px solid var(--line);padding:7px 10px;font-size:11.5px}
+  .danger{color:var(--red)}
+  input[type=text],input[type=password],textarea,select{
+    border:1px solid var(--line);padding:8px;font-size:13px;border-radius:2px;width:100%;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#fff;color:var(--ink)}
+  textarea{min-height:110px;resize:vertical}
+  .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .hint{font-size:10.5px;color:var(--ink3);line-height:1.5;margin:8px 0 0}
+  .q{display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--paper)}
+  .q:first-child{border-top:none}
+  .q.err{background:#FFF5F5}
+  .q .n{font-family:ui-monospace,monospace;font-size:11px;color:var(--ink3);width:20px;text-align:right;flex-shrink:0}
+  .q img{width:34px;height:46px;object-fit:cover;object-position:top;border:1px solid var(--line);
+    border-radius:2px;flex-shrink:0}
+  .q.err img{border-color:var(--red)}
+  .q .st{font-family:ui-monospace,monospace;font-size:12px;font-weight:600;color:var(--ink3)}
+  .q .st.ok{color:var(--green)} .q .st.bad{color:var(--red)}
+  .q .msg{font-size:10px;color:var(--red);word-break:break-word}
+  section h2{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin:0}
+  .head{display:flex;align-items:baseline;gap:8px;padding-bottom:4px;margin-top:18px}
+  .count{font-family:ui-monospace,monospace;font-size:12px;font-weight:700}
+  .tag{font-size:10px;font-weight:700;letter-spacing:.08em;padding:2px 6px;border-radius:2px;text-transform:uppercase}
+  .plate{display:inline-flex;align-items:stretch;border:1.5px solid var(--ink);border-radius:3px;
+    overflow:hidden;background:#fff}
+  .plate .eu{background:var(--eu);color:#fff;font-size:9px;font-weight:700;padding:0 4px;
+    display:flex;align-items:flex-end;justify-content:center;line-height:1.8}
+  .plate .txt{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700;font-size:14px;
+    letter-spacing:.06em;padding:3px 8px}
+  .dim{opacity:.65}
+  .item{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--paper)}
+  .item .meta{flex:1;min-width:0;font-size:12px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tabs{display:flex;gap:4px;margin-bottom:10px}
+  .tabs button{flex:1;padding:8px 4px;font-size:12px;font-weight:600;border:1px solid var(--line);
+    background:transparent;color:var(--ink2)}
+  .tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .tabs small{display:block;font-family:ui-monospace,monospace;font-size:11px;opacity:.7;font-weight:400}
+  pre{background:var(--paper);border:1px solid var(--line);padding:10px;font-size:11px;line-height:1.55;
+    white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    color:var(--ink2);max-height:300px;overflow:auto;margin:10px 0 0}
+  .foot{font-size:10.5px;color:var(--ink3);margin-top:16px;line-height:1.6}
+  label.chk{font-size:11.5px;color:var(--ink2);display:flex;align-items:center;gap:4px}
+  .empty{font-size:12px;color:var(--ink3);margin:8px 0 0}
+  @media(prefers-reduced-motion:no-preference){.q{transition:background .2s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="bar"></div>
+    <div>
+      <h1>Control de matrículas</h1>
+      <p class="sub">Capturas de apps.fomento.gob.es → provincia y matrícula ordenadas → mensaje listo para WhatsApp.</p>
+    </div>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <!-- entrada -->
+  <div class="card drop">
+    <input type="file" id="file" accept="image/*" multiple hidden>
+    <button class="main" id="btnFile">Añadir capturas</button>
+    <p class="hint" id="fileHint">Puedes seleccionar 20 de golpe.</p>
+    <div class="row" style="justify-content:center;margin-top:6px">
+      <button class="ghost" id="btnManual">escribir una a mano</button>
+      <button class="ghost" id="btnPaste">pegar una lista</button>
+      <button class="ghost" id="btnCfg">ajustes</button>
+    </div>
+
+    <div id="manual" hidden style="margin-top:8px">
+      <div class="row">
+        <input type="text" id="mPlate" placeholder="Matrícula" style="flex:1 1 110px">
+        <input type="text" id="mProv" placeholder="Provincia" style="flex:1 1 110px">
+        <input type="text" id="mMuni" placeholder="Municipio" style="flex:1 1 110px">
+        <button class="main" id="mSave">Guardar</button>
+      </div>
+    </div>
+
+    <div id="paste" hidden style="margin-top:8px;text-align:left">
+      <textarea id="bulk" placeholder="8330LZB ; ASTURIAS ; OVIEDO ; VTC ; 30-04-2028&#10;0264KYD ; LA RIOJA ; LOGROÑO ; VTC&#10;5718LHM ; SIN"></textarea>
+      <div class="row" style="margin-top:6px">
+        <button class="main" id="bImport">Importar</button>
+        <span class="hint" style="margin:0">Una por línea, separada por «;». Escribe SIN si no tiene títulos.</span>
+      </div>
+    </div>
+
+    <div id="cfg" hidden style="margin-top:8px;text-align:left">
+      <p class="hint" style="margin:0 0 6px">
+        Tu clave de Anthropic se guarda solo en este teléfono, nunca se sube a GitHub. Sin clave puedes seguir usando
+        «pegar una lista» y «escribir una a mano».
+      </p>
+      <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off">
+      <div class="row" style="margin-top:6px">
+        <select id="model" style="flex:1 1 160px">
+          <option value="claude-sonnet-5">Sonnet 5 — más preciso</option>
+          <option value="claude-haiku-4-5-20251001">Haiku 4.5 — más barato</option>
+          <option value="claude-opus-5">Opus 5</option>
+        </select>
+        <button class="main" id="cfgSave">Guardar clave</button>
+        <button class="ghost" id="cfgClear">borrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="queueCard" hidden>
+    <div id="queue"></div>
+    <div class="row" id="queueActions" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card" id="editCard" hidden style="border:2px solid var(--eu)">
+    <p class="hint" style="margin:0 0 6px;text-transform:uppercase;letter-spacing:.08em">Corregir ficha</p>
+    <div class="row">
+      <input type="text" id="ePlate" placeholder="Matrícula" style="flex:1 1 110px">
+      <input type="text" id="eProv" placeholder="Provincia" style="flex:1 1 110px">
+      <input type="text" id="eMuni" placeholder="Municipio" style="flex:1 1 110px">
+      <button class="main" id="eSave">Guardar cambios</button>
+      <button class="ghost" id="eCancel">cancelar</button>
+    </div>
+  </div>
+
+  <div id="lists"></div>
+
+  <!-- informe -->
+  <section class="card" style="margin-top:24px">
+    <p class="hint" style="margin:0 0 8px;text-transform:uppercase;letter-spacing:.12em">Mensaje para el grupo</p>
+    <div class="tabs" id="tabs"></div>
+    <p class="hint" id="tabHint" style="margin:0 0 10px"></p>
+    <div class="row">
+      <button class="main" id="btnCopy">Copiar para WhatsApp</button>
+      <button class="ghost" id="btnSent" hidden>marcar como enviado</button>
+      <button class="ghost" id="btnCsv">CSV</button>
+      <label class="chk"><input type="checkbox" id="detail"> con municipio</label>
+    </div>
+    <pre id="preview" hidden></pre>
+  </section>
+
+  <div class="row" style="margin-top:12px;justify-content:flex-end">
+    <button class="ghost danger" id="btnWipe">vaciar registro</button>
+  </div>
+
+  <p class="foot">
+    Los datos se guardan en este navegador. Proceden de la consulta pública del Registro de Empresas y Actividades de
+    Transporte; compártelos como información de flota, no como acusación a personas concretas.
+  </p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ── almacenamiento ──────────────────────────────────── */
+  var K = { rows: "cm.rows.v1", key: "cm.apikey", model: "cm.model", detail: "cm.detail" };
+  var store = {
+    get: function (k, def) { try { var v = localStorage.getItem(k); return v === null ? def : JSON.parse(v); }
+      catch (e) { return def; } },
+    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+    del: function (k) { try { localStorage.removeItem(k); } catch (e) {} }
+  };
+
+  var rows = store.get(K.rows, []);
+  var apiKey = store.get(K.key, "");
+  var model = store.get(K.model, "claude-sonnet-5");
+  var detail = store.get(K.detail, false);
+  var modo = "dia";
+  var queue = [];
+  var busy = false;
+  var editing = null;
+
+  /* ── utilidades ──────────────────────────────────────── */
+  var CAT = ["BARCELONA", "GIRONA", "LLEIDA", "TARRAGONA"];
+  var MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  var DIAS = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+
+  function strip(s){ return (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().trim(); }
+  function normProv(p){
+    var v = strip(p).replace(/\.$/,"");
+    var map = { GERONA:"GIRONA", LERIDA:"LLEIDA", "ILLES BALEARS":"BALEARES", "ISLAS BALEARES":"BALEARES",
+      CORUNA:"A CORUÑA", "LA CORUNA":"A CORUÑA", "A CORUNA":"A CORUÑA", ALAVA:"ARABA/ALAVA",
+      GUIPUZCOA:"GIPUZKOA", VIZCAYA:"BIZKAIA" };
+    return map[v] || v;
+  }
+  function normPlate(p){ return strip(p).replace(/[^A-Z0-9]/g,""); }
+  function isCat(p){ return CAT.indexOf(normProv(p)) >= 0; }
+  function cmp(a,b){ return (a||"").localeCompare(b||"","es"); }
+  function pad(n){ return String(n).padStart(2,"0"); }
+  function isoOf(d){ d = d || new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+  function today(){ var d=new Date(); return pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear(); }
+  function longDate(iso){
+    var p=(iso||isoOf()).split("-").map(Number), dt=new Date(p[0],p[1]-1,p[2]);
+    return DIAS[dt.getDay()]+" "+p[2]+" de "+MESES[p[1]-1]+" de "+p[0];
+  }
+  function monthLabel(ym){ var p=ym.split("-"); return MESES[Number(p[1])-1]+" "+p[0]; }
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function wait(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+  function save(){ store.set(K.rows, rows); render(); }
+
+  /* ── lectura de capturas ─────────────────────────────── */
+  var PROMPT = 'Estás leyendo una captura de pantalla de apps.fomento.gob.es (Registro de Empresas y Actividades de Transporte, España).\n\n'
+    + 'Devuelve SOLO un objeto JSON, sin texto adicional y sin backticks:\n'
+    + '{"plate":"","status":"VIGOR|SIN_TITULO|REPETIR|UNKNOWN","province":"","municipality":"","authorization":"","validUntil":""}\n\n'
+    + 'Reglas:\n'
+    + '- "plate": la matrícula, en mayúsculas y sin espacios. Si hay tabla "Datos vehículo/s", usa esa; si no, la escrita en el campo Matrícula.\n'
+    + '- Si hay "Datos autorización de transporte", status = "VIGOR".\n'
+    + '- Si aparece en rojo "no tiene titulos habilitantes en vigor", status = "SIN_TITULO".\n'
+    + '- Si aparece en rojo "La verificacion de seguridad ha fallado", status = "REPETIR".\n'
+    + '- "province": SOLO la provincia de "Domicilio del establecimiento" (última palabra: "33007 - OVIEDO - ASTURIAS" → ASTURIAS). NUNCA la de "Datos del titular".\n'
+    + '- "municipality": la localidad de ese domicilio.\n'
+    + '- "authorization": VTC, VT, MDP o MDL.\n'
+    + '- "validUntil": la F. Validez si aparece.\n'
+    + '- Deja "" lo que no se vea. No inventes datos.';
+
+  function rawB64(file){
+    return new Promise(function(res,rej){
+      var r=new FileReader();
+      r.onload=function(){ res(String(r.result).split(",")[1]); };
+      r.onerror=function(){ rej(new Error("No se puede abrir el archivo")); };
+      r.readAsDataURL(file);
+    });
+  }
+
+  function prepare(file, max){
+    var url = URL.createObjectURL(file);
+    return new Promise(function(res){
+      var img = new Image();
+      img.onload = function(){
+        try {
+          var scale = Math.min(1, max / Math.max(img.width, img.height));
+          var c = document.createElement("canvas");
+          c.width = Math.max(1, Math.round(img.width*scale));
+          c.height = Math.max(1, Math.round(img.height*scale));
+          var ctx = c.getContext("2d");
+          ctx.fillStyle = "#fff"; ctx.fillRect(0,0,c.width,c.height);
+          ctx.drawImage(img,0,0,c.width,c.height);
+          var d = c.toDataURL("image/jpeg", .72).split(",")[1];
+          URL.revokeObjectURL(url);
+          if (!d || d.length < 500) throw new Error("canvas");
+          res({ data:d, media:"image/jpeg" });
+        } catch (e) {
+          URL.revokeObjectURL(url);
+          rawB64(file).then(function(d){
+            var m = /^image\/(jpeg|png|webp|gif)$/.test(file.type) ? file.type : "image/png";
+            res({ data:d, media:m });
+          });
+        }
+      };
+      img.onerror = function(){
+        URL.revokeObjectURL(url);
+        rawB64(file).then(function(d){
+          var m = /^image\/(jpeg|png|webp|gif)$/.test(file.type) ? file.type : "image/png";
+          res({ data:d, media:m });
+        });
+      };
+      img.src = url;
+    });
+  }
+
+  function callOnce(img){
+    return fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: model,
+        max_tokens: 1000,
+        messages: [{ role:"user", content:[
+          { type:"image", source:{ type:"base64", media_type:img.media, data:img.data } },
+          { type:"text", text:PROMPT }
+        ]}]
+      })
+    }).then(function(r){
+      return r.text().then(function(body){
+        var data = null;
+        try { data = JSON.parse(body); } catch(e){}
+        if (!r.ok) {
+          var detailMsg = (data && data.error && data.error.message) || body.slice(0,90);
+          var err = new Error("HTTP " + r.status + ": " + detailMsg);
+          err.retry = r.status === 429 || r.status >= 500 || /internal|overload|timeout|unavailable/i.test(detailMsg);
+          throw err;
+        }
+        var txt = "";
+        if (data && Array.isArray(data.content)) {
+          txt = data.content.filter(function(c){ return c && c.type === "text"; })
+                            .map(function(c){ return c.text; }).join("\n");
+        } else if (data && typeof data.completion === "string") { txt = data.completion; }
+        else if (data && data.error && data.error.message) {
+          var e2 = new Error(String(data.error.message).slice(0,90));
+          e2.retry = /overload|rate|timeout|unavailable/i.test(data.error.message);
+          throw e2;
+        } else { txt = body; }
+
+        txt = txt.replace(/```json|```/g, "").trim();
+        var s = txt.indexOf("{"), e = txt.lastIndexOf("}");
+        if (s < 0 || e < s) { var e3 = new Error("Respuesta sin datos"); e3.retry = true; throw e3; }
+        return JSON.parse(txt.slice(s, e+1));
+      });
+    });
+  }
+
+  function readShot(file){
+    var tam = [900, 900, 700, 550], esp = [1500, 3000, 5000];
+    function intento(i){
+      return prepare(file, tam[i]).then(callOnce)["catch"](function(err){
+        var puede = err.retry || /Failed to fetch|NetworkError|Load failed/i.test(err.message||"");
+        if (i < tam.length-1 && puede) return wait(esp[i]).then(function(){ return intento(i+1); });
+        throw err;
+      });
+    }
+    return intento(0);
+  }
+
+  /* ── lote ────────────────────────────────────────────── */
+  function onFiles(files){
+    var list = Array.prototype.slice.call(files||[]).filter(function(f){
+      return f && (!f.type || f.type.indexOf("image/") === 0 || /\.(png|jpe?g|webp|heic|gif)$/i.test(f.name||""));
+    });
+    if (!list.length) return;
+    if (!apiKey) { alert("Añade tu clave de Anthropic en «ajustes» para leer capturas, o usa «pegar una lista»."); return; }
+
+    queue.forEach(function(q){ if (q.url) URL.revokeObjectURL(q.url); });
+    queue = list.map(function(f,i){
+      return { n:i+1, file:f, url:URL.createObjectURL(f), state:"espera", msg:"", plate:"" };
+    });
+    busy = true; render();
+
+    var found = [];
+    function pasada(vuelta){
+      var pend = queue.filter(function(q){ return q.state === "espera" || q.state === "error"; });
+      if (!pend.length || vuelta > 1) return Promise.resolve();
+      var p = Promise.resolve();
+      if (vuelta > 0) {
+        pend.forEach(function(q){ q.state = "espera"; q.msg = "reintentando…"; });
+        render();
+        p = wait(4000);
+      }
+      pend.forEach(function(q){
+        p = p.then(function(){
+          q.state = "leyendo"; q.msg = ""; render();
+          return readShot(q.file).then(function(d){
+            var st = ["VIGOR","SIN_TITULO","REPETIR"].indexOf(d.status) >= 0 ? d.status : "UNKNOWN";
+            found.push({
+              id: Date.now()+"-"+q.n+"-"+vuelta,
+              plate: normPlate(d.plate),
+              province: st === "VIGOR" ? normProv(d.province) : "",
+              municipality: st === "VIGOR" ? strip(d.municipality) : "",
+              authorization: strip(d.authorization),
+              validUntil: d.validUntil || "",
+              status: st, date: today(), firstIso: isoOf(), lastIso: isoOf(), sentAt: null
+            });
+            q.plate = normPlate(d.plate);
+            q.state = st === "REPETIR" ? "repetir consulta" : (q.plate ? "ok" : "revisar");
+          })["catch"](function(err){
+            q.state = "error"; q.msg = String(err.message || err);
+          }).then(function(){ render(); return wait(700); });
+        });
+      });
+      return p.then(function(){ return pasada(vuelta+1); });
+    }
+
+    pasada(0).then(function(){
+      found.forEach(function(f){
+        var k = -1;
+        for (var i=0;i<rows.length;i++){ if (rows[i].plate && rows[i].plate === f.plate) { k=i; break; } }
+        if (k >= 0) {
+          f.id = rows[k].id; f.date = rows[k].date; f.firstIso = rows[k].firstIso;
+          f.sentAt = rows[k].sentAt; f.lastIso = isoOf(); rows[k] = f;
+        } else if (f.plate) rows.push(f);
+      });
+      busy = false;
+      save();
+      document.getElementById("file").value = "";
+    });
+  }
+
+  /* ── agrupación ──────────────────────────────────────── */
+  function buckets(){
+    var fuera = {}, dins = {}, sense = [], revisar = [];
+    rows.forEach(function(r){
+      if (r.status === "SIN_TITULO") return sense.push(r);
+      if (!r.province || !r.plate) return revisar.push(r);
+      var b = isCat(r.province) ? dins : fuera;
+      (b[r.province] = b[r.province] || []).push(r);
+    });
+    function sortG(o){
+      return Object.keys(o).sort(cmp).map(function(p){
+        return [p, o[p].sort(function(a,b){ return cmp(a.plate,b.plate); })];
+      });
+    }
+    return { fuera:sortG(fuera), dins:sortG(dins),
+             sense:sense.sort(function(a,b){ return cmp(a.plate,b.plate); }), revisar:revisar };
+  }
+  function total(g){ return g.reduce(function(s,x){ return s + x[1].length; }, 0); }
+  function nuevas(){ return rows.filter(function(r){ return !r.sentAt; }); }
+  function meses(){
+    var m = {};
+    rows.forEach(function(r){ var ym = (r.firstIso||"").slice(0,7); if (ym) (m[ym]=m[ym]||[]).push(r); });
+    return Object.keys(m).sort().reverse().map(function(ym){ return [ym, m[ym]]; });
+  }
+
+  /* ── informes ────────────────────────────────────────── */
+  function listar(set, L, num){
+    var g = {};
+    set.forEach(function(r){ var p = r.province || "SIN PROVINCIA"; (g[p]=g[p]||[]).push(r); });
+    Object.keys(g).sort(cmp).forEach(function(p){
+      L.push("▪️ " + p + "  (" + g[p].length + ")");
+      g[p].sort(function(a,b){ return cmp(a.plate,b.plate); }).forEach(function(r,i){
+        L.push("      " + (num ? (i+1)+". " : "") + r.plate + (detail && r.municipality ? "  ·  " + r.municipality : ""));
+      });
+      L.push("");
+    });
+  }
+
+  function reporteDiario(){
+    var b = buckets(), nv = nuevas(), ms = meses(), L = [];
+    L.push("🚕 *CONTROL DE MATRÍCULAS*");
+    L.push("📅 " + longDate(isoOf()));
+    L.push("");
+    L.push("━━━━━━━━━━━━━━━━━");
+    L.push("🆕 *NUEVAS DE HOY: " + nv.length + "*");
+    L.push("━━━━━━━━━━━━━━━━━");
+    if (!nv.length) L.push("Hoy no hay matrículas nuevas.");
+    else {
+      var nf = nv.filter(function(r){ return r.status === "VIGOR" && r.province && !isCat(r.province); });
+      var nc = nv.filter(function(r){ return r.status === "VIGOR" && r.province && isCat(r.province); });
+      var ns = nv.filter(function(r){ return r.status === "SIN_TITULO"; });
+      if (nf.length) { L.push(""); L.push("🚨 *De fuera de Catalunya* (" + nf.length + ")"); listar(nf, L, true); }
+      if (nc.length) { L.push("✅ *De Catalunya* (" + nc.length + ")"); listar(nc, L, true); }
+      if (ns.length) {
+        L.push("❌ *Sin títulos en vigor* (" + ns.length + ")");
+        ns.sort(function(a,b){ return cmp(a.plate,b.plate); }).forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate); });
+        L.push("");
+      }
+    }
+    L.push("━━━━━━━━━━━━━━━━━");
+    L.push("📊 *TOTAL ACUMULADO: " + rows.length + "*");
+    L.push("━━━━━━━━━━━━━━━━━");
+    L.push("🚨 Fuera de Catalunya:  " + total(b.fuera));
+    L.push("✅ Catalunya:  " + total(b.dins));
+    L.push("❌ Sin títulos en vigor:  " + b.sense.length);
+    if (b.revisar.length) L.push("⚠️ Pendientes de revisar:  " + b.revisar.length);
+    if (ms.length) { L.push(""); L.push("📈 Este mes (" + monthLabel(ms[0][0]) + "): " + ms[0][1].length + " nuevas"); }
+    if (b.fuera.length) {
+      L.push(""); L.push("🔝 Provincias de fuera con más vehículos:");
+      b.fuera.slice().sort(function(a,b2){ return b2[1].length - a[1].length; }).slice(0,5)
+        .forEach(function(x){ L.push("      " + x[0] + " — " + x[1].length); });
+    }
+    L.push("");
+    L.push("_Datos de la consulta pública del Ministerio (apps.fomento.gob.es). Solo información de flota._");
+    return L.join("\n");
+  }
+
+  function reporteMes(){
+    var ms = meses(), L = [];
+    var ym = ms.length ? ms[0][0] : isoOf().slice(0,7);
+    var set = ms.length ? ms[0][1] : [];
+    L.push("🚕 *CONTROL DE MATRÍCULAS*");
+    L.push("🗓️ *RESUMEN DE " + monthLabel(ym).toUpperCase() + "*");
+    L.push("");
+    L.push("Nuevas este mes: *" + set.length + "*   ·   Acumulado: *" + rows.length + "*");
+    L.push("");
+    L.push("━━━ *POR DÍA* ━━━");
+    var dias = {};
+    set.forEach(function(r){ dias[r.firstIso] = (dias[r.firstIso]||0) + 1; });
+    Object.keys(dias).sort().forEach(function(d){
+      L.push("   " + d.slice(8) + "/" + d.slice(5,7) + "  —  " + dias[d] + " matrículas");
+    });
+    L.push("");
+    L.push("━━━ *DE FUERA DE CATALUNYA* ━━━");
+    var f = set.filter(function(r){ return r.status === "VIGOR" && r.province && !isCat(r.province); });
+    if (!f.length) L.push("Ninguna este mes."); else listar(f, L, true);
+    var s = set.filter(function(r){ return r.status === "SIN_TITULO"; });
+    L.push("━━━ *SIN TÍTULOS EN VIGOR* (" + s.length + ") ━━━");
+    s.sort(function(a,b){ return cmp(a.plate,b.plate); }).forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate); });
+    L.push("");
+    L.push("_Consulta pública del Ministerio · apps.fomento.gob.es_");
+    return L.join("\n");
+  }
+
+  function reporteTotal(){
+    var b = buckets(), L = [];
+    L.push("🚕 *CONTROL DE MATRÍCULAS — LISTA COMPLETA*");
+    L.push("📅 Actualizada el " + longDate(isoOf()) + "  ·  " + rows.length + " matrículas");
+    L.push("");
+    L.push("━━━━━━━━━━━━━━━━━");
+    L.push("🚨 *FUERA DE CATALUNYA* (" + total(b.fuera) + ")");
+    L.push("━━━━━━━━━━━━━━━━━");
+    if (!b.fuera.length) L.push("Ninguna.");
+    b.fuera.forEach(function(x){
+      L.push("▪️ " + x[0] + "  (" + x[1].length + ")");
+      x[1].forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate + (detail && r.municipality ? "  ·  " + r.municipality : "")); });
+      L.push("");
+    });
+    L.push("━━━━━━━━━━━━━━━━━");
+    L.push("✅ *CATALUNYA* (" + total(b.dins) + ")");
+    L.push("━━━━━━━━━━━━━━━━━");
+    if (!b.dins.length) L.push("Ninguna.");
+    b.dins.forEach(function(x){
+      L.push("▪️ " + x[0] + "  (" + x[1].length + ")");
+      x[1].forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate); });
+      L.push("");
+    });
+    L.push("━━━━━━━━━━━━━━━━━");
+    L.push("❌ *SIN TÍTULOS HABILITANTES EN VIGOR* (" + b.sense.length + ")");
+    L.push("━━━━━━━━━━━━━━━━━");
+    if (!b.sense.length) L.push("Ninguna.");
+    b.sense.forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate); });
+    if (b.revisar.length) {
+      L.push(""); L.push("⚠️ *PENDIENTES DE REVISAR* (" + b.revisar.length + ")");
+      b.revisar.forEach(function(r){ L.push("      " + (r.plate || "sin matrícula")); });
+    }
+    L.push("");
+    L.push("━━━━━━━━━━━━━━━━━");
+    L.push("ℹ️ *Cómo leer esta lista*");
+    L.push("🚨 = domicilio de la empresa fuera de Catalunya");
+    L.push("❌ = la consulta no muestra títulos en vigor");
+    L.push("Los datos salen de la consulta pública del Ministerio y pueden cambiar. Es información de flota, no una acusación a ningún conductor.");
+    return L.join("\n");
+  }
+
+  function informe(){ return modo === "dia" ? reporteDiario() : modo === "mes" ? reporteMes() : reporteTotal(); }
+
+  /* ── pintado ─────────────────────────────────────────── */
+  function plateHTML(p, dim){
+    return '<span class="plate' + (dim ? " dim" : "") + '"><span class="eu">E</span><span class="txt">'
+      + esc(p || "—") + '</span></span>';
+  }
+  function itemHTML(r, dim){
+    return '<div class="item">' + plateHTML(r.plate, dim)
+      + '<div class="meta">' + esc([r.municipality || r.province || "", r.validUntil ? "hasta " + r.validUntil : ""]
+          .filter(Boolean).join("  ·  ")) + '</div>'
+      + (r.authorization ? '<span class="tag" style="background:var(--paper);color:var(--ink2)">' + esc(r.authorization) + '</span>' : "")
+      + '<button class="ghost" data-edit="' + esc(r.id) + '">editar</button>'
+      + '<button class="ghost danger" data-del="' + esc(r.id) + '">×</button></div>';
+  }
+  function groupHTML(title, count, color, body){
+    return '<section><div class="head" style="border-bottom:2px solid ' + color + '">'
+      + '<h2>' + title + '</h2><span class="count" style="color:' + color + '">' + count + '</span></div>'
+      + body + '</section>';
+  }
+
+  function render(){
+    var b = buckets(), nv = nuevas(), ms = meses();
+
+    document.getElementById("stats").innerHTML =
+      [[rows.length,"acumuladas","var(--ink)"],[nv.length,"sin enviar","#946B00"],
+       [total(b.fuera),"fuera de Cat.","var(--eu)"],[b.sense.length,"sin título","var(--red)"]]
+      .map(function(s){ return '<div class="stat"><b style="color:'+s[2]+'">'+s[0]+'</b><span>'+s[1]+'</span></div>'; }).join("");
+
+    document.getElementById("btnFile").disabled = busy;
+    document.getElementById("btnFile").textContent = busy
+      ? "Leyendo " + (queue.filter(function(q){ return q.state !== "espera" && q.state !== "leyendo"; }).length + 1)
+        + " de " + queue.length + "…"
+      : "Añadir capturas";
+    document.getElementById("fileHint").textContent = apiKey
+      ? "Puedes seleccionar 20 de golpe."
+      : "Necesitas tu clave de Anthropic en «ajustes» para leer capturas.";
+
+    var qc = document.getElementById("queueCard");
+    qc.hidden = queue.length === 0;
+    document.getElementById("queue").innerHTML = queue.map(function(q){
+      var bad = q.state === "error";
+      return '<div class="q' + (bad ? " err" : "") + '">'
+        + '<span class="n">' + q.n + '</span>'
+        + '<img src="' + q.url + '" alt="captura ' + q.n + '" data-open="' + q.n + '">'
+        + '<div style="flex:1;min-width:0">'
+        + '<div class="st ' + (bad ? "bad" : q.state === "ok" ? "ok" : "") + '">'
+        + esc(q.state === "ok" ? (q.plate || "leída") : q.state) + '</div>'
+        + (q.msg ? '<div class="msg">' + esc(q.msg) + '</div>' : "")
+        + '</div></div>';
+    }).join("");
+
+    var fallos = queue.filter(function(q){ return q.state === "error"; });
+    document.getElementById("queueActions").innerHTML = busy
+      ? '<span class="hint" style="margin:0">Reintenta solo hasta 4 veces por captura y hace una segunda vuelta al final. Deja la pantalla abierta.</span>'
+      : (queue.length
+          ? (fallos.length
+              ? '<button class="main" id="qRetry">Reintentar (' + fallos.length + ')</button>'
+                + '<span class="hint" style="margin:0;flex:1">Toca una miniatura roja para ver qué captura ha fallado.</span>'
+              : '<span style="font-size:11px;color:var(--green);font-weight:600">Todas leídas ✓</span>')
+            + '<button class="ghost" id="qHide">ocultar</button>'
+          : "");
+
+    var out = "";
+    if (!rows.length) {
+      out = '<p class="empty" style="text-align:center;margin-top:24px">Todavía no hay matrículas. Añade la primera captura o pega una lista.</p>';
+    } else {
+      out += groupHTML("Fuera de Catalunya", total(b.fuera), "var(--eu)",
+        (b.fuera.length ? b.fuera.map(function(x){
+          return '<div style="margin-top:10px"><span class="tag" style="background:var(--sign);color:var(--ink)">'
+            + esc(x[0]) + '</span> <span class="count" style="color:var(--ink3)">' + x[1].length + '</span>'
+            + x[1].map(function(r){ return itemHTML(r); }).join("") + '</div>';
+        }).join("") : '<p class="empty">Ninguna de momento.</p>'));
+
+      out += groupHTML("Catalunya", total(b.dins), "var(--green)",
+        (b.dins.length ? b.dins.map(function(x){
+          return '<div style="margin-top:10px"><span class="tag" style="background:var(--paper);color:var(--ink2)">'
+            + esc(x[0]) + '</span> <span class="count" style="color:var(--ink3)">' + x[1].length + '</span>'
+            + x[1].map(function(r){ return itemHTML(r); }).join("") + '</div>';
+        }).join("") : '<p class="empty">Ninguna de momento.</p>'));
+
+      out += groupHTML("Sin títulos habilitantes en vigor", b.sense.length, "var(--red)",
+        (b.sense.length ? b.sense.map(function(r){ return itemHTML(r, true); }).join("")
+                        : '<p class="empty">Ninguna de momento.</p>'));
+
+      if (b.revisar.length) {
+        out += groupHTML("Pendientes de revisar", b.revisar.length, "var(--ink3)",
+          '<p class="empty">O la web falló la verificación de seguridad, o falta el domicilio. Vuelve a consultar esa matrícula y sube la captura del resultado.</p>'
+          + b.revisar.map(function(r){ return itemHTML(r, true); }).join(""));
+      }
+    }
+    document.getElementById("lists").innerHTML = out;
+
+    document.getElementById("tabs").innerHTML =
+      [["dia","Hoy",nv.length],["mes","Este mes",ms.length?ms[0][1].length:0],["todo","Lista completa",rows.length]]
+      .map(function(t){ return '<button data-tab="'+t[0]+'" class="'+(modo===t[0]?"on":"")+'">'+t[1]+'<small>'+t[2]+'</small></button>'; }).join("");
+    document.getElementById("tabHint").textContent = modo === "dia"
+      ? "Novedades desde el último envío, con los totales acumulados debajo. Es el mensaje del día a día."
+      : modo === "mes"
+      ? "Resumen del mes en curso: cuántas por día y el listado de fuera de Catalunya."
+      : "Todo lo acumulado, por provincia y matrícula, con una leyenda al final.";
+    document.getElementById("btnSent").hidden = !(modo === "dia" && nv.length);
+    document.getElementById("detail").checked = detail;
+
+    var pv = document.getElementById("preview");
+    pv.hidden = !rows.length;
+    if (rows.length) pv.textContent = informe();
+
+    document.getElementById("editCard").hidden = !editing;
+  }
+
+  /* ── acciones ────────────────────────────────────────── */
+  function on(id, ev, fn){ document.getElementById(id).addEventListener(ev, fn); }
+  function toggle(id){ var el = document.getElementById(id); el.hidden = !el.hidden; }
+
+  on("btnFile","click",function(){ document.getElementById("file").click(); });
+  on("file","change",function(e){ onFiles(e.target.files); });
+  on("btnManual","click",function(){ toggle("manual"); });
+  on("btnPaste","click",function(){ toggle("paste"); });
+  on("btnCfg","click",function(){
+    toggle("cfg");
+    document.getElementById("apiKey").value = apiKey;
+    document.getElementById("model").value = model;
+  });
+
+  on("cfgSave","click",function(){
+    apiKey = document.getElementById("apiKey").value.trim();
+    model = document.getElementById("model").value;
+    store.set(K.key, apiKey); store.set(K.model, model);
+    document.getElementById("cfg").hidden = true;
+    render();
+  });
+  on("cfgClear","click",function(){
+    apiKey = ""; store.del(K.key); document.getElementById("apiKey").value = "";
+    render();
+  });
+
+  on("mSave","click",function(){
+    var p = normPlate(document.getElementById("mPlate").value);
+    if (!p) return;
+    var prov = normProv(document.getElementById("mProv").value);
+    rows.push({ id:Date.now()+"-m", plate:p, province:prov,
+      municipality:strip(document.getElementById("mMuni").value), authorization:"", validUntil:"",
+      status: prov ? "VIGOR" : "UNKNOWN", date:today(), firstIso:isoOf(), lastIso:isoOf(), sentAt:null });
+    ["mPlate","mProv","mMuni"].forEach(function(i){ document.getElementById(i).value = ""; });
+    document.getElementById("manual").hidden = true;
+    save();
+  });
+
+  on("bImport","click",function(){
+    var txt = document.getElementById("bulk").value, add = 0;
+    txt.split(/\r?\n/).forEach(function(linea, i){
+      var partes = linea.split(/[;|\t]|\s{2,}/).map(function(x){ return x.trim(); }).filter(Boolean);
+      if (!partes.length) return;
+      var plate = normPlate(partes[0]);
+      if (plate.length < 6) return;
+      var resto = partes.slice(1).join(" ").toUpperCase();
+      var sin = /\bSIN\b|NO TIENE/.test(resto);
+      var rep = /REPETIR|VERIFICACION/.test(resto);
+      var prov = sin || rep ? "" : normProv(partes[1]);
+      var rec = { id:Date.now()+"-i"+i, plate:plate, province:prov,
+        municipality: sin||rep ? "" : strip(partes[2]),
+        authorization: sin||rep ? "" : strip(partes[3]), validUntil: partes[4] || "",
+        status: sin ? "SIN_TITULO" : rep ? "REPETIR" : prov ? "VIGOR" : "UNKNOWN",
+        date:today(), firstIso:isoOf(), lastIso:isoOf(), sentAt:null };
+      var k = -1;
+      for (var j=0;j<rows.length;j++){ if (rows[j].plate === plate) { k=j; break; } }
+      if (k >= 0) { rec.id = rows[k].id; rec.firstIso = rows[k].firstIso; rec.sentAt = rows[k].sentAt; rows[k] = rec; }
+      else rows.push(rec);
+      add++;
+    });
+    if (!add) { alert("No se ha reconocido ninguna matrícula. Revisa el formato."); return; }
+    document.getElementById("bulk").value = "";
+    document.getElementById("paste").hidden = true;
+    save();
+  });
+
+  document.body.addEventListener("click", function(e){
+    var t = e.target;
+    if (t.dataset.tab) { modo = t.dataset.tab; render(); return; }
+    if (t.closest && t.closest("[data-tab]")) { modo = t.closest("[data-tab]").dataset.tab; render(); return; }
+    if (t.dataset.open) {
+      var q = queue[Number(t.dataset.open) - 1];
+      if (q) window.open(q.url, "_blank");
+      return;
+    }
+    if (t.dataset.del) {
+      rows = rows.filter(function(r){ return r.id !== t.dataset.del; });
+      save(); return;
+    }
+    if (t.dataset.edit) {
+      editing = t.dataset.edit;
+      var r = rows.filter(function(x){ return x.id === editing; })[0];
+      if (r) {
+        document.getElementById("ePlate").value = r.plate;
+        document.getElementById("eProv").value = r.province;
+        document.getElementById("eMuni").value = r.municipality;
+      }
+      render();
+      var ec = document.getElementById("editCard");
+      if (ec.scrollIntoView) ec.scrollIntoView({ block:"center" });
+      return;
+    }
+    if (t.id === "qRetry") {
+      onFiles(queue.filter(function(q2){ return q2.state === "error"; }).map(function(q2){ return q2.file; }));
+      return;
+    }
+    if (t.id === "qHide") { queue = []; render(); return; }
+  });
+
+  on("eSave","click",function(){
+    rows = rows.map(function(r){
+      if (r.id !== editing) return r;
+      var prov = normProv(document.getElementById("eProv").value);
+      return Object.assign({}, r, {
+        plate: normPlate(document.getElementById("ePlate").value),
+        province: prov,
+        municipality: strip(document.getElementById("eMuni").value),
+        status: r.status === "SIN_TITULO" ? "SIN_TITULO" : prov ? "VIGOR" : r.status
+      });
+    });
+    editing = null; save();
+  });
+  on("eCancel","click",function(){ editing = null; render(); });
+
+  on("detail","change",function(e){ detail = e.target.checked; store.set(K.detail, detail); render(); });
+
+  on("btnCopy","click",function(){
+    var text = informe(), btn = document.getElementById("btnCopy");
+    function done(){ btn.textContent = "✓ Copiado"; setTimeout(function(){ btn.textContent = "Copiar para WhatsApp"; }, 1800); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done)["catch"](fallback);
+    } else fallback();
+    function fallback(){
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); done(); } catch (err) { alert("Copia el texto del recuadro de abajo."); }
+      ta.remove();
+    }
+  });
+
+  on("btnSent","click",function(){
+    rows = rows.map(function(r){ return r.sentAt ? r : Object.assign({}, r, { sentAt: isoOf() }); });
+    save();
+  });
+
+  on("btnCsv","click",function(){
+    var head = ["Fecha alta","Provincia","Matricula","Municipio","Autorizacion","Valida hasta","Estado","Fuera de Catalunya","Enviado"];
+    var body = rows.slice().sort(function(a,b){ return cmp(a.province,b.province) || cmp(a.plate,b.plate); })
+      .map(function(r){
+        return [r.firstIso, r.province, r.plate, r.municipality, r.authorization, r.validUntil,
+          r.status === "SIN_TITULO" ? "SIN TITULOS EN VIGOR" : r.status === "VIGOR" ? "EN VIGOR" : "REVISAR",
+          r.province && !isCat(r.province) ? "SI" : "", r.sentAt || "NUEVA"]
+          .map(function(c){ return '"' + String(c==null?"":c).replace(/"/g,'""') + '"'; }).join(",");
+      });
+    var blob = new Blob(["\uFEFF" + [head.join(",")].concat(body).join("\n")], { type:"text/csv;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "matriculas-" + isoOf() + ".csv";
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  });
+
+  on("btnWipe","click",function(){
+    if (confirm("¿Borrar todas las matrículas guardadas?")) { rows = []; save(); }
+  });
+
+  window.addEventListener("paste", function(e){
+    var items = Array.prototype.slice.call((e.clipboardData && e.clipboardData.items) || []);
+    var imgs = items.filter(function(i){ return i.type.indexOf("image/") === 0; })
+                    .map(function(i){ return i.getAsFile(); }).filter(Boolean);
+    if (imgs.length) onFiles(imgs);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
