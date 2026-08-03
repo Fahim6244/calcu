@@ -145,6 +145,7 @@
       <input type="text" id="ePlate" placeholder="Matrícula" style="flex:1 1 110px">
       <input type="text" id="eProv" placeholder="Provincia" style="flex:1 1 110px">
       <input type="text" id="eMuni" placeholder="Municipio" style="flex:1 1 110px">
+      <input type="text" id="eGrupo" placeholder="Grupo (A, B…)" style="flex:1 1 110px" maxlength="12">
       <button class="main" id="eSave">Guardar cambios</button>
       <button class="ghost" id="eCancel">cancelar</button>
     </div>
@@ -238,6 +239,47 @@
     return m ? m[2] + " " + m[1].padStart(4,"0") : "ZZZZ " + (p || "");
   }
   function cmpPlate(a,b){ return cmp(plateKey(a), plateKey(b)); }
+
+  /* Huella del titular: convierte NIF + nombre + CP en un código corto
+     e irreversible. Se guarda el código; los datos personales se descartan
+     y nunca se muestran ni se envían a ningún sitio. */
+  function huella(nif, nombre, cp){
+    var n = strip(nombre).replace(/[^A-Z ]/g,"").replace(/\s+/g," ").trim();
+    var i = strip(nif).replace(/[^0-9A-Z]/g,"");
+    if (!n && i.replace(/[^0-9]/g,"").length < 4) return "";
+    var base = i + "|" + n + "|" + String(cp||"").replace(/[^0-9]/g,"").slice(0,5);
+    var h = 0x811c9dc5;
+    for (var k=0;k<base.length;k++){
+      h ^= base.charCodeAt(k);
+      h = (h + ((h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24))) >>> 0;
+    }
+    return h.toString(36).toUpperCase().slice(0,6);
+  }
+
+  var COLORES = ["#123C8C","#B4531A","#6B2D8C","#0B6B45","#8C6D0A","#1A6E7E","#7A2E4A","#3D4A5C"];
+  var LETRAS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+  /* Asigna una letra a cada titular que tenga 2 o más vehículos. */
+  function grupos(){
+    var mapa = {};
+    rows.forEach(function(r){
+      var k = r.grupo ? "M:" + strip(r.grupo) : (r.okey ? "H:" + r.okey : "");
+      if (!k) return;
+      (mapa[k] = mapa[k] || []).push(r);
+    });
+    var claves = Object.keys(mapa).filter(function(k){ return mapa[k].length > 1; });
+    claves.sort(function(a,b){
+      var pa = mapa[a].slice().sort(function(x,y){ return cmpPlate(x.plate,y.plate); })[0].plate;
+      var pb = mapa[b].slice().sort(function(x,y){ return cmpPlate(x.plate,y.plate); })[0].plate;
+      return cmpPlate(pa, pb);
+    });
+    var out = {};
+    claves.forEach(function(k, i){
+      var letra = LETRAS[i % 26], color = COLORES[i % COLORES.length];
+      mapa[k].forEach(function(r){ out[r.id] = { letra: letra, color: color, n: mapa[k].length }; });
+    });
+    return out;
+  }
   function pad(n){ return String(n).padStart(2,"0"); }
   function isoOf(d){ d = d || new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
   function today(){ var d=new Date(); return pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear(); }
@@ -264,6 +306,8 @@
     + '- "municipality": la localidad de ese domicilio.\n'
     + '- "authorization": VTC, VT, MDP o MDL.\n'
     + '- "validUntil": la F. Validez si aparece.\n'
+    + '- "ownerNif", "ownerName": el NIF y el Nombre de "Datos del titular", tal cual aparezcan (aunque estén parcialmente ocultos).\n'
+    + '- "ownerPostal": el código postal del domicilio del establecimiento (los 5 dígitos iniciales).\n'
     + '- Deja "" lo que no se vea. No inventes datos.';
 
   function rawB64(file){
@@ -405,6 +449,8 @@
               municipality: st === "VIGOR" ? strip(d.municipality) : "",
               authorization: strip(d.authorization),
               validUntil: d.validUntil || "",
+              okey: huella(d.ownerNif, d.ownerName, d.ownerPostal),
+              grupo: "",
               status: st, date: today(), firstIso: isoOf(), lastIso: isoOf(), sentAt: null
             });
             q.plate = normPlate(d.plate);
@@ -458,13 +504,18 @@
   }
 
   /* ── informes ────────────────────────────────────────── */
+  function marca(r, G){ return G && G[r.id] ? "  [" + G[r.id].letra + "]" : ""; }
+
   function listar(set, L, num){
+    var G = grupos();
     var g = {};
     set.forEach(function(r){ var p = r.province || "SIN PROVINCIA"; (g[p]=g[p]||[]).push(r); });
     Object.keys(g).sort(cmp).forEach(function(p){
       L.push("▪️ " + p + "  (" + g[p].length + ")");
       g[p].sort(function(a,b){ return cmpPlate(a.plate,b.plate); }).forEach(function(r,i){
-        L.push("      " + (num ? (i+1)+". " : "") + r.plate + (detail && r.municipality ? "  ·  " + r.municipality : ""));
+        L.push("      " + (num ? (i+1)+". " : "") + r.plate
+          + (G[r.id] ? "  [" + G[r.id].letra + "]" : "")
+          + (detail && r.municipality ? "  ·  " + r.municipality : ""));
       });
       L.push("");
     });
@@ -479,6 +530,17 @@
     "Estamos abiertos a cualquier corrección, aclaración o colaboración. Esto es de todos y para todos: cuanto mejor informados estemos, mejor podremos defender nuestro trabajo.",
     "Gracias por vuestra comprensión y por cuidar entre todos el buen ambiente del sector."
   ];
+  function leyendaGrupos(L){
+    var G = grupos(), letras = {};
+    Object.keys(G).forEach(function(id){ letras[G[id].letra] = true; });
+    var n = Object.keys(letras).length;
+    if (!n) return;
+    L.push("");
+    L.push("🔗 *VEHÍCULOS DEL MISMO TITULAR*");
+    L.push("Las matrículas marcadas con la misma letra entre corchetes — [A], [B]… — están registradas a nombre del mismo titular.");
+    L.push("No publicamos ni guardamos ningún dato personal: solo indicamos que coinciden. Grupos detectados: " + n + ".");
+  }
+
   function notaTexto(L){
     L.push("");
     L.push("━━━━━━━━━━━━━━━━━");
@@ -502,7 +564,8 @@
       if (nf.length) { L.push(""); L.push("🚨 *De fuera de Catalunya* (" + nf.length + ")"); listar(nf, L, true); }
       if (ns.length) {
         L.push("❌ *Sin títulos en vigor* (" + ns.length + ")");
-        ns.sort(function(a,b){ return cmpPlate(a.plate,b.plate); }).forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate); });
+        var GD = grupos();
+        ns.sort(function(a,b){ return cmpPlate(a.plate,b.plate); }).forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate + marca(r, GD)); });
         L.push("");
       }
     }
@@ -518,6 +581,7 @@
       b.fuera.slice().sort(function(a,b2){ return b2[1].length - a[1].length; }).slice(0,5)
         .forEach(function(x){ L.push("      " + x[0] + " — " + x[1].length); });
     }
+    leyendaGrupos(L);
     notaTexto(L);
     return L.join("\n");
   }
@@ -543,7 +607,9 @@
     if (!f.length) L.push("Ninguna este mes."); else listar(f, L, true);
     var s = set.filter(function(r){ return r.status === "SIN_TITULO"; });
     L.push("━━━ *SIN TÍTULOS EN VIGOR* (" + s.length + ") ━━━");
-    s.sort(function(a,b){ return cmpPlate(a.plate,b.plate); }).forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate); });
+    var GM = grupos();
+    s.sort(function(a,b){ return cmpPlate(a.plate,b.plate); }).forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate + marca(r, GM)); });
+    leyendaGrupos(L);
     notaTexto(L);
     return L.join("\n");
   }
@@ -557,16 +623,18 @@
     L.push("🚨 *FUERA DE CATALUNYA* (" + total(b.fuera) + ")");
     L.push("━━━━━━━━━━━━━━━━━");
     if (!b.fuera.length) L.push("Ninguna.");
+    var GT = grupos();
     b.fuera.forEach(function(x){
       L.push("▪️ " + x[0] + "  (" + x[1].length + ")");
-      x[1].forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate + (detail && r.municipality ? "  ·  " + r.municipality : "")); });
+      x[1].forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate + marca(r, GT)
+        + (detail && r.municipality ? "  ·  " + r.municipality : "")); });
       L.push("");
     });
     L.push("━━━━━━━━━━━━━━━━━");
     L.push("❌ *SIN TÍTULOS HABILITANTES EN VIGOR* (" + b.sense.length + ")");
     L.push("━━━━━━━━━━━━━━━━━");
     if (!b.sense.length) L.push("Ninguna.");
-    b.sense.forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate); });
+    b.sense.forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate + marca(r, GT)); });
     if (b.revisar.length) {
       L.push(""); L.push("⚠️ *PENDIENTES DE REVISAR* (" + b.revisar.length + ")");
       b.revisar.forEach(function(r){ L.push("      " + (r.plate || "sin matrícula")); });
@@ -576,6 +644,8 @@
     L.push("ℹ️ *Cómo leer esta lista*");
     L.push("🚨 = domicilio de la empresa fuera de Catalunya");
     L.push("❌ = la consulta no muestra títulos en vigor");
+    L.push("[A] [B] = vehículos del mismo titular");
+    leyendaGrupos(L);
     notaTexto(L);
     return L.join("\n");
   }
@@ -589,7 +659,8 @@
     todas = todas.concat(b.sense, b.revisar);
     todas.sort(function(a,b2){ return cmpPlate(a.plate, b2.plate); });
     var L = ["MATRÍCULAS EN LA LISTA (" + todas.length + ") — " + longDate(isoOf()), ""];
-    todas.forEach(function(r){ L.push(r.plate); });
+    var GP2 = grupos();
+    todas.forEach(function(r){ L.push(r.plate + marca(r, GP2)); });
     L.push("");
     L.push("Busca tu matrícula en este mensaje. Si aparece y crees que es un error, escríbenos y la quitamos.");
     return L.join("\n");
@@ -602,8 +673,10 @@
     return '<span class="plate' + (dim ? " dim" : "") + '"><span class="eu">E</span><span class="txt">'
       + esc(p || "—") + '</span></span>';
   }
-  function itemHTML(r, dim){
+  function itemHTML(r, dim, G){
+    var g = G && G[r.id];
     return '<div class="item">' + plateHTML(r.plate, dim)
+      + (g ? '<span class="tag" style="background:' + g.color + ';color:#fff" title="mismo titular">' + g.letra + '</span>' : "")
       + '<div class="meta">' + esc([r.municipality || r.province || "", r.validUntil ? "hasta " + r.validUntil : ""]
           .filter(Boolean).join("  ·  ")) + '</div>'
       + (r.authorization ? '<span class="tag" style="background:var(--paper);color:var(--ink2)">' + esc(r.authorization) + '</span>' : "")
@@ -617,7 +690,7 @@
   }
 
   function render(){
-    var b = buckets(), nv = nuevas(), ms = meses();
+    var b = buckets(), nv = nuevas(), ms = meses(), G = grupos();
 
     document.getElementById("stats").innerHTML =
       [[rows.length,"acumuladas","var(--ink)"],[nv.length,"sin enviar","#946B00"],
@@ -666,27 +739,33 @@
         (b.fuera.length ? b.fuera.map(function(x){
           return '<div style="margin-top:10px"><span class="tag" style="background:var(--sign);color:var(--ink)">'
             + esc(x[0]) + '</span> <span class="count" style="color:var(--ink3)">' + x[1].length + '</span>'
-            + x[1].map(function(r){ return itemHTML(r); }).join("") + '</div>';
+            + x[1].map(function(r){ return itemHTML(r, false, G); }).join("") + '</div>';
         }).join("") : '<p class="empty">Ninguna de momento.</p>'));
 
       out += groupHTML("Catalunya — solo aviso, no se publica", total(b.dins), "var(--green)",
         (b.dins.length ? b.dins.map(function(x){
           return '<div style="margin-top:10px"><span class="tag" style="background:var(--paper);color:var(--ink2)">'
             + esc(x[0]) + '</span> <span class="count" style="color:var(--ink3)">' + x[1].length + '</span>'
-            + x[1].map(function(r){ return itemHTML(r); }).join("") + '</div>';
+            + x[1].map(function(r){ return itemHTML(r, false, G); }).join("") + '</div>';
         }).join("") : '<p class="empty">Ninguna de momento.</p>'));
 
       if (b.dins.length) out += '<p class="empty" style="color:var(--green)">Estas matrículas tienen el domicilio en Catalunya. No salen ni en el mensaje ni en la imagen: son solo para tu control.</p>';
 
       out += groupHTML("Sin títulos habilitantes en vigor", b.sense.length, "var(--red)",
-        (b.sense.length ? b.sense.map(function(r){ return itemHTML(r, true); }).join("")
+        (b.sense.length ? b.sense.map(function(r){ return itemHTML(r, true, G); }).join("")
                         : '<p class="empty">Ninguna de momento.</p>'));
 
       if (b.revisar.length) {
         out += groupHTML("Pendientes de revisar", b.revisar.length, "var(--ink3)",
           '<p class="empty">O la web falló la verificación de seguridad, o falta el domicilio. Vuelve a consultar esa matrícula y sube la captura del resultado.</p>'
-          + b.revisar.map(function(r){ return itemHTML(r, true); }).join(""));
+          + b.revisar.map(function(r){ return itemHTML(r, true, G); }).join(""));
       }
+    }
+    var nG = {};
+    Object.keys(G).forEach(function(id){ nG[G[id].letra] = true; });
+    if (Object.keys(nG).length) {
+      out += '<p class="empty">🔗 Las letras de colores marcan vehículos del mismo titular ('
+        + Object.keys(nG).length + ' grupos). La app guarda solo un código anónimo, nunca el nombre ni el NIF.</p>';
     }
     document.getElementById("lists").innerHTML = out;
 
@@ -720,7 +799,8 @@
       var y0 = y + dy;
       op(function(c){ c.font = font; c.fillStyle = color; c.textAlign = align || "left"; c.fillText(t, x, y0); });
     }
-    function plateCell(plate, sub, col, row, dim){
+    var GP = grupos();
+    function plateCell(plate, sub, col, row, dim, g){
       var x = P + col*CW, y0 = y + row*CH;
       op(function(c){
         var w = 250, h = 44;
@@ -737,13 +817,19 @@
           c.fillStyle = "#727C86"; c.font = "400 15px system-ui, sans-serif";
           c.fillText(sub, x + 38, y0 + 62);
         }
+        if (g) {
+          c.fillStyle = g.color;
+          c.beginPath(); c.roundRect(x + w + 9, y0 + 6, 32, 32, 4); c.fill();
+          c.fillStyle = "#fff"; c.font = "800 19px system-ui, sans-serif"; c.textAlign = "center";
+          c.fillText(g.letra, x + w + 25, y0 + 29);
+        }
         c.globalAlpha = 1;
       });
     }
     function grid(list, dim, withSub){
       var rows = Math.ceil(list.length / COLS);
       list.forEach(function(r, i){
-        plateCell(r.plate, withSub && r.municipality ? r.municipality : "", i % COLS, Math.floor(i / COLS), dim);
+        plateCell(r.plate, withSub && r.municipality ? r.municipality : "", i % COLS, Math.floor(i / COLS), dim, GP[r.id]);
       });
       y += rows * CH + 6;
     }
@@ -798,7 +884,12 @@
     var medidor = document.createElement("canvas").getContext("2d");
     medidor.font = "400 19px system-ui, sans-serif";
     var lineas = [];
-    NOTA.forEach(function(par){
+    var letrasP = {};
+    Object.keys(GP).forEach(function(id){ letrasP[GP[id].letra] = true; });
+    var avisoGrupo = Object.keys(letrasP).length
+      ? ["Las matrículas con la misma letra de color pertenecen al mismo titular. No publicamos ningún dato personal: solo indicamos la coincidencia."]
+      : [];
+    avisoGrupo.concat(NOTA).forEach(function(par){
       var palabras = par.split(" "), linea = "";
       palabras.forEach(function(w){
         var prueba = linea ? linea + " " + w : w;
@@ -876,6 +967,7 @@
     var prov = normProv(document.getElementById("mProv").value);
     rows.push({ id:Date.now()+"-m", plate:p, province:prov,
       municipality:strip(document.getElementById("mMuni").value), authorization:"", validUntil:"",
+      okey:"", grupo:"",
       status: prov ? "VIGOR" : "UNKNOWN", date:today(), firstIso:isoOf(), lastIso:isoOf(), sentAt:null });
     ["mPlate","mProv","mMuni"].forEach(function(i){ document.getElementById(i).value = ""; });
     document.getElementById("manual").hidden = true;
@@ -892,15 +984,26 @@
       var resto = partes.slice(1).join(" ").toUpperCase();
       var sin = /\bSIN\b|NO TIENE/.test(resto);
       var rep = /REPETIR|VERIFICACION/.test(resto);
+      var grupo = "";
+      partes = partes.filter(function(x){
+        var m = /^G(?:RUPO)?[: ]?\s*([A-Z0-9]{1,6})$/i.exec(x.trim());
+        if (m) { grupo = strip(m[1]); return false; }
+        return true;
+      });
       var prov = sin || rep ? "" : normProv(partes[1]);
       var rec = { id:Date.now()+"-i"+i, plate:plate, province:prov,
         municipality: sin||rep ? "" : strip(partes[2]),
         authorization: sin||rep ? "" : strip(partes[3]), validUntil: partes[4] || "",
+        grupo: grupo, okey: "",
         status: sin ? "SIN_TITULO" : rep ? "REPETIR" : prov ? "VIGOR" : "UNKNOWN",
         date:today(), firstIso:isoOf(), lastIso:isoOf(), sentAt:null };
       var k = -1;
       for (var j=0;j<rows.length;j++){ if (rows[j].plate === plate) { k=j; break; } }
-      if (k >= 0) { rec.id = rows[k].id; rec.firstIso = rows[k].firstIso; rec.sentAt = rows[k].sentAt; rows[k] = rec; }
+      if (k >= 0) {
+        rec.id = rows[k].id; rec.firstIso = rows[k].firstIso; rec.sentAt = rows[k].sentAt;
+        rec.okey = rows[k].okey || ""; if (!rec.grupo) rec.grupo = rows[k].grupo || "";
+        rows[k] = rec;
+      }
       else rows.push(rec);
       add++;
     });
@@ -930,6 +1033,7 @@
         document.getElementById("ePlate").value = r.plate;
         document.getElementById("eProv").value = r.province;
         document.getElementById("eMuni").value = r.municipality;
+        document.getElementById("eGrupo").value = r.grupo || "";
       }
       render();
       var ec = document.getElementById("editCard");
@@ -951,6 +1055,7 @@
         plate: normPlate(document.getElementById("ePlate").value),
         province: prov,
         municipality: strip(document.getElementById("eMuni").value),
+        grupo: strip(document.getElementById("eGrupo").value),
         status: r.status === "SIN_TITULO" ? "SIN_TITULO" : prov ? "VIGOR" : r.status
       });
     });
@@ -1009,14 +1114,15 @@
     if (!sheetUrl) { msg.textContent = "Pega primero la URL del Apps Script en «ajustes»."; return; }
     if (!rows.length) { msg.textContent = "Todavía no hay matrículas."; return; }
     msg.textContent = "Enviando " + rows.length + " matrículas…";
-    var b = buckets();
+    var GS = grupos();
     var payload = rows.slice().sort(function(a,b2){
       return cmp(a.province, b2.province) || cmpPlate(a.plate, b2.plate);
     }).map(function(r){
       return { fecha:r.firstIso, provincia:r.province, matricula:r.plate, municipio:r.municipality,
         autorizacion:r.authorization, validez:r.validUntil,
         estado: r.status === "SIN_TITULO" ? "SIN TITULOS EN VIGOR" : r.status === "VIGOR" ? "EN VIGOR" : "REVISAR",
-        fuera: r.province && !isCat(r.province) ? "SI" : "", catalunya: r.province && isCat(r.province) ? "SI" : "" };
+        fuera: r.province && !isCat(r.province) ? "SI" : "", catalunya: r.province && isCat(r.province) ? "SI" : "",
+        grupo: GS[r.id] ? GS[r.id].letra : "" };
     });
     fetch(sheetUrl, {
       method: "POST", mode: "no-cors",
@@ -1035,12 +1141,13 @@
   });
 
   on("btnCsv","click",function(){
-    var head = ["Fecha alta","Provincia","Matricula","Municipio","Autorizacion","Valida hasta","Estado","Fuera de Catalunya","Enviado"];
+    var G = grupos();
+    var head = ["Fecha alta","Provincia","Matricula","Municipio","Autorizacion","Valida hasta","Estado","Fuera de Catalunya","Grupo titular","Enviado"];
     var body = rows.slice().sort(function(a,b){ return cmp(a.province,b.province) || cmpPlate(a.plate,b.plate); })
       .map(function(r){
         return [r.firstIso, r.province, r.plate, r.municipality, r.authorization, r.validUntil,
           r.status === "SIN_TITULO" ? "SIN TITULOS EN VIGOR" : r.status === "VIGOR" ? "EN VIGOR" : "REVISAR",
-          r.province && !isCat(r.province) ? "SI" : "", r.sentAt || "NUEVA"]
+          r.province && !isCat(r.province) ? "SI" : "", G[r.id] ? G[r.id].letra : "", r.sentAt || "NUEVA"]
           .map(function(c){ return '"' + String(c==null?"":c).replace(/"/g,'""') + '"'; }).join(",");
       });
     var blob = new Blob(["\uFEFF" + [head.join(",")].concat(body).join("\n")], { type:"text/csv;charset=utf-8" });
