@@ -230,6 +230,13 @@
   function normPlate(p){ return strip(p).replace(/[^A-Z0-9]/g,""); }
   function isCat(p){ return CAT.indexOf(normProv(p)) >= 0; }
   function cmp(a,b){ return (a||"").localeCompare(b||"","es"); }
+  /* Las matrículas españolas terminan en tres letras correlativas.
+     Ordenar por esas letras (y luego por el número) es lo más fácil de buscar. */
+  function plateKey(p){
+    var m = /^(\d+)([A-Z]+)$/.exec(p || "");
+    return m ? m[2] + " " + m[1].padStart(4,"0") : "ZZZZ " + (p || "");
+  }
+  function cmpPlate(a,b){ return cmp(plateKey(a), plateKey(b)); }
   function pad(n){ return String(n).padStart(2,"0"); }
   function isoOf(d){ d = d || new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
   function today(){ var d=new Date(); return pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear(); }
@@ -435,11 +442,11 @@
     });
     function sortG(o){
       return Object.keys(o).sort(cmp).map(function(p){
-        return [p, o[p].sort(function(a,b){ return cmp(a.plate,b.plate); })];
+        return [p, o[p].sort(function(a,b){ return cmpPlate(a.plate,b.plate); })];
       });
     }
     return { fuera:sortG(fuera), dins:sortG(dins),
-             sense:sense.sort(function(a,b){ return cmp(a.plate,b.plate); }), revisar:revisar };
+             sense:sense.sort(function(a,b){ return cmpPlate(a.plate,b.plate); }), revisar:revisar };
   }
   function total(g){ return g.reduce(function(s,x){ return s + x[1].length; }, 0); }
   function nuevas(){ return rows.filter(function(r){ return !r.sentAt; }); }
@@ -455,7 +462,7 @@
     set.forEach(function(r){ var p = r.province || "SIN PROVINCIA"; (g[p]=g[p]||[]).push(r); });
     Object.keys(g).sort(cmp).forEach(function(p){
       L.push("▪️ " + p + "  (" + g[p].length + ")");
-      g[p].sort(function(a,b){ return cmp(a.plate,b.plate); }).forEach(function(r,i){
+      g[p].sort(function(a,b){ return cmpPlate(a.plate,b.plate); }).forEach(function(r,i){
         L.push("      " + (num ? (i+1)+". " : "") + r.plate + (detail && r.municipality ? "  ·  " + r.municipality : ""));
       });
       L.push("");
@@ -494,7 +501,7 @@
       if (nf.length) { L.push(""); L.push("🚨 *De fuera de Catalunya* (" + nf.length + ")"); listar(nf, L, true); }
       if (ns.length) {
         L.push("❌ *Sin títulos en vigor* (" + ns.length + ")");
-        ns.sort(function(a,b){ return cmp(a.plate,b.plate); }).forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate); });
+        ns.sort(function(a,b){ return cmpPlate(a.plate,b.plate); }).forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate); });
         L.push("");
       }
     }
@@ -535,7 +542,7 @@
     if (!f.length) L.push("Ninguna este mes."); else listar(f, L, true);
     var s = set.filter(function(r){ return r.status === "SIN_TITULO"; });
     L.push("━━━ *SIN TÍTULOS EN VIGOR* (" + s.length + ") ━━━");
-    s.sort(function(a,b){ return cmp(a.plate,b.plate); }).forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate); });
+    s.sort(function(a,b){ return cmpPlate(a.plate,b.plate); }).forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate); });
     notaTexto(L);
     return L.join("\n");
   }
@@ -981,7 +988,7 @@
     msg.textContent = "Enviando " + rows.length + " matrículas…";
     var b = buckets();
     var payload = rows.slice().sort(function(a,b2){
-      return cmp(a.province, b2.province) || cmp(a.plate, b2.plate);
+      return cmp(a.province, b2.province) || cmpPlate(a.plate, b2.plate);
     }).map(function(r){
       return { fecha:r.firstIso, provincia:r.province, matricula:r.plate, municipio:r.municipality,
         autorizacion:r.authorization, validez:r.validUntil,
@@ -1006,7 +1013,7 @@
 
   on("btnCsv","click",function(){
     var head = ["Fecha alta","Provincia","Matricula","Municipio","Autorizacion","Valida hasta","Estado","Fuera de Catalunya","Enviado"];
-    var body = rows.slice().sort(function(a,b){ return cmp(a.province,b.province) || cmp(a.plate,b.plate); })
+    var body = rows.slice().sort(function(a,b){ return cmp(a.province,b.province) || cmpPlate(a.plate,b.plate); })
       .map(function(r){
         return [r.firstIso, r.province, r.plate, r.municipality, r.authorization, r.validUntil,
           r.status === "SIN_TITULO" ? "SIN TITULOS EN VIGOR" : r.status === "VIGOR" ? "EN VIGOR" : "REVISAR",
