@@ -160,6 +160,7 @@
     <div class="row">
       <button class="main" id="btnCopy">Copiar para WhatsApp</button>
       <button class="main" id="btnImg">Imagen para WhatsApp</button>
+      <button class="ghost" id="btnPlates">Solo matrículas</button>
       <button class="ghost" id="btnSent" hidden>marcar como enviado</button>
       <button class="ghost" id="btnCsv">CSV</button>
       <button class="ghost" id="btnSheet">Google Sheets</button>
@@ -579,6 +580,21 @@
     return L.join("\n");
   }
 
+  /* Lista plana: solo matrículas, en un único orden alfabético.
+     Sirve para que cualquiera busque su número y vea si está o no. */
+  function soloMatriculas(){
+    var b = buckets();
+    var todas = [];
+    b.fuera.forEach(function(x){ todas = todas.concat(x[1]); });
+    todas = todas.concat(b.sense, b.revisar);
+    todas.sort(function(a,b2){ return cmpPlate(a.plate, b2.plate); });
+    var L = ["MATRÍCULAS EN LA LISTA (" + todas.length + ") — " + longDate(isoOf()), ""];
+    todas.forEach(function(r){ L.push(r.plate); });
+    L.push("");
+    L.push("Busca tu matrícula en este mensaje. Si aparece y crees que es un error, escríbenos y la quitamos.");
+    return L.join("\n");
+  }
+
   function informe(){ return modo === "dia" ? reporteDiario() : modo === "mes" ? reporteMes() : reporteTotal(); }
 
   /* ── pintado ─────────────────────────────────────────── */
@@ -944,9 +960,8 @@
 
   on("detail","change",function(e){ detail = e.target.checked; store.set(K.detail, detail); render(); });
 
-  on("btnCopy","click",function(){
-    var text = informe(), btn = document.getElementById("btnCopy");
-    function done(){ btn.textContent = "✓ Copiado"; setTimeout(function(){ btn.textContent = "Copiar para WhatsApp"; }, 1800); }
+  function copiar(text, btn, label){
+    function done(){ btn.textContent = "✓ Copiado"; setTimeout(function(){ btn.textContent = label; }, 1800); }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(done)["catch"](fallback);
     } else fallback();
@@ -957,6 +972,14 @@
       try { document.execCommand("copy"); done(); } catch (err) { alert("Copia el texto del recuadro de abajo."); }
       ta.remove();
     }
+  }
+
+  on("btnCopy","click",function(){
+    copiar(informe(), document.getElementById("btnCopy"), "Copiar para WhatsApp");
+  });
+  on("btnPlates","click",function(){
+    if (!rows.length) { alert("Todavía no hay matrículas."); return; }
+    copiar(soloMatriculas(), document.getElementById("btnPlates"), "Solo matrículas");
   });
 
 
