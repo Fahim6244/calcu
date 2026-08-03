@@ -151,7 +151,9 @@
     </div>
   </div>
 
+  <div id="avisos"></div>
   <div id="lists"></div>
+  <div id="papelera"></div>
 
   <!-- informe -->
   <section class="card" style="margin-top:24px">
@@ -198,7 +200,7 @@
   "use strict";
 
   /* ── almacenamiento ──────────────────────────────────── */
-  var K = { rows: "cm.rows.v1", key: "cm.apikey", model: "cm.model", detail: "cm.detail", sheet: "cm.sheet" };
+  var K = { rows: "cm.rows.v1", key: "cm.apikey", model: "cm.model", detail: "cm.detail", sheet: "cm.sheet", borradas: "cm.borradas" };
   var store = {
     get: function (k, def) { try { var v = localStorage.getItem(k); return v === null ? def : JSON.parse(v); }
       catch (e) { return def; } },
@@ -211,6 +213,7 @@
   var model = store.get(K.model, "claude-sonnet-5");
   var detail = store.get(K.detail, false);
   var sheetUrl = store.get(K.sheet, "");
+  var borradas = store.get(K.borradas, []);
   var modo = "dia";
   var queue = [];
   var busy = false;
@@ -239,6 +242,30 @@
     return m ? m[2] + " " + m[1].padStart(4,"0") : "ZZZZ " + (p || "");
   }
   function cmpPlate(a,b){ return cmp(plateKey(a), plateKey(b)); }
+
+  /* Comprobación del formato oficial español.
+     Desde el año 2000: 4 cifras + 3 letras sin vocales, Ñ ni Q. */
+  var LET_OK = "BCDFGHJKLMNPRSTVWXYZ";
+  function validar(p){
+    p = p || "";
+    if (/^\d{4}[BCDFGHJKLMNPRSTVWXYZ]{3}$/.test(p)) return { ok:true, tipo:"moderna" };
+    if (/^[A-Z]{1,2}\d{4}[A-Z]{0,2}$/.test(p)) return { ok:true, tipo:"antigua" };
+    if (/^\d{4}[A-Z]{3}$/.test(p)) {
+      var malas = p.slice(4).split("").filter(function(c){ return LET_OK.indexOf(c) < 0; });
+      return { ok:false, tipo:"letras", aviso:"Letras no válidas en España (" + malas.join(", ") + "). Suele ser un error de lectura." };
+    }
+    var arreglo = p.replace(/^([\dOISB]{4})/, function(m){
+      return m.replace(/O/g,"0").replace(/I/g,"1").replace(/S/g,"5").replace(/B/g,"8");
+    });
+    if (arreglo !== p && /^\d{4}[BCDFGHJKLMNPRSTVWXYZ]{3}$/.test(arreglo))
+      return { ok:false, tipo:"cifras", aviso:"¿Querías decir " + arreglo + "? Las cifras parecen mal leídas." };
+    return { ok:false, tipo:"formato", aviso:"No tiene formato de matrícula española." };
+  }
+
+  function fueBorrada(plate){
+    for (var i=0;i<borradas.length;i++) if (borradas[i].plate === plate) return borradas[i];
+    return null;
+  }
 
   /* Huella del titular: convierte NIF + nombre + CP en un código corto
      e irreversible. Se guarda el código; los datos personales se descartan
@@ -761,6 +788,47 @@
           + b.revisar.map(function(r){ return itemHTML(r, true, G); }).join(""));
       }
     }
+    /* Avisos: matrículas que volvieron después de haberlas borrado, y formatos raros. */
+    var reap = rows.filter(function(r){ return fueBorrada(r.plate); });
+    var malas = rows.filter(function(r){ return r.plate && !validar(r.plate).ok; });
+    var av = "";
+    if (reap.length) {
+      av += '<div class="card" style="border-left:6px solid var(--sign)">'
+        + '<p style="margin:0 0 6px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase">'
+        + '⚠️ Ya habías borrado ' + (reap.length === 1 ? "esta matrícula" : "estas matrículas") + '</p>'
+        + reap.map(function(r){
+            var b = fueBorrada(r.plate);
+            return '<div class="item">' + plateHTML(r.plate)
+              + '<div class="meta">borrada el ' + esc(b.iso.slice(8) + "/" + b.iso.slice(5,7)) + '</div>'
+              + '<button class="ghost" data-keep="' + esc(r.plate) + '">es correcta</button>'
+              + '<button class="ghost danger" data-redel="' + esc(r.plate) + '">quitar otra vez</button></div>';
+          }).join("")
+        + '<p class="hint">Verifícalas en la web del Ministerio antes de publicarlas. Si esta vez son correctas, pulsa «es correcta» y dejaré de avisarte.</p></div>';
+    }
+    if (malas.length) {
+      av += '<div class="card" style="border-left:6px solid var(--red)">'
+        + '<p style="margin:0 0 6px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase">'
+        + '🔎 Revisa el formato</p>'
+        + malas.map(function(r){
+            return '<div class="item">' + plateHTML(r.plate, true)
+              + '<div class="meta">' + esc(validar(r.plate).aviso) + '</div>'
+              + '<button class="ghost" data-edit="' + esc(r.id) + '">corregir</button></div>';
+          }).join("") + '</div>';
+    }
+    document.getElementById("avisos").innerHTML = av;
+
+    document.getElementById("papelera").innerHTML = borradas.length
+      ? '<section><div class="head" style="border-bottom:2px solid var(--ink3)">'
+        + '<h2>Papelera</h2><span class="count" style="color:var(--ink3)">' + borradas.length + '</span></div>'
+        + '<p class="empty">Matrículas que quitaste de la lista. Se guardan solo para avisarte si vuelven a aparecer.</p>'
+        + borradas.slice().sort(function(a,b2){ return cmpPlate(a.plate,b2.plate); }).map(function(x){
+            return '<div class="item">' + plateHTML(x.plate, true)
+              + '<div class="meta">' + esc(x.iso) + (x.provincia ? "  ·  " + esc(x.provincia) : "") + '</div>'
+              + '<button class="ghost" data-keep="' + esc(x.plate) + '">olvidar</button></div>';
+          }).join("")
+        + '<div class="row" style="margin-top:8px"><button class="ghost danger" id="papeleraClear">vaciar papelera</button></div></section>'
+      : "";
+
     var nG = {};
     Object.keys(G).forEach(function(id){ nG[G[id].letra] = true; });
     if (Object.keys(nG).length) {
@@ -1023,8 +1091,27 @@
       return;
     }
     if (t.dataset.del) {
+      var victima = rows.filter(function(r){ return r.id === t.dataset.del; })[0];
+      if (victima && victima.plate && !fueBorrada(victima.plate)) {
+        borradas.push({ plate: victima.plate, iso: isoOf(), provincia: victima.province || "" });
+        store.set(K.borradas, borradas);
+      }
       rows = rows.filter(function(r){ return r.id !== t.dataset.del; });
       save(); return;
+    }
+    if (t.dataset.keep) {
+      borradas = borradas.filter(function(x){ return x.plate !== t.dataset.keep; });
+      store.set(K.borradas, borradas); render(); return;
+    }
+    if (t.dataset.redel) {
+      rows = rows.filter(function(r){ return r.plate !== t.dataset.redel; });
+      save(); return;
+    }
+    if (t.id === "papeleraClear") {
+      if (confirm("¿Vaciar el historial de matrículas borradas?")) {
+        borradas = []; store.set(K.borradas, borradas); render();
+      }
+      return;
     }
     if (t.dataset.edit) {
       editing = t.dataset.edit;
