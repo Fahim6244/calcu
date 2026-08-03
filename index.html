@@ -121,6 +121,7 @@
         «pegar una lista» y «escribir una a mano».
       </p>
       <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off">
+      <input type="text" id="sheetUrl" placeholder="URL de Google Sheets (Apps Script)" style="margin-top:6px" autocomplete="off">
       <div class="row" style="margin-top:6px">
         <select id="model" style="flex:1 1 160px">
           <option value="claude-sonnet-5">Sonnet 5 — más preciso</option>
@@ -158,12 +159,27 @@
     <p class="hint" id="tabHint" style="margin:0 0 10px"></p>
     <div class="row">
       <button class="main" id="btnCopy">Copiar para WhatsApp</button>
+      <button class="main" id="btnImg">Imagen para WhatsApp</button>
       <button class="ghost" id="btnSent" hidden>marcar como enviado</button>
       <button class="ghost" id="btnCsv">CSV</button>
+      <button class="ghost" id="btnSheet">Google Sheets</button>
       <label class="chk"><input type="checkbox" id="detail"> con municipio</label>
     </div>
+    <p class="hint" id="sheetMsg" style="margin:6px 0 0"></p>
     <pre id="preview" hidden></pre>
   </section>
+
+  <div id="imgModal" hidden style="position:fixed;inset:0;background:rgba(14,20,25,.92);z-index:50;
+       overflow:auto;padding:16px;text-align:center">
+    <p style="color:#fff;font-size:13px;margin:4px 0 10px">
+      Mantén pulsada la imagen para guardarla o compartirla en WhatsApp.
+    </p>
+    <img id="imgOut" alt="Resumen de matrículas" style="max-width:100%;border-radius:4px;background:#fff">
+    <div class="row" style="justify-content:center;margin-top:12px">
+      <a id="imgDl" class="main" style="text-decoration:none;display:inline-block" download="matriculas.png">Descargar</a>
+      <button class="ghost" id="imgClose" style="background:#fff">cerrar</button>
+    </div>
+  </div>
 
   <div class="row" style="margin-top:12px;justify-content:flex-end">
     <button class="ghost danger" id="btnWipe">vaciar registro</button>
@@ -180,7 +196,7 @@
   "use strict";
 
   /* ── almacenamiento ──────────────────────────────────── */
-  var K = { rows: "cm.rows.v1", key: "cm.apikey", model: "cm.model", detail: "cm.detail" };
+  var K = { rows: "cm.rows.v1", key: "cm.apikey", model: "cm.model", detail: "cm.detail", sheet: "cm.sheet" };
   var store = {
     get: function (k, def) { try { var v = localStorage.getItem(k); return v === null ? def : JSON.parse(v); }
       catch (e) { return def; } },
@@ -192,6 +208,7 @@
   var apiKey = store.get(K.key, "");
   var model = store.get(K.model, "claude-sonnet-5");
   var detail = store.get(K.detail, false);
+  var sheetUrl = store.get(K.sheet, "");
   var modo = "dia";
   var queue = [];
   var busy = false;
@@ -445,6 +462,23 @@
     });
   }
 
+
+  /* ── aviso final ─────────────────────────────────────── */
+  var NOTA = [
+    "Esta lista se elabora consultando el registro público del Ministerio de Transportes (apps.fomento.gob.es) y se revisa dos veces antes de publicarse.",
+    "Aun así, cualquiera puede equivocarse. Si alguna matrícula aparece por error, pedimos disculpas sinceras: ponte en contacto con nosotros y la retiraremos de inmediato, sin necesidad de dar explicaciones.",
+    "Esto no es una acusación contra ningún compañero ni contra ninguna empresa. Es información pública recogida para entender mejor cómo se está trabajando en nuestro sector.",
+    "Estamos abiertos a cualquier corrección, aclaración o colaboración. Esto es de todos y para todos: cuanto mejor informados estemos, mejor podremos defender nuestro trabajo.",
+    "Gracias por vuestra comprensión y por cuidar entre todos el buen ambiente del sector."
+  ];
+  function notaTexto(L){
+    L.push("");
+    L.push("━━━━━━━━━━━━━━━━━");
+    L.push("⚠️ *AVISO IMPORTANTE*");
+    L.push("━━━━━━━━━━━━━━━━━");
+    NOTA.forEach(function(n){ L.push(n); L.push(""); });
+  }
+
   function reporteDiario(){
     var b = buckets(), nv = nuevas(), ms = meses(), L = [];
     L.push("🚕 *CONTROL DE MATRÍCULAS*");
@@ -456,10 +490,8 @@
     if (!nv.length) L.push("Hoy no hay matrículas nuevas.");
     else {
       var nf = nv.filter(function(r){ return r.status === "VIGOR" && r.province && !isCat(r.province); });
-      var nc = nv.filter(function(r){ return r.status === "VIGOR" && r.province && isCat(r.province); });
       var ns = nv.filter(function(r){ return r.status === "SIN_TITULO"; });
       if (nf.length) { L.push(""); L.push("🚨 *De fuera de Catalunya* (" + nf.length + ")"); listar(nf, L, true); }
-      if (nc.length) { L.push("✅ *De Catalunya* (" + nc.length + ")"); listar(nc, L, true); }
       if (ns.length) {
         L.push("❌ *Sin títulos en vigor* (" + ns.length + ")");
         ns.sort(function(a,b){ return cmp(a.plate,b.plate); }).forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate); });
@@ -470,7 +502,6 @@
     L.push("📊 *TOTAL ACUMULADO: " + rows.length + "*");
     L.push("━━━━━━━━━━━━━━━━━");
     L.push("🚨 Fuera de Catalunya:  " + total(b.fuera));
-    L.push("✅ Catalunya:  " + total(b.dins));
     L.push("❌ Sin títulos en vigor:  " + b.sense.length);
     if (b.revisar.length) L.push("⚠️ Pendientes de revisar:  " + b.revisar.length);
     if (ms.length) { L.push(""); L.push("📈 Este mes (" + monthLabel(ms[0][0]) + "): " + ms[0][1].length + " nuevas"); }
@@ -479,8 +510,7 @@
       b.fuera.slice().sort(function(a,b2){ return b2[1].length - a[1].length; }).slice(0,5)
         .forEach(function(x){ L.push("      " + x[0] + " — " + x[1].length); });
     }
-    L.push("");
-    L.push("_Datos de la consulta pública del Ministerio (apps.fomento.gob.es). Solo información de flota._");
+    notaTexto(L);
     return L.join("\n");
   }
 
@@ -506,8 +536,7 @@
     var s = set.filter(function(r){ return r.status === "SIN_TITULO"; });
     L.push("━━━ *SIN TÍTULOS EN VIGOR* (" + s.length + ") ━━━");
     s.sort(function(a,b){ return cmp(a.plate,b.plate); }).forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate); });
-    L.push("");
-    L.push("_Consulta pública del Ministerio · apps.fomento.gob.es_");
+    notaTexto(L);
     return L.join("\n");
   }
 
@@ -526,15 +555,6 @@
       L.push("");
     });
     L.push("━━━━━━━━━━━━━━━━━");
-    L.push("✅ *CATALUNYA* (" + total(b.dins) + ")");
-    L.push("━━━━━━━━━━━━━━━━━");
-    if (!b.dins.length) L.push("Ninguna.");
-    b.dins.forEach(function(x){
-      L.push("▪️ " + x[0] + "  (" + x[1].length + ")");
-      x[1].forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate); });
-      L.push("");
-    });
-    L.push("━━━━━━━━━━━━━━━━━");
     L.push("❌ *SIN TÍTULOS HABILITANTES EN VIGOR* (" + b.sense.length + ")");
     L.push("━━━━━━━━━━━━━━━━━");
     if (!b.sense.length) L.push("Ninguna.");
@@ -548,7 +568,7 @@
     L.push("ℹ️ *Cómo leer esta lista*");
     L.push("🚨 = domicilio de la empresa fuera de Catalunya");
     L.push("❌ = la consulta no muestra títulos en vigor");
-    L.push("Los datos salen de la consulta pública del Ministerio y pueden cambiar. Es información de flota, no una acusación a ningún conductor.");
+    notaTexto(L);
     return L.join("\n");
   }
 
@@ -626,12 +646,14 @@
             + x[1].map(function(r){ return itemHTML(r); }).join("") + '</div>';
         }).join("") : '<p class="empty">Ninguna de momento.</p>'));
 
-      out += groupHTML("Catalunya", total(b.dins), "var(--green)",
+      out += groupHTML("Catalunya — solo aviso, no se publica", total(b.dins), "var(--green)",
         (b.dins.length ? b.dins.map(function(x){
           return '<div style="margin-top:10px"><span class="tag" style="background:var(--paper);color:var(--ink2)">'
             + esc(x[0]) + '</span> <span class="count" style="color:var(--ink3)">' + x[1].length + '</span>'
             + x[1].map(function(r){ return itemHTML(r); }).join("") + '</div>';
         }).join("") : '<p class="empty">Ninguna de momento.</p>'));
+
+      if (b.dins.length) out += '<p class="empty" style="color:var(--green)">Estas matrículas tienen el domicilio en Catalunya. No salen ni en el mensaje ni en la imagen: son solo para tu control.</p>';
 
       out += groupHTML("Sin títulos habilitantes en vigor", b.sense.length, "var(--red)",
         (b.sense.length ? b.sense.map(function(r){ return itemHTML(r, true); }).join("")
@@ -663,6 +685,140 @@
     document.getElementById("editCard").hidden = !editing;
   }
 
+  /* ── imagen para WhatsApp ────────────────────────────── */
+  function makePoster(){
+    var b = buckets();
+    var W = 1080, P = 56, COLS = 3, CW = (W - P*2) / COLS, CH = 74;
+    var ops = [], y = 0;
+
+    function op(f){ ops.push(f); }
+    function band(h, color){ var y0 = y; op(function(c){ c.fillStyle = color; c.fillRect(0, y0, W, h); }); y += h; }
+    function text(t, x, dy, font, color, align){
+      var y0 = y + dy;
+      op(function(c){ c.font = font; c.fillStyle = color; c.textAlign = align || "left"; c.fillText(t, x, y0); });
+    }
+    function plateCell(plate, sub, col, row, dim){
+      var x = P + col*CW, y0 = y + row*CH;
+      op(function(c){
+        var w = 250, h = 44;
+        c.globalAlpha = dim ? .55 : 1;
+        c.fillStyle = "#fff"; c.strokeStyle = "#0E1419"; c.lineWidth = 2.5;
+        c.beginPath(); c.roundRect(x, y0, w, h, 5); c.fill(); c.stroke();
+        c.fillStyle = "#123C8C";
+        c.beginPath(); c.roundRect(x, y0, 26, h, [5,0,0,5]); c.fill();
+        c.fillStyle = "#fff"; c.font = "700 13px ui-monospace, Menlo, monospace";
+        c.textAlign = "center"; c.fillText("E", x + 13, y0 + h - 9);
+        c.fillStyle = "#0E1419"; c.font = "700 25px ui-monospace, Menlo, monospace";
+        c.textAlign = "left"; c.fillText(plate, x + 38, y0 + 31);
+        if (sub) {
+          c.fillStyle = "#727C86"; c.font = "400 15px system-ui, sans-serif";
+          c.fillText(sub, x + 38, y0 + 62);
+        }
+        c.globalAlpha = 1;
+      });
+    }
+    function grid(list, dim, withSub){
+      var rows = Math.ceil(list.length / COLS);
+      list.forEach(function(r, i){
+        plateCell(r.plate, withSub && r.municipality ? r.municipality : "", i % COLS, Math.floor(i / COLS), dim);
+      });
+      y += rows * CH + 6;
+    }
+    function sectionHead(title, count, color){
+      y += 34;
+      var y0 = y;
+      op(function(c){ c.fillStyle = color; c.fillRect(P, y0, W - P*2, 4); });
+      y += 20;
+      text(title.toUpperCase(), P, 26, "800 27px system-ui, sans-serif", "#0E1419");
+      text(String(count), W - P, 26, "800 27px ui-monospace, Menlo, monospace", color, "right");
+      y += 44;
+    }
+    function provinceHead(name, n){
+      var y0 = y;
+      var w = name.length * 15 + 34;
+      op(function(c){
+        c.fillStyle = "#F5C518"; c.fillRect(P, y0, w, 32);
+        c.fillStyle = "#0E1419"; c.font = "800 19px system-ui, sans-serif"; c.textAlign = "left";
+        c.fillText(name, P + 13, y0 + 23);
+        c.fillStyle = "#727C86"; c.font = "700 18px ui-monospace, Menlo, monospace";
+        c.fillText(String(n), P + w + 12, y0 + 23);
+      });
+      y += 46;
+    }
+
+    /* cabecera */
+    band(210, "#0E1419");
+    op((function(){ var y0 = 0; return function(c){ c.fillStyle = "#F5C518"; c.fillRect(0, 0, 10, 210); }; })());
+    text("CONTROL DE MATRÍCULAS", P, -140, "800 46px system-ui, sans-serif", "#FFFFFF");
+    text(longDate(isoOf()), P, -95, "400 25px system-ui, sans-serif", "#C9CFD6");
+    text(rows.length + " matrículas revisadas  ·  " + total(b.fuera) + " de fuera de Catalunya",
+      P, -55, "600 23px system-ui, sans-serif", "#F5C518");
+
+    /* fuera de Catalunya */
+    if (b.fuera.length) {
+      sectionHead("Fuera de Catalunya", total(b.fuera), "#123C8C");
+      b.fuera.forEach(function(x){ provinceHead(x[0], x[1].length); grid(x[1], false, true); });
+    }
+    /* sin título */
+    if (b.sense.length) {
+      sectionHead("Sin títulos habilitantes en vigor", b.sense.length, "#C41E27");
+      grid(b.sense, true, false);
+    }
+    if (b.revisar.length) {
+      sectionHead("Pendientes de revisar", b.revisar.length, "#727C86");
+      grid(b.revisar, true, false);
+    }
+
+    /* pie con el aviso */
+    y += 30;
+    var yFoot = y;
+    var medidor = document.createElement("canvas").getContext("2d");
+    medidor.font = "400 19px system-ui, sans-serif";
+    var lineas = [];
+    NOTA.forEach(function(par){
+      var palabras = par.split(" "), linea = "";
+      palabras.forEach(function(w){
+        var prueba = linea ? linea + " " + w : w;
+        if (medidor.measureText(prueba).width > W - P*2 - 10) { lineas.push(linea); linea = w; }
+        else linea = prueba;
+      });
+      if (linea) lineas.push(linea);
+      lineas.push("");
+    });
+    var hFoot = 96 + lineas.length * 28 + 56;
+    op(function(c){
+      c.fillStyle = "#0E1419"; c.fillRect(0, yFoot, W, hFoot);
+      c.fillStyle = "#F5C518"; c.fillRect(0, yFoot, 10, hFoot);
+      c.textAlign = "left";
+      c.fillStyle = "#F5C518"; c.font = "800 26px system-ui, sans-serif";
+      c.fillText("AVISO IMPORTANTE", P, yFoot + 52);
+      c.fillStyle = "#E6EAEE"; c.font = "400 19px system-ui, sans-serif";
+      lineas.forEach(function(l, i){ c.fillText(l, P, yFoot + 92 + i*28); });
+      c.fillStyle = "#727C86"; c.font = "400 17px system-ui, sans-serif";
+      c.fillText("Ordenado por provincia (A–Z) y matrícula (A–Z)  ·  Fuente: apps.fomento.gob.es",
+        P, yFoot + hFoot - 24);
+    });
+    y += hFoot;
+
+    var canvas = document.createElement("canvas");
+    canvas.width = W; canvas.height = Math.max(y, 400);
+    var ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (!ctx.roundRect) {
+      ctx.roundRect = function(x, y2, w, h, r){
+        var rr = typeof r === "number" ? [r,r,r,r] : r;
+        this.moveTo(x+rr[0], y2);
+        this.lineTo(x+w-rr[1], y2); this.quadraticCurveTo(x+w, y2, x+w, y2+rr[1]);
+        this.lineTo(x+w, y2+h-rr[2]); this.quadraticCurveTo(x+w, y2+h, x+w-rr[2], y2+h);
+        this.lineTo(x+rr[3], y2+h); this.quadraticCurveTo(x, y2+h, x, y2+h-rr[3]);
+        this.lineTo(x, y2+rr[0]); this.quadraticCurveTo(x, y2, x+rr[0], y2);
+        return this;
+      };
+    }
+    ops.forEach(function(f){ ctx.save(); f(ctx); ctx.restore(); });
+    return canvas;
+  }
+
   /* ── acciones ────────────────────────────────────────── */
   function on(id, ev, fn){ document.getElementById(id).addEventListener(ev, fn); }
   function toggle(id){ var el = document.getElementById(id); el.hidden = !el.hidden; }
@@ -674,13 +830,15 @@
   on("btnCfg","click",function(){
     toggle("cfg");
     document.getElementById("apiKey").value = apiKey;
+    document.getElementById("sheetUrl").value = sheetUrl;
     document.getElementById("model").value = model;
   });
 
   on("cfgSave","click",function(){
     apiKey = document.getElementById("apiKey").value.trim();
+    sheetUrl = document.getElementById("sheetUrl").value.trim();
     model = document.getElementById("model").value;
-    store.set(K.key, apiKey); store.set(K.model, model);
+    store.set(K.key, apiKey); store.set(K.model, model); store.set(K.sheet, sheetUrl);
     document.getElementById("cfg").hidden = true;
     render();
   });
@@ -792,6 +950,53 @@
       try { document.execCommand("copy"); done(); } catch (err) { alert("Copia el texto del recuadro de abajo."); }
       ta.remove();
     }
+  });
+
+
+  on("btnImg","click",function(){
+    if (!rows.length) { alert("Todavía no hay matrículas."); return; }
+    var btn = document.getElementById("btnImg");
+    btn.textContent = "Creando…"; btn.disabled = true;
+    setTimeout(function(){
+      try {
+        var canvas = makePoster();
+        var url = canvas.toDataURL("image/png");
+        document.getElementById("imgOut").src = url;
+        var dl = document.getElementById("imgDl");
+        dl.href = url;
+        dl.download = "matriculas-" + isoOf() + ".png";
+        document.getElementById("imgModal").hidden = false;
+      } catch (err) {
+        alert("No se ha podido crear la imagen: " + err.message);
+      }
+      btn.textContent = "Imagen para WhatsApp"; btn.disabled = false;
+    }, 30);
+  });
+  on("imgClose","click",function(){ document.getElementById("imgModal").hidden = true; });
+
+  on("btnSheet","click",function(){
+    var msg = document.getElementById("sheetMsg");
+    if (!sheetUrl) { msg.textContent = "Pega primero la URL del Apps Script en «ajustes»."; return; }
+    if (!rows.length) { msg.textContent = "Todavía no hay matrículas."; return; }
+    msg.textContent = "Enviando " + rows.length + " matrículas…";
+    var b = buckets();
+    var payload = rows.slice().sort(function(a,b2){
+      return cmp(a.province, b2.province) || cmp(a.plate, b2.plate);
+    }).map(function(r){
+      return { fecha:r.firstIso, provincia:r.province, matricula:r.plate, municipio:r.municipality,
+        autorizacion:r.authorization, validez:r.validUntil,
+        estado: r.status === "SIN_TITULO" ? "SIN TITULOS EN VIGOR" : r.status === "VIGOR" ? "EN VIGOR" : "REVISAR",
+        fuera: r.province && !isCat(r.province) ? "SI" : "", catalunya: r.province && isCat(r.province) ? "SI" : "" };
+    });
+    fetch(sheetUrl, {
+      method: "POST", mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ actualizado: new Date().toISOString(), filas: payload })
+    }).then(function(){
+      msg.textContent = "✓ Enviado a Google Sheets (" + rows.length + " filas) — " + new Date().toLocaleTimeString("es-ES");
+    })["catch"](function(e){
+      msg.textContent = "No se ha podido enviar: " + e.message;
+    });
   });
 
   on("btnSent","click",function(){
