@@ -531,6 +531,32 @@
   }
 
   /* ── informes ────────────────────────────────────────── */
+  /* En el apartado "sin títulos en vigor" ocultamos una cifra y una letra:
+     el propietario reconoce su coche, pero nadie más puede identificarlo. */
+  function tapar(p){
+    p = p || "";
+    var m = /^(\d{4})([A-Z]{3})$/.exec(p);
+    if (m) {
+      var d = m[1].split(""), l = m[2].split("");
+      d[2] = "•"; l[1] = "•";
+      return d.join("") + l.join("");
+    }
+    if (p.length > 3) {
+      var a = p.split(""); a[Math.floor(p.length/2)] = "•"; return a.join("");
+    }
+    return p;
+  }
+  function mostrar(r){ return r.status === "SIN_TITULO" ? tapar(r.plate) : r.plate; }
+
+  function leyendaTapadas(L, n){
+    if (!n) return;
+    L.push("");
+    L.push("🔒 *POR QUÉ OCULTAMOS PARTE DE ESTAS MATRÍCULAS*");
+    L.push("En este apartado la consulta no muestra títulos en vigor, pero eso no significa siempre una irregularidad: puede ser una autorización en trámite, un cambio de titular reciente, una baja temporal o simplemente un retraso en la actualización del registro.");
+    L.push("Por respeto a esos casos ocultamos una cifra y una letra. Cada propietario reconoce su propio vehículo, pero nadie más puede identificarlo.");
+    L.push("Si es tu coche y quieres que lo revisemos o lo retiremos de la lista, escríbenos y lo hacemos igualmente.");
+  }
+
   function marca(r, G){ return G && G[r.id] ? "  [" + G[r.id].letra + "]" : ""; }
 
   function listar(set, L, num){
@@ -592,7 +618,7 @@
       if (ns.length) {
         L.push("❌ *Sin títulos en vigor* (" + ns.length + ")");
         var GD = grupos();
-        ns.sort(function(a,b){ return cmpPlate(a.plate,b.plate); }).forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate + marca(r, GD)); });
+        ns.sort(function(a,b){ return cmpPlate(a.plate,b.plate); }).forEach(function(r,i){ L.push("      " + (i+1) + ". " + mostrar(r) + marca(r, GD)); });
         L.push("");
       }
     }
@@ -609,6 +635,7 @@
         .forEach(function(x){ L.push("      " + x[0] + " — " + x[1].length); });
     }
     leyendaGrupos(L);
+    leyendaTapadas(L, b.sense.length);
     notaTexto(L);
     return L.join("\n");
   }
@@ -635,8 +662,9 @@
     var s = set.filter(function(r){ return r.status === "SIN_TITULO"; });
     L.push("━━━ *SIN TÍTULOS EN VIGOR* (" + s.length + ") ━━━");
     var GM = grupos();
-    s.sort(function(a,b){ return cmpPlate(a.plate,b.plate); }).forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate + marca(r, GM)); });
+    s.sort(function(a,b){ return cmpPlate(a.plate,b.plate); }).forEach(function(r,i){ L.push("      " + (i+1) + ". " + mostrar(r) + marca(r, GM)); });
     leyendaGrupos(L);
+    leyendaTapadas(L, s.length);
     notaTexto(L);
     return L.join("\n");
   }
@@ -661,7 +689,7 @@
     L.push("❌ *SIN TÍTULOS HABILITANTES EN VIGOR* (" + b.sense.length + ")");
     L.push("━━━━━━━━━━━━━━━━━");
     if (!b.sense.length) L.push("Ninguna.");
-    b.sense.forEach(function(r,i){ L.push("      " + (i+1) + ". " + r.plate + marca(r, GT)); });
+    b.sense.forEach(function(r,i){ L.push("      " + (i+1) + ". " + mostrar(r) + marca(r, GT)); });
     if (b.revisar.length) {
       L.push(""); L.push("⚠️ *PENDIENTES DE REVISAR* (" + b.revisar.length + ")");
       b.revisar.forEach(function(r){ L.push("      " + (r.plate || "sin matrícula")); });
@@ -672,7 +700,9 @@
     L.push("🚨 = domicilio de la empresa fuera de Catalunya");
     L.push("❌ = la consulta no muestra títulos en vigor");
     L.push("[A] [B] = vehículos del mismo titular");
+    L.push("• = cifra o letra oculta a propósito");
     leyendaGrupos(L);
+    leyendaTapadas(L, b.sense.length);
     notaTexto(L);
     return L.join("\n");
   }
@@ -687,9 +717,10 @@
     todas.sort(function(a,b2){ return cmpPlate(a.plate, b2.plate); });
     var L = ["MATRÍCULAS EN LA LISTA (" + todas.length + ") — " + longDate(isoOf()), ""];
     var GP2 = grupos();
-    todas.forEach(function(r){ L.push(r.plate + marca(r, GP2)); });
+    todas.forEach(function(r){ L.push(mostrar(r) + marca(r, GP2)); });
     L.push("");
     L.push("Busca tu matrícula en este mensaje. Si aparece y crees que es un error, escríbenos y la quitamos.");
+    if (b.sense.length) L.push("Las que llevan un • están parcialmente ocultas a propósito: son las del apartado «sin títulos en vigor».");
     return L.join("\n");
   }
 
@@ -939,7 +970,11 @@
     /* sin título */
     if (b.sense.length) {
       sectionHead("Sin títulos habilitantes en vigor", b.sense.length, "#C41E27");
-      grid(b.sense, true, false);
+      grid(b.sense.map(function(r){
+        var c = {}; for (var k in r) c[k] = r[k];
+        c.plate = tapar(r.plate);
+        return c;
+      }), true, false);
     }
     if (b.revisar.length) {
       sectionHead("Pendientes de revisar", b.revisar.length, "#727C86");
@@ -957,7 +992,10 @@
     var avisoGrupo = Object.keys(letrasP).length
       ? ["Las matrículas con la misma letra de color pertenecen al mismo titular. No publicamos ningún dato personal: solo indicamos la coincidencia."]
       : [];
-    avisoGrupo.concat(NOTA).forEach(function(par){
+    var avisoTapado = b.sense.length
+      ? ["En el apartado «sin títulos en vigor» ocultamos una cifra y una letra de cada matrícula. Que no aparezcan títulos no significa siempre una irregularidad: puede ser una autorización en trámite, un cambio de titular reciente, una baja temporal o un retraso del registro. Así cada propietario reconoce su vehículo, pero nadie más puede identificarlo. Si es tu coche y quieres que lo revisemos o lo retiremos, escríbenos."]
+      : [];
+    avisoTapado.concat(avisoGrupo, NOTA).forEach(function(par){
       var palabras = par.split(" "), linea = "";
       palabras.forEach(function(w){
         var prueba = linea ? linea + " " + w : w;
