@@ -594,12 +594,28 @@
     L.push("No publicamos ni guardamos ningún dato personal: solo indicamos que coinciden. Grupos detectados: " + n + ".");
   }
 
+
+  /* Aviso legal, al final de todo y en letra pequeña. */
+  var LEGAL = [
+    "La información publicada tiene como finalidad exclusiva documentar y facilitar la comprobación de posibles irregularidades en materia de transporte ante las autoridades competentes.",
+    "La inclusión de una matrícula o vehículo en esta lista no constituye por sí misma una acusación ni confirma la existencia de una infracción. La situación de cada vehículo deberá ser verificada por la autoridad competente.",
+    "La información procede de fuentes oficiales y/o de observaciones realizadas por los miembros del grupo y puede contener errores o estar sujeta a actualización.",
+    "No se publican nombres, DNI/NIF, domicilios, teléfonos ni otros datos personales innecesarios. Cualquier dato personal publicado accidentalmente será eliminado.",
+    "Este grupo no sustituye a las autoridades competentes ni pretende identificar, señalar, acosar o perjudicar a ninguna persona o empresa."
+  ];
+  function legalTexto(L){
+    L.push("");
+    L.push("⚠️ _AVISO IMPORTANTE_");
+    LEGAL.forEach(function(x){ L.push("_" + x + "_"); L.push(""); });
+  }
+
   function notaTexto(L){
     L.push("");
     L.push("━━━━━━━━━━━━━━━━━");
     L.push("⚠️ *AVISO IMPORTANTE*");
     L.push("━━━━━━━━━━━━━━━━━");
     NOTA.forEach(function(n){ L.push(n); L.push(""); });
+    legalTexto(L);
   }
 
   function reporteDiario(){
@@ -1005,7 +1021,20 @@
       if (linea) lineas.push(linea);
       lineas.push("");
     });
-    var hFoot = 96 + lineas.length * 28 + 56;
+    var medidorL = document.createElement("canvas").getContext("2d");
+    medidorL.font = "400 14px system-ui, sans-serif";
+    var legalLineas = [];
+    LEGAL.forEach(function(par){
+      var linea = "";
+      par.split(" ").forEach(function(w){
+        var prueba = linea ? linea + " " + w : w;
+        if (medidorL.measureText(prueba).width > W - P*2 - 10) { legalLineas.push(linea); linea = w; }
+        else linea = prueba;
+      });
+      if (linea) legalLineas.push(linea);
+      legalLineas.push("");
+    });
+    var hFoot = 96 + lineas.length * 28 + 46 + 30 + legalLineas.length * 20 + 40;
     op(function(c){
       c.fillStyle = "#0E1419"; c.fillRect(0, yFoot, W, hFoot);
       c.fillStyle = "#F5C518"; c.fillRect(0, yFoot, 10, hFoot);
@@ -1014,9 +1043,18 @@
       c.fillText("AVISO IMPORTANTE", P, yFoot + 52);
       c.fillStyle = "#E6EAEE"; c.font = "400 19px system-ui, sans-serif";
       lineas.forEach(function(l, i){ c.fillText(l, P, yFoot + 92 + i*28); });
-      c.fillStyle = "#727C86"; c.font = "400 17px system-ui, sans-serif";
-      c.fillText("Ordenado por provincia (A–Z) y matrícula (A–Z)  ·  Fuente: apps.fomento.gob.es",
-        P, yFoot + hFoot - 24);
+      var yl = yFoot + 92 + lineas.length * 28 + 10;
+      c.fillStyle = "#727C86"; c.font = "400 16px system-ui, sans-serif";
+      c.fillText("Ordenado por provincia (A–Z) y matrícula (A–Z)  ·  Fuente: apps.fomento.gob.es", P, yl);
+      yl += 26;
+      c.strokeStyle = "#39434D"; c.lineWidth = 1;
+      c.beginPath(); c.moveTo(P, yl); c.lineTo(W - P, yl); c.stroke();
+      yl += 24;
+      c.fillStyle = "#8A939C"; c.font = "700 14px system-ui, sans-serif";
+      c.fillText("⚠ AVISO IMPORTANTE", P, yl);
+      yl += 22;
+      c.font = "400 14px system-ui, sans-serif"; c.fillStyle = "#727C86";
+      legalLineas.forEach(function(l){ c.fillText(l, P, yl); yl += 20; });
     });
     y += hFoot;
 
