@@ -1,0 +1,222 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SNIPER X — live panel mockup</title>
+<style>
+:root{
+  --surface-0:#0e0e0d; --surface-1:#1a1a19; --surface-2:#232322;
+  --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8a8a80;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --rule:#33332f;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);
+  font:14px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;padding:22px}
+h1{font-size:15px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--text-secondary);font-weight:600;margin:0 0 4px}
+.sub{color:var(--text-muted);font-size:12.5px;margin:0 0 20px}
+.panel{background:var(--surface-1);border:1px solid var(--rule);border-radius:8px;
+  padding:16px 18px;max-width:920px;margin-bottom:22px}
+.hdr{display:flex;flex-wrap:wrap;gap:16px;color:var(--text-secondary);
+  font-size:12.5px;border-bottom:1px solid var(--rule);padding-bottom:10px;margin-bottom:12px}
+.hdr b{color:var(--text-primary);font-weight:600}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-muted);font-weight:600;padding:0 0 8px}
+td{padding:5px 0;vertical-align:middle;white-space:nowrap}
+.book{color:var(--text-primary);width:190px}
+.dir{width:44px;color:var(--text-secondary);text-align:center}
+.meter{width:200px}
+.bar{display:block;height:11px;background:var(--surface-2);border-radius:3px;
+  overflow:hidden;position:relative}
+.fill{display:block;height:100%;border-radius:3px;transition:width .55s ease}
+.pct{width:56px;text-align:right;padding-right:14px;color:var(--text-primary);
+  font-variant-numeric:tabular-nums}
+.gate{color:var(--text-secondary);font-size:13px}
+.gate .why{color:var(--text-muted)}
+.icon{display:inline-block;width:15px}
+.dim{opacity:.42}
+.tag{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  border:1px solid var(--rule);border-radius:3px;padding:1px 5px;color:var(--text-muted)}
+.pos{border-top:1px solid var(--rule);margin-top:12px;padding-top:11px}
+.posline{color:var(--text-secondary);font-size:13px;margin-bottom:7px}
+.poslbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-muted);margin-right:12px}
+.posline .why{color:var(--text-muted)}
+.pl{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;margin-bottom:7px}
+.plbig{font-size:23px;font-weight:600;font-variant-numeric:tabular-nums;
+  letter-spacing:-.01em;transition:color .3s}
+.plcur{font-size:12px;color:var(--text-muted);margin-right:8px}
+.plsep{color:var(--rule);margin:0 6px}
+.posmeta{display:flex;gap:22px;flex-wrap:wrap;color:var(--text-secondary);font-size:12.5px}
+.posmeta b{color:var(--text-primary)}
+.foot{border-top:1px solid var(--rule);margin-top:12px;padding-top:10px;
+  color:var(--text-secondary);font-size:12.5px;display:flex;gap:26px;flex-wrap:wrap}
+.legend{display:flex;gap:20px;flex-wrap:wrap;font-size:12.5px;
+  color:var(--text-secondary);margin-top:10px}
+.legend span{display:flex;align-items:center;gap:7px}
+.dot{width:9px;height:9px;border-radius:2px;display:inline-block}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:920px}
+@media(max-width:760px){.cards{grid-template-columns:1fr}}
+.card{background:var(--surface-1);border:1px solid var(--rule);border-radius:8px;padding:14px 16px}
+.card h2{font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-muted);margin:0 0 10px;font-weight:600}
+pre{margin:0;font:13px/1.6 ui-monospace,Menlo,Consolas,monospace;
+  color:var(--text-secondary);white-space:pre-wrap}
+pre b{color:var(--text-primary);font-weight:600}
+.strike{color:var(--text-muted);opacity:.55}
+.beep{display:inline-block;margin-left:10px;padding:2px 8px;border-radius:3px;
+  font-size:11px;letter-spacing:.08em;background:var(--surface-2);
+  color:var(--text-muted);opacity:0;transition:opacity .2s}
+.beep.on{opacity:1;color:#0e0e0d;background:var(--good)}
+.note{max-width:920px;color:var(--text-muted);font-size:12.5px;margin-top:8px}
+</style></head><body>
+
+<h1>Sniper X — strategy readiness panel</h1>
+<p class="sub">Mockup only. Repaints once per second in your console window (the loop already ticks at BAR_POLL_SEC = 1.0s). Nothing here is built yet.</p>
+
+<div class="panel">
+  <div class="hdr">
+    <span>SNIPER X <b>v11.9.70</b></span><span>XAUUSD <b id="px">4330.59</b></span>
+    <span>ATR <b>1.98</b></span><span>thr <b>73</b></span>
+    <span>NY_OVERLAP</span><span id="clk">09:14:22</span>
+    <span class="beep" id="beep">♪ BEEP</span>
+  </div>
+  <table>
+    <thead><tr><th>Book</th><th style="text-align:center">Dir</th>
+      <th colspan="2">Ready</th><th>Weakest link — what it is waiting on</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <div class="pos" id="pos">
+    <div class="posline">
+      <span class="poslbl">POSITION</span>
+      <b>&#128994; LONG</b> <span class="why">0.02 lots @ 4322.10 &middot; TREND_ENGINE</span>
+    </div>
+    <div class="pl">
+      <span class="plbig" id="plccy">+14.80</span><span class="plcur">EUR</span>
+      <span class="plsep">&middot;</span>
+      <span class="plbig" id="plpct">+1.40%</span><span class="plcur">of equity</span>
+      <span class="plsep">&middot;</span>
+      <span class="plbig" id="plr">+1.42R</span>
+    </div>
+    <div class="posmeta">
+      <span>SL <b>4312.80</b></span><span>TP <b>4348.20</b></span>
+      <span>held <b>18m</b></span><span>peak <b id="mfe">+1.61R</b></span>
+    </div>
+  </div>
+  <div class="foot"><span>day <b>+0.00R</b></span>
+    <span>equity <b id="eq">1056.20</b> EUR</span><span>scans <b>111</b></span></div>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--critical)"></i>◆ cold &lt;40%</span>
+    <span><i class="dot" style="background:var(--serious)"></i>▲ warming 40–69%</span>
+    <span><i class="dot" style="background:var(--warning)"></i>● close 70–89%</span>
+    <span><i class="dot" style="background:var(--good)"></i>★ ready ≥90%</span>
+  </div>
+</div>
+
+<p class="note"><b>READY % = the weakest gate.</b> Each book is scored on the gate it is furthest from
+satisfying, so 82% means "its worst gate is 82% of the way there" — not "82% likely to trade".
+Once a candidate exists the last gate is the score itself, so READY% becomes score ÷ threshold.
+Gates that are yes/no (COUNTER_TREND, MTF_OPPOSES) cannot be a percentage — they show 0% and say so.</p>
+
+<div class="cards" style="margin-top:22px">
+  <div class="card"><h2>Telegram — trade opened</h2>
+<pre><b>🟢 LONG XAUUSD  4330.59</b>
+TREND_ENGINE   score 78/73
+SL 4321.4  TP 4348.2   RR 1.9
+0.02 lots   risk 8.10 (0.77%)</pre>
+  <p class="note" style="margin-top:10px">Replaces the current 47-row card. The full card still goes to the log file.</p></div>
+
+  <div class="card"><h2>Telegram — trade closed</h2>
+<pre><b>✅ +14.80  (+1.42R)</b>
+TREND_ENGINE via TP2
+day +1.42R   equity 1071.00</pre>
+  <p class="note" style="margin-top:10px">Loss uses ❌ and the same three lines. Nothing else.</p></div>
+</div>
+
+<div class="panel" style="margin-top:22px">
+  <h2 style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin:0 0 10px">Sounds — winsound, Windows built-in, no install</h2>
+  <table><tbody>
+   <tr><td class="book">Book turns ready</td><td class="gate">two short blips &nbsp;<span class="why">1200 Hz</span></td></tr>
+   <tr><td class="book">Order filled</td><td class="gate">rising pair &nbsp;<span class="why">800 → 1200 Hz</span></td></tr>
+   <tr><td class="book">TP hit</td><td class="gate">rising triad &nbsp;<span class="why">900 → 1200 → 1600 Hz</span></td></tr>
+   <tr><td class="book">SL hit</td><td class="gate">low falling pair &nbsp;<span class="why">500 → 350 Hz</span></td></tr>
+   <tr><td class="book">Managed / manual close</td><td class="gate">single low tone &nbsp;<span class="why">400 Hz</span></td></tr>
+  </tbody></table>
+  <p class="note" style="margin-top:10px">Played on a daemon thread — winsound.Beep blocks, and the trading loop must never wait on a sound. Wrapped so it is a silent no-op off Windows and can never raise.</p>
+</div>
+
+<div class="cards" style="margin-top:22px">
+ <div class="card"><h2>Telegram now — every bar</h2>
+<pre class="strike">LSG HOLD … / LSX … / SCORE … /
+COOP … / TIQ … / near-miss …
+FILL DEGRADED … / RISK CEILING …
+ENGINE HEALTH (24 lines) …
+entry card (47 rows) …</pre></div>
+ <div class="card"><h2>Telegram with TG_SLIM = True</h2>
+<pre><b>trade opened</b>   (4 lines)
+<b>trade closed</b>   (3 lines)
+<b>day close</b>      (1 line)
+<b>bot up / down</b>  (1 line)
+<b>something broke</b> (1 line)</pre>
+<p class="note" style="margin-top:10px">One allow-list. Everything not on it becomes log-only — nothing is deleted, and TG_SLIM = False restores today's behaviour exactly.</p></div>
+</div>
+
+<script>
+const BOOKS=[
+ {n:"SNIPER_SWEEP",       d:"-1", base:31, gate:"COUNTER_TREND",  why:"H4/H1 aligned up — cannot fade", binary:true},
+ {n:"SNIPER_BURST",       d:"+1", base:62, gate:"NO_EXPANSION",   why:"bar 1.08a, needs 1.60a"},
+ {n:"TREND_ENGINE",       d:"+1", base:82, gate:"SCORE",          why:"45.6 of 73"},
+ {n:"SNIPER_PULLBACK_PRO",d:"+1", base:24, gate:"NO_TREND",       why:"M5 regime -0.21, needs 1.20"},
+ {n:"SNIPER_STEP",        d:"--", base:14, gate:"NO_STAIRCASE",   why:"0 rising / 1 falling pairs"},
+ {n:"SNIPER_CREEP",       d:"-1", base:88, gate:"NO_TRAVEL",      why:"drift 1.24a, needs 1.60a", shadow:true}
+];
+function state(p){
+  if(p>=90) return {c:"var(--good)",     i:"★"};
+  if(p>=70) return {c:"var(--warning)",  i:"●"};
+  if(p>=40) return {c:"var(--serious)",  i:"▲"};
+  return      {c:"var(--critical)",      i:"◆"};
+}
+const rows=document.getElementById("rows");
+BOOKS.forEach((b,i)=>{
+  const tr=document.createElement("tr"); tr.id="r"+i;
+  tr.innerHTML=`<td class="book">${b.n}${b.shadow?' <span class="tag">shadow</span>':''}</td>
+    <td class="dir">${b.d}</td>
+    <td class="meter"><span class="bar"><span class="fill" id="f${i}"></span></span></td>
+    <td class="pct" id="p${i}"></td>
+    <td class="gate"><span class="icon" id="ic${i}"></span><b id="g${i}"></b> <span class="why">${b.why}</span></td>`;
+  rows.appendChild(tr);
+});
+let t=0;
+function paint(){
+  t++;
+  BOOKS.forEach((b,i)=>{
+    let p = b.binary ? 0
+      : Math.max(2,Math.min(99, Math.round(b.base + 9*Math.sin(t/4+i*1.7) + (Math.random()*4-2))));
+    const s=state(p);
+    const f=document.getElementById("f"+i);
+    f.style.width=p+"%"; f.style.background=s.c;
+    document.getElementById("p"+i).textContent=p+"%";
+    const ic=document.getElementById("ic"+i); ic.textContent=s.i; ic.style.color=s.c;
+    document.getElementById("g"+i).textContent=b.gate;
+    document.getElementById("r"+i).className = b.binary ? "dim" : "";
+    if(p>=97){const el=document.getElementById("beep");el.classList.add("on");
+      setTimeout(()=>el.classList.remove("on"),700);}
+  });
+  // ---- open position: money, percent, R — every second ----
+  const eqBase=1056.20;
+  const pl = 14.80 + Math.sin(t/5)*9.5 + (Math.random()*1.2-0.6);
+  const pct = 100*pl/eqBase, rr = pl/10.42;
+  const good = pl>=0;
+  const col = good ? "var(--good)" : "var(--critical)";
+  const sgn = v=>(v>=0?"+":"");
+  const set=(id,txt)=>{const e=document.getElementById(id);e.textContent=txt;e.style.color=col;};
+  set("plccy", sgn(pl)+pl.toFixed(2));
+  set("plpct", sgn(pct)+pct.toFixed(2)+"%");
+  set("plr",   sgn(rr)+rr.toFixed(2)+"R");
+  document.getElementById("eq").textContent=(eqBase+pl).toFixed(2);
+  const d=new Date();
+  document.getElementById("clk").textContent=d.toTimeString().slice(0,8);
+  document.getElementById("px").textContent=(4330.59+Math.sin(t/6)*1.4).toFixed(2);
+}
+paint(); setInterval(paint,1000);
+</script></body></html>
