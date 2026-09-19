@@ -6,7 +6,16 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+
+<!-- ═══════════════ CONFIG — EDIT THIS ONE LINE ONLY ═══════════════ -->
+<script>
+window.APP_VER = 'v29.1';   // shown in the header on every screen,
+                            // and drives the reload-on-update check below.
+</script>
+<!-- ════════════════════════════════════════════════════════════════ -->
+
 <!-- ════════════════════════════════════════════════════════════════
+     v29.1 — adds the version badge (top of every screen)
      v29 — SPEED REBUILD
      Every salary/cash/balance formula is byte-identical to v28; only the
      way data is FETCHED changed.
@@ -27,7 +36,7 @@
 // Force fresh load — kills browser cache on every visit
 (function(){
   const key='rc_ver';
-  const ver='v29';
+  const ver=window.APP_VER;
   if(sessionStorage.getItem(key)!==ver){
     sessionStorage.setItem(key,ver);
     const url=new URL(window.location.href);
@@ -86,6 +95,8 @@ body.modal-open{overflow:hidden;touch-action:none}
 .bexit{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#f87171;border-radius:8px;padding:4px 9px;font-size:11px;font-weight:600}
 .bsync{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#93c5fd;border-radius:8px;padding:4px 9px;font-size:12px;font-weight:600}
 .bsync.busy{opacity:.5}
+.vchip{display:inline-block;background:rgba(16,185,129,.18);border:1px solid rgba(16,185,129,.45);color:#34d399;border-radius:999px;padding:1px 7px;font-size:10px;font-weight:800;font-family:monospace;letter-spacing:.5px;vertical-align:middle;margin-left:6px}
+.vbig{display:inline-block;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.4);color:#34d399;border-radius:999px;padding:4px 14px;font-size:13px;font-weight:800;font-family:monospace;letter-spacing:1px}
 .tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
 .tab{flex:1;min-width:52px;padding:7px 0;border:none;background:transparent;display:flex;flex-direction:column;align-items:center;gap:1px;color:var(--text3);border-bottom:2px solid transparent;font-size:9px;font-weight:600;white-space:nowrap}
 .tab.on{color:var(--blue);border-bottom-color:var(--blue)}
@@ -163,11 +174,13 @@ body.modal-open{overflow:hidden;touch-action:none}
 <div id="screen-loading" class="screen active">
   <div style="font-size:44px">&#x1F697;</div><div class="spin"></div>
   <p style="color:var(--text2);font-size:13px" id="lmsg">Raza Cars</p>
+  <span class="vbig" id="ver-load"></span>
 </div>
 <div id="screen-auth" class="screen">
   <div style="font-size:52px;text-align:center;margin-bottom:6px">&#x1F697;</div>
   <div style="font-size:26px;font-weight:800;text-align:center;background:linear-gradient(135deg,#60a5fa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:3px">Raza Cars</div>
-  <div style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:22px">Fleet Earnings Management</div>
+  <div style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:10px">Fleet Earnings Management</div>
+  <div style="text-align:center;margin-bottom:20px"><span class="vbig" id="ver-auth"></span></div>
   <div style="margin-bottom:14px;width:100%">
     <div style="font-size:10px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">I am a</div>
     <div class="atabs"><button class="atab on" id="rtab-owner" onclick="setRole('owner')">🏢 Owner</button><button class="atab" id="rtab-driver" onclick="setRole('driver')">🚗 Driver</button></div>
@@ -176,7 +189,7 @@ body.modal-open{overflow:hidden;touch-action:none}
   <div class="asw" id="asw"></div>
 </div>
 <div id="screen-owner" class="screen">
-  <div class="hdr"><div class="hrow"><div><div class="htitle">&#x1F697; Raza Cars</div><div class="hsub" id="osub"></div></div><div style="display:flex;gap:5px;align-items:center"><span class="badge bo">Owner</span><button class="bsync" id="osync" onclick="forceSync()">⟳</button><button class="bexit" onclick="fbLogout()">Exit</button></div></div></div>
+  <div class="hdr"><div class="hrow"><div><div class="htitle">&#x1F697; Raza Cars<span class="vchip" id="ver-own"></span></div><div class="hsub" id="osub"></div></div><div style="display:flex;gap:5px;align-items:center"><span class="badge bo">Owner</span><button class="bsync" id="osync" onclick="forceSync()">⟳</button><button class="bexit" onclick="fbLogout()">Exit</button></div></div></div>
   <div class="tabs" id="otabs"></div>
   <div class="content">
     <div id="op-dash" class="panel on"></div><div id="op-drvs" class="panel"></div><div id="op-cars" class="panel"></div>
@@ -186,7 +199,7 @@ body.modal-open{overflow:hidden;touch-action:none}
 </div>
 <div id="screen-driver" class="screen">
   <div class="hdr">
-    <div class="hrow"><div><div class="htitle" id="dname">My Earnings</div><div class="hsub" id="dcar"></div></div><div style="display:flex;gap:5px;align-items:center"><span class="badge bd">Driver</span><button class="bsync" id="dsync" onclick="forceSync()">⟳</button><button class="bexit" onclick="fbLogout()">Exit</button></div></div>
+    <div class="hrow"><div><div class="htitle" id="dname">My Earnings</div><div style="display:flex;align-items:center;gap:5px"><div class="hsub" id="dcar"></div><span class="vchip" id="ver-drv" style="margin-left:0"></span></div></div><div style="display:flex;gap:5px;align-items:center"><span class="badge bd">Driver</span><button class="bsync" id="dsync" onclick="forceSync()">⟳</button><button class="bexit" onclick="fbLogout()">Exit</button></div></div>
     <div style="display:flex;align-items:center;gap:7px;margin-top:7px"><div class="pt"><div class="pf" id="dprog" style="width:0%;background:linear-gradient(90deg,var(--blue2),var(--green))"></div></div><span id="dprogl" style="font-size:10px;color:#fff;font-family:monospace;font-weight:700"></span><span id="dprogp" style="font-size:10px;color:var(--text2)"></span></div>
   </div>
   <div class="tabs"><button class="tab on" onclick="dTab('entry')"><span class="ti">&#x1F4DD;</span><span>Entry</span></button><button class="tab" onclick="dTab('history')"><span class="ti">&#x1F4CB;</span><span>History</span></button><button class="tab" onclick="dTab('summary')"><span class="ti">&#x1F4CA;</span><span>Summary</span></button><button class="tab" onclick="dTab('balance')"><span class="ti">&#x1F4B0;</span><span>Balance</span></button><button class="tab" onclick="dTab('drvexps')"><span class="ti">&#x1F9FE;</span><span>Expenses</span></button></div>
@@ -197,6 +210,14 @@ body.modal-open{overflow:hidden;touch-action:none}
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import{getFirestore,initializeFirestore,persistentLocalCache,persistentMultipleTabManager,doc,getDoc,getDocFromCache,setDoc,updateDoc,collection,query,where,getDocs,getDocsFromCache,addDoc,deleteDoc,orderBy}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// Version badge — one constant (set at the very top of this file) paints
+// every screen, so what you see on screen is always the file that is live.
+const APP_VER=window.APP_VER||'?';
+['ver-load','ver-auth','ver-own','ver-drv'].forEach(id=>{
+  const el=document.getElementById(id);if(el)el.textContent=APP_VER;
+});
+document.title='Raza Cars '+APP_VER;
 
 const FB={apiKey:"AIzaSyAPqe6KnPoRAaPIRijsWDV-DIbhGHroFg0",authDomain:"raza-cars.firebaseapp.com",projectId:"raza-cars",storageBucket:"raza-cars.firebasestorage.app",messagingSenderId:"907101131064",appId:"1:907101131064:web:3740d8f3ec3297bf24f1cd"};
 const fbApp=initializeApp(FB);const auth=getAuth(fbApp);
@@ -1436,7 +1457,7 @@ window.oHistChgM=delta=>{oHistM+=delta;if(oHistM>12){oHistM=1;oHistY++;}if(oHist
 
 function renderSets(){
   document.getElementById('op-sets').innerHTML=`<div style="font-size:15px;font-weight:700">Settings</div>
-    <div class="card"><div class="cb">${rH('Owner Name',esc(UP.name))+rH('Email',esc(UP.email))+rH('Entries cached',DS.entries.length)+rH('Last sync',new Date(DS.loadedAt).toLocaleTimeString())}</div></div>
+    <div class="card"><div class="cb">${rH('App version','<span style="color:var(--green);font-weight:800">'+APP_VER+'</span>')+rH('Owner Name',esc(UP.name))+rH('Email',esc(UP.email))+rH('Entries cached',DS.entries.length)+rH('Last sync',new Date(DS.loadedAt).toLocaleTimeString())}</div></div>
     <div class="card"><div class="ch" style="color:var(--blue)">📱 Driver Management</div><div class="cb">
     <p style="font-size:11px;color:var(--text2);margin-bottom:8px">Add drivers from the Drivers tab. They receive login info via WhatsApp and log in by selecting <strong>🚗 Driver</strong> on the login screen.</p>
     <button class="btn bp bfull" onclick="oSwitch('drvs')">👥 Go to Drivers</button></div></div>
