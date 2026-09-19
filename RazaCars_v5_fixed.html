@@ -6,15 +6,30 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- v28 — Uber month = driver-chosen locked date range, settable for current OR past months; Transfer month stays 1 → last calendar day -->
+<!-- ════════════════════════════════════════════════════════════════
+     v29 — SPEED REBUILD
+     Every salary/cash/balance formula is byte-identical to v28; only the
+     way data is FETCHED changed.
+       1. ONE bulk load (9 queries, 2 parallel waves) per session, instead
+          of 40-260+ sequential round-trips that grew with every month of
+          history. Every screen then renders from memory.
+       2. Firestore persistent (IndexedDB) cache -> the app paints instantly
+          from last known data on open, then syncs in the background.
+       3. calcMonth()/getDebt() no longer re-query per driver per month.
+       4. Tab switches, month arrows, calendar taps = 0 network calls.
+       5. Owner also sweeps entries/advances/settlements/ubercycles by
+          driverId, not just ownerId — v28 read them per-driver, so any
+          record saved without an ownerId would otherwise have gone
+          invisible to the owner. ⟳ button in the header forces a resync.
+       6. Transfer wizard quick price: €40 -> €35 (€25 and Other unchanged).
+     ════════════════════════════════════════════════════════════════ -->
 <script>
 // Force fresh load — kills browser cache on every visit
 (function(){
   const key='rc_ver';
-  const ver='v28';;
+  const ver='v29';
   if(sessionStorage.getItem(key)!==ver){
     sessionStorage.setItem(key,ver);
-    // Add cache-busting param and reload if not already there
     const url=new URL(window.location.href);
     if(!url.searchParams.get('_rc')){
       url.searchParams.set('_rc',Date.now());
@@ -41,7 +56,6 @@ button{cursor:pointer}
 #modal-bg{position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,.75);display:none;align-items:flex-end;justify-content:center;overscroll-behavior:contain}
 #modal-bg.show{display:flex}
 #modal-box{background:var(--bg3);border-radius:22px 22px 0 0;padding:22px 18px 40px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-/* Scrollbar visible on modal for long forms */
 #modal-box::-webkit-scrollbar{width:4px;display:block}
 #modal-box::-webkit-scrollbar-track{background:transparent}
 #modal-box::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
@@ -70,6 +84,8 @@ body.modal-open{overflow:hidden;touch-action:none}
 .bo{background:rgba(139,92,246,.2);color:#a78bfa;border:1px solid rgba(139,92,246,.3)}
 .bd{background:rgba(16,185,129,.2);color:#34d399;border:1px solid rgba(16,185,129,.3)}
 .bexit{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#f87171;border-radius:8px;padding:4px 9px;font-size:11px;font-weight:600}
+.bsync{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#93c5fd;border-radius:8px;padding:4px 9px;font-size:12px;font-weight:600}
+.bsync.busy{opacity:.5}
 .tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
 .tab{flex:1;min-width:52px;padding:7px 0;border:none;background:transparent;display:flex;flex-direction:column;align-items:center;gap:1px;color:var(--text3);border-bottom:2px solid transparent;font-size:9px;font-weight:600;white-space:nowrap}
 .tab.on{color:var(--blue);border-bottom-color:var(--blue)}
@@ -160,7 +176,7 @@ body.modal-open{overflow:hidden;touch-action:none}
   <div class="asw" id="asw"></div>
 </div>
 <div id="screen-owner" class="screen">
-  <div class="hdr"><div class="hrow"><div><div class="htitle">&#x1F697; Raza Cars</div><div class="hsub" id="osub"></div></div><div style="display:flex;gap:5px;align-items:center"><span class="badge bo">Owner</span><button class="bexit" onclick="fbLogout()">Exit</button></div></div></div>
+  <div class="hdr"><div class="hrow"><div><div class="htitle">&#x1F697; Raza Cars</div><div class="hsub" id="osub"></div></div><div style="display:flex;gap:5px;align-items:center"><span class="badge bo">Owner</span><button class="bsync" id="osync" onclick="forceSync()">⟳</button><button class="bexit" onclick="fbLogout()">Exit</button></div></div></div>
   <div class="tabs" id="otabs"></div>
   <div class="content">
     <div id="op-dash" class="panel on"></div><div id="op-drvs" class="panel"></div><div id="op-cars" class="panel"></div>
@@ -170,7 +186,7 @@ body.modal-open{overflow:hidden;touch-action:none}
 </div>
 <div id="screen-driver" class="screen">
   <div class="hdr">
-    <div class="hrow"><div><div class="htitle" id="dname">My Earnings</div><div class="hsub" id="dcar"></div></div><div style="display:flex;gap:5px;align-items:center"><span class="badge bd">Driver</span><button class="bexit" onclick="fbLogout()">Exit</button></div></div>
+    <div class="hrow"><div><div class="htitle" id="dname">My Earnings</div><div class="hsub" id="dcar"></div></div><div style="display:flex;gap:5px;align-items:center"><span class="badge bd">Driver</span><button class="bsync" id="dsync" onclick="forceSync()">⟳</button><button class="bexit" onclick="fbLogout()">Exit</button></div></div>
     <div style="display:flex;align-items:center;gap:7px;margin-top:7px"><div class="pt"><div class="pf" id="dprog" style="width:0%;background:linear-gradient(90deg,var(--blue2),var(--green))"></div></div><span id="dprogl" style="font-size:10px;color:#fff;font-family:monospace;font-weight:700"></span><span id="dprogp" style="font-size:10px;color:var(--text2)"></span></div>
   </div>
   <div class="tabs"><button class="tab on" onclick="dTab('entry')"><span class="ti">&#x1F4DD;</span><span>Entry</span></button><button class="tab" onclick="dTab('history')"><span class="ti">&#x1F4CB;</span><span>History</span></button><button class="tab" onclick="dTab('summary')"><span class="ti">&#x1F4CA;</span><span>Summary</span></button><button class="tab" onclick="dTab('balance')"><span class="ti">&#x1F4B0;</span><span>Balance</span></button><button class="tab" onclick="dTab('drvexps')"><span class="ti">&#x1F9FE;</span><span>Expenses</span></button></div>
@@ -180,10 +196,16 @@ body.modal-open{overflow:hidden;touch-action:none}
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import{getFirestore,doc,getDoc,setDoc,updateDoc,collection,query,where,getDocs,addDoc,deleteDoc,orderBy}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import{getFirestore,initializeFirestore,persistentLocalCache,persistentMultipleTabManager,doc,getDoc,getDocFromCache,setDoc,updateDoc,collection,query,where,getDocs,getDocsFromCache,addDoc,deleteDoc,orderBy}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const FB={apiKey:"AIzaSyAPqe6KnPoRAaPIRijsWDV-DIbhGHroFg0",authDomain:"raza-cars.firebaseapp.com",projectId:"raza-cars",storageBucket:"raza-cars.firebasestorage.app",messagingSenderId:"907101131064",appId:"1:907101131064:web:3740d8f3ec3297bf24f1cd"};
-const fbApp=initializeApp(FB);const auth=getAuth(fbApp);const db=getFirestore(fbApp);
+const fbApp=initializeApp(FB);const auth=getAuth(fbApp);
+
+// ══ SPEED #1: persistent IndexedDB cache — app opens instantly with last known data ══
+let db;
+try{db=initializeFirestore(fbApp,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});}
+catch(e){console.warn('persistent cache unavailable:',e.message);db=getFirestore(fbApp);}
+
 let CU=null,UP=null,CD=null;
 const f2=n=>`\u20AC${Number(n||0).toFixed(2)}`;
 const abs2=n=>`\u20AC${Math.abs(Number(n||0)).toFixed(2)}`;
@@ -202,52 +224,35 @@ const rH=(l,v,cls='')=>`<div class="row ${cls}"><span class="rl">${l}</span><spa
 const isLocked=(d,ld)=>false; // drivers always free to edit any day
 const isDayOff=(d,dayOff)=>{if(dayOff===-1||dayOff===undefined)return false;const p=d.split('-');return new Date(+p[0],+p[1]-1,+p[2]).getDay()===+dayOff;};
 
-// SALARY CALC - returns 'rent' key (not 'carRent')
+// ══════════ SALARY CALC (unchanged maths) ══════════
 function calcDay(e,type,params){
   const p=params||{};
   const pT=+e.paidTrans||0,cT=+e.cashTrans||0,uA=+e.uberApp||0;
   const uC=+e.uberCash||0,cC=+e.cardCash||0;
   const tip=+e.tip||0,adj=+e.adjustment||0;
-  // driverExp = all expenses driver paid from own pocket — owner must return all
-  // supports new field 'driverExp' and legacy fields 'cashFuel','expenses'
   const driverExp=(+e.driverExp||0)+(+e.cashFuel||0)+(+e.expenses||0);
   const rent=+e.carRent||0; // legacy only
   const transfers=pT+cT,income=transfers+uA;
-  // Tips go directly to company Uber account — driver never holds them.
-  // actualCash = cash driver physically has. totalInHand = same (no tips).
   const phys=uC+cT,actualCash=phys-cC,totalInHand=phys;
   let salary=0;
   if(type==='base_bonus'){const base=+p.base||1600,thr=+p.thr||6000,bp=+p.bonusPct||40;salary=income<=thr?base:base+(bp/100)*(income-thr);}
   else if(type==='uber_pct'){const pct=+p.pct||35,ud=+p.uberDeduct||10;salary=uA*(1-ud/100)*(pct/100)+transfers*(pct/100);}
   else if(type==='flat_pct'){salary=income*(+p.pct||35)/100;}
   else if(type==='custom'){salary=transfers*(+p.tPct||35)/100+uA*(1-(+p.uberDeduct||10)/100)*((+p.uPct||35)/100);}
-  // netSal = salary + tips - legacy rent + driverExp (owner owes back to driver)
   const salTips=salary+tip,netSal=salTips-rent+driverExp,bal=(actualCash-netSal)-adj;
   return{pT,cT,uA,uC,cC,tip,adj,rent,driverExp,transfers,income,phys,actualCash,totalInHand,salary,salTips,netSal,bal};
 }
 
-// Last Sunday of month y/m — legacy fallback for Uber month close date
-function lastSundayOf(y,m){
-  const d=new Date(y,m,0); // last day of month (day 0 of next month)
-  return d.getDate()-d.getDay(); // getDay()=0 for Sunday
-}
-
-// ══════════════════════════════════════════════════════════
-// UBER MONTH CYCLE — driver picks the start & end date, then locks it.
-// Uber App / Uber Cash / Tips are counted ONLY inside that window.
-// Transfers, card cash, expenses, adjustments stay on the plain
-// calendar month (1 → 30/31). Nothing else changed.
-// ══════════════════════════════════════════════════════════
+// ══════════ UBER MONTH CYCLE helpers (unchanged rules) ══════════
+function lastSundayOf(y,m){const d=new Date(y,m,0);return d.getDate()-d.getDay();}
 const dAdd=(ds,n)=>{const p=String(ds).split('-');const d=new Date(+p[0],+p[1]-1,+p[2]);d.setDate(d.getDate()+n);return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;};
 const dFmt=ds=>{const p=String(ds||'').split('-');return p.length===3?`${p[2]} ${MNS[+p[1]-1]}`:'—';};
-// All yearMonth keys touched by an inclusive date range
 function ymsBetween(a,b){
   const out=[];if(!a||!b||a>b)return out;
   let y=+a.slice(0,4),m=+a.slice(5,7);const ey=+b.slice(0,4),em=+b.slice(5,7);let guard=0;
   while((y<ey||(y===ey&&m<=em))&&guard++<36){out.push(`${y}-${pad(m)}`);m++;if(m>12){m=1;y++;}}
   return out;
 }
-// Legacy default (identical to old behaviour): day after prev month's last Sunday → this month's last Sunday
 function defaultUberCycle(y,m){
   let pM=m-1,pY=y;if(pM<1){pM=12;pY--;}
   const start=dAdd(`${pY}-${pad(pM)}-${pad(lastSundayOf(pY,pM))}`,1);
@@ -255,49 +260,217 @@ function defaultUberCycle(y,m){
   return{start,end,locked:false,auto:true};
 }
 const ucKey=(did,y,m)=>`${did}_${y}-${pad(m)}`;
-let UCYC={}; // cache: key → cycle object
-window.ucClearCache=()=>{UCYC={};};
-async function getUberCycle(did,y,m){
-  const key=ucKey(did,y,m);
-  if(UCYC[key])return UCYC[key];
-  let c=null;
-  try{const d=await getDoc(doc(db,'ubercycles',key));if(d.exists())c=d.data();}catch(e){console.warn('getUberCycle:',e.message);}
-  if(!c||!c.start||!c.end||c.start>c.end)c=defaultUberCycle(y,m);
-  UCYC[key]=c;return c;
+
+// ══════════════════════════════════════════════════════════════════
+//  SPEED #2: ONE in-memory store. Loaded in 2 parallel round-trips
+//  per session. Every screen then renders with ZERO network calls.
+// ══════════════════════════════════════════════════════════════════
+const DS={role:'',drivers:[],cars:[],entries:[],setts:{},advs:[],
+  cycles:{},cycChecked:{},expCache:{},cycAll:false,
+  idx:{},months:{},settled:{},
+  loaded:false,loadedAt:0,syncing:false};
+
+function dsReset(){
+  DS.role='';DS.drivers=[];DS.cars=[];DS.entries=[];DS.setts={};DS.advs=[];
+  DS.cycles={};DS.cycChecked={};DS.expCache={};DS.cycAll=false;
+  DS.idx={};DS.months={};DS.settled={};
+  DS.loaded=false;DS.loadedAt=0;DS.syncing=false;
 }
-async function saveUberCycle(did,y,m,start,end,locked){
-  const key=ucKey(did,y,m);
-  const rec={driverId:did,yearMonth:`${y}-${pad(m)}`,start,end,locked:!!locked,auto:false,setAt:new Date().toISOString()};
-  await setDoc(doc(db,'ubercycles',key),rec);
-  UCYC[key]=rec;return rec;
-}
 
-async function calcMonth(drv,y,m){
-  const ym=`${y}-${pad(m)}`;
-  const empty={pT:0,cT:0,uA:0,uC:0,cC:0,tip:0,adj:0,rent:0,driverExp:0,income:0,phys:0,actualCash:0,totalInHand:0,salary:0,netSal:0,bal:0,days:0};
-
-  // Uber window for this month — driver-chosen if set, legacy last-Sunday rule if not
-  const cyc=await getUberCycle(drv.id,y,m);
-  const uStart=cyc.start,uEnd=cyc.end;
-
-  // Every yearMonth we must read: the calendar month + whatever the Uber window spans
-  const need=[...new Set([ym,...ymsBetween(uStart,uEnd)])];
-  const byYm={};
-  for(const k of need){
-    const s=await getDocs(query(collection(db,'entries'),where('driverId','==',drv.id),where('yearMonth','==',k)));
-    byYm[k]=s.docs.map(d=>d.data());
+function idxRebuild(){
+  DS.idx={};DS.months={};
+  for(const e of DS.entries){
+    const did=e.driverId;if(!did)continue;
+    const ym=e.yearMonth||String(e.date||'').slice(0,7);if(!ym)continue;
+    if(!DS.idx[did])DS.idx[did]={};
+    if(!DS.idx[did][ym])DS.idx[did][ym]=[];
+    DS.idx[did][ym].push(e);
+    if(!DS.months[did])DS.months[did]=new Set();
+    DS.months[did].add(ym);
   }
+  DS.settled={};
+  Object.values(DS.setts).forEach(s=>{
+    if(!s||!s.driverId||!s.yearMonth)return;
+    if(!DS.settled[s.driverId])DS.settled[s.driverId]=new Set();
+    DS.settled[s.driverId].add(s.yearMonth);
+  });
+}
+const mEntries=(did,ym)=>((DS.idx[did]||{})[ym]||[]);
+const dayEntries=(did,ds)=>mEntries(did,String(ds).slice(0,7)).filter(e=>e.date===ds);
+function entriesRange(did,a,b){
+  const out=[];const map=DS.idx[did]||{};
+  ymsBetween(a,b).forEach(k=>(map[k]||[]).forEach(e=>{if(e.date>=a&&e.date<=b)out.push(e);}));
+  return out;
+}
+function putEntry(o){const i=DS.entries.findIndex(e=>e.id===o.id);if(i>=0)DS.entries[i]=o;else DS.entries.push(o);idxRebuild();}
+function dropEntry(id){DS.entries=DS.entries.filter(e=>e.id!==id);idxRebuild();}
+const cycleOf=(did,y,m)=>DS.cycles[ucKey(did,y,m)]||defaultUberCycle(y,m);
 
-  const cur=byYm[ym]||[];
-  // Uber-window entries — may sit in the previous and/or next calendar month
-  const uberRows=[];
-  need.forEach(k=>(byYm[k]||[]).forEach(e=>{if(e.date>=uStart&&e.date<=uEnd)uberRows.push(e);}));
+// Cycle docs carry driverId, so the bulk load grabs every one of them in a
+// single query and sets cycAll. After that there is nothing left to look up:
+// a key that isn't in DS.cycles simply has no doc, so the default applies.
+function absorbCycles(rows){
+  rows.forEach(r=>{if(r&&r.start&&r.end&&r.start<=r.end)DS.cycles[r.id]=r;});
+}
+async function ensureCycles(pairs,source){
+  if(DS.cycAll)return;
+  const need=[];
+  pairs.forEach(p=>{const k=ucKey(p[0],p[1],p[2]);if(!DS.cycles[k]&&!DS.cycChecked[k]&&need.indexOf(k)<0)need.push(k);});
+  if(!need.length)return;
+  const fn=source==='cache'?getDocFromCache:getDoc;
+  const res=await Promise.all(need.map(k=>fn(doc(db,'ubercycles',k)).then(s=>[k,s.exists()?s.data():null]).catch(()=>[k,undefined])));
+  res.forEach(([k,d])=>{
+    if(d===undefined)return;              // failed — try again next time
+    DS.cycChecked[k]=1;
+    if(d&&d.start&&d.end&&d.start<=d.end)DS.cycles[k]=d;
+  });
+}
+function cyclePairsNeeded(){
+  const ids=DS.role==='owner'?DS.drivers.map(d=>d.id):(CD?[CD.id]:[]);
+  const cur=`${nowY()}-${pad(nowM())}`;const out=[];
+  ids.forEach(id=>{
+    const set=new Set(DS.months[id]||[]);set.add(cur);
+    [...set].sort().slice(-24).forEach(ym=>out.push([id,+ym.slice(0,4),+ym.slice(5,7)]));
+  });
+  return out;
+}
 
-  if(!cur.length&&!uberRows.length)return{...empty,uStart,uEnd,uLocked:!!cyc.locked,uAuto:!!cyc.auto,uDays:0};
+// ── the single bulk load ──
+async function loadData(source){
+  if(!CU)return;
+  const cacheMode=source==='cache';
+  const fn=cacheMode?getDocsFromCache:getDocs;
+  const uid=CU.uid;
+  let specs;
+  if(DS.role==='owner'){
+    specs=[
+      ['drivers',query(collection(db,'drivers'),where('ownerId','==',uid),where('active','==',true))],
+      ['cars',query(collection(db,'cars'),where('ownerId','==',uid))],
+      ['entries',query(collection(db,'entries'),where('ownerId','==',uid))],
+      ['setts',query(collection(db,'settlements'),where('ownerId','==',uid))],
+      ['advs',query(collection(db,'advances'),where('ownerId','==',uid))]
+    ];
+  }else{
+    specs=[
+      ['entries',query(collection(db,'entries'),where('driverId','==',CD.id))],
+      ['setts',query(collection(db,'settlements'),where('driverId','==',CD.id))],
+      ['advs',query(collection(db,'advances'),where('driverId','==',CD.id))],
+      ['cycs',query(collection(db,'ubercycles'),where('driverId','==',CD.id))]
+    ];
+  }
+  setSync(true);
+  let got=false;
+  try{
+    const res=await Promise.all(specs.map(sp=>fn(sp[1]).then(s=>[sp[0],s]).catch(()=>[sp[0],null])));
+    res.forEach(([k,s])=>{
+      if(!s)return;got=true;
+      const rows=s.docs.map(d=>({id:d.id,...d.data()}));
+      if(k==='setts'){const map={};rows.forEach(r=>map[r.id]=r);DS.setts=map;}
+      else if(k==='cycs'){absorbCycles(rows);DS.cycAll=true;}  // query succeeded, so this is every cycle the driver has
+      else DS[k]=rows;
+    });
+    if(!got)throw new Error('nothing loaded');
+    idxRebuild();
+    // ── phase 2 (needs the driver ids) ──
+    // v28 read entries/advances/settlements PER DRIVER by driverId, never by
+    // ownerId. Any doc written with a missing or wrong ownerId is therefore
+    // visible in v28 but would vanish here. So we also sweep by driverId and
+    // merge by doc id — a superset of what v28 showed, still 2 round-trips.
+    if(DS.role==='owner'&&DS.drivers.length){
+      const ids=DS.drivers.map(d=>d.id);
+      const chunks=[];for(let i=0;i<ids.length;i+=30)chunks.push(ids.slice(i,i+30));
+      const jobs=[];let cycOk=true;
+      const sweep=(coll,onRows)=>chunks.forEach(ch=>jobs.push(
+        fn(query(collection(db,coll),where('driverId','in',ch)))
+          .then(s=>onRows(s.docs.map(d=>({id:d.id,...d.data()}))))
+          .catch(()=>{if(coll==='ubercycles')cycOk=false;})));
+      const seenE=new Set(DS.entries.map(e=>e.id));
+      sweep('entries',rows=>rows.forEach(r=>{if(!seenE.has(r.id)){seenE.add(r.id);DS.entries.push(r);}}));
+      const seenA=new Set(DS.advs.map(a=>a.id));
+      sweep('advances',rows=>rows.forEach(r=>{if(!seenA.has(r.id)){seenA.add(r.id);DS.advs.push(r);}}));
+      sweep('settlements',rows=>rows.forEach(r=>{if(!DS.setts[r.id])DS.setts[r.id]=r;}));
+      sweep('ubercycles',absorbCycles);
+      await Promise.all(jobs);
+      if(cycOk)DS.cycAll=true;   // only when EVERY cycle chunk came back
+      idxRebuild();  // months index must include the swept entries...
+    }
+    // ...before we work out which uber cycles to fetch, or a locked window
+    // would be missed and the month would silently use the default range.
+    await ensureCycles(cyclePairsNeeded(),source);
+    DS.loaded=true;DS.loadedAt=Date.now();
+  }finally{setSync(false);}
+}
 
-  let t={...empty};
-  t.uStart=uStart;t.uEnd=uEnd;t.uLocked=!!cyc.locked;t.uAuto=!!cyc.auto;
+function setSync(on){
+  DS.syncing=on;
+  ['osync','dsync'].forEach(id=>{const b=document.getElementById(id);if(b){b.classList.toggle('busy',on);b.textContent=on?'…':'⟳';}});
+}
 
+// cache-first boot: paint from IndexedDB instantly, refresh from server behind it
+async function bootData(role){
+  DS.role=role;
+  let painted=false;
+  try{await loadData('cache');if(DS.entries.length)painted=true;}catch(e){}
+  if(painted){setTimeout(()=>{loadData('server').then(()=>rerender()).catch(()=>{});},50);}
+  else{await loadData('server');}
+}
+function rerender(){
+  try{
+    if(UP&&UP.role==='owner'&&document.getElementById('screen-owner').classList.contains('active')){oSwitch(oTab).catch(()=>{});}
+    else if(CD&&document.getElementById('screen-driver').classList.contains('active')){
+      renderDHdr();
+      if(dCurTab!=='entry')dRender(dCurTab).catch(()=>{}); // never wipe a half-typed entry
+    }
+  }catch(e){console.warn('rerender:',e);}
+}
+function maybeSync(){
+  if(!DS.loaded||DS.syncing)return;
+  if(Date.now()-DS.loadedAt<45000)return;
+  loadData('server').then(()=>rerender()).catch(()=>{});
+}
+window.forceSync=async()=>{
+  if(DS.syncing)return;
+  showToast('Refreshing…',1200);
+  DS.expCache={};DS.cycChecked={};DS.cycAll=false;
+  try{await loadData('server');rerender();showToast('Up to date');}
+  catch(e){showToast('Refresh failed: '+e.message);}
+};
+
+// ── lazy expense fetches (kept out of the bulk load: receipt photos are heavy) ──
+async function expsForDriverMonth(did,ym){
+  const k='d:'+did+':'+ym;
+  if(DS.expCache[k])return DS.expCache[k];
+  try{const s=await getDocs(query(collection(db,'expenses'),where('driverId','==',did),where('yearMonth','==',ym)));
+    return DS.expCache[k]=s.docs.map(d=>({id:d.id,...d.data()}));}
+  catch(e){return DS.expCache[k]=[];}
+}
+async function expsForOwnerMonth(ym){
+  const k='o:'+ym;
+  if(DS.expCache[k])return DS.expCache[k];
+  try{const s=await getDocs(query(collection(db,'expenses'),where('ownerId','==',CU.uid),where('yearMonth','==',ym)));
+    return DS.expCache[k]=s.docs.map(d=>({id:d.id,...d.data()}));}
+  catch(e){return DS.expCache[k]=[];}
+}
+async function expsForDriverAll(){
+  const k='all:'+CD.id;
+  if(DS.expCache[k])return DS.expCache[k];
+  try{const s=await getDocs(query(collection(db,'expenses'),where('driverId','==',CD.id)));
+    return DS.expCache[k]=s.docs.map(d=>({id:d.id,...d.data()}));}
+  catch(e){return DS.expCache[k]=[];}
+}
+const expCacheClear=()=>{DS.expCache={};};
+
+// ══════════ MONTH TOTALS — pure, in-memory, no awaits ══════════
+function calcMonthSync(drv,y,m){
+  const ym=`${y}-${pad(m)}`;
+  const cyc=cycleOf(drv.id,y,m);
+  const uStart=cyc.start,uEnd=cyc.end;
+  const base={pT:0,cT:0,uA:0,uC:0,cC:0,tip:0,adj:0,rent:0,driverExp:0,income:0,phys:0,actualCash:0,totalInHand:0,salary:0,netSal:0,bal:0,days:0,
+    uStart,uEnd,uLocked:!!cyc.locked,uAuto:!!cyc.auto,uDays:0};
+  const cur=mEntries(drv.id,ym);
+  const uberRows=entriesRange(drv.id,uStart,uEnd);
+  if(!cur.length&&!uberRows.length)return base;
+  const t={...base};
   // Calendar month 1 → 30/31: transfers, card cash, adjustments, expenses, day count
   cur.forEach(e=>{
     t.pT+=+e.paidTrans||0; t.cT+=+e.cashTrans||0;
@@ -305,24 +478,17 @@ async function calcMonth(drv,y,m){
     t.driverExp+=(+e.driverExp||0)+(+e.cashFuel||0)+(+e.expenses||0);
     t.days++;
   });
-
   // Uber window only: Uber App / Uber Cash / Tips
-  uberRows.forEach(e=>{
-    t.uA+=+e.uberApp||0; t.uC+=+e.uberCash||0; t.tip+=+e.tip||0;
-  });
+  uberRows.forEach(e=>{t.uA+=+e.uberApp||0;t.uC+=+e.uberCash||0;t.tip+=+e.tip||0;});
   t.uDays=uberRows.length;
-
-  // Compute derived totals
   t.income=t.pT+t.cT+t.uA;
   t.phys=t.uC+t.cT;
   t.actualCash=t.phys-t.cC;
   t.totalInHand=t.phys;
-
-  // Salary on full monthly income
   const p=drv.salParams||{};
   if(drv.salType==='base_bonus'){
-    const base=+p.base||1600,thr=+p.thr||6000,bp=+p.bonusPct||40;
-    t.salary=t.income<=thr?base:base+(bp/100)*(t.income-thr);
+    const bse=+p.base||1600,thr=+p.thr||6000,bp=+p.bonusPct||40;
+    t.salary=t.income<=thr?bse:bse+(bp/100)*(t.income-thr);
   }else if(drv.salType==='uber_pct'){
     const pct=+p.pct||35,ud=+p.uberDeduct||10;
     t.salary=t.uA*(1-ud/100)*(pct/100)+(t.pT+t.cT)*(pct/100);
@@ -336,113 +502,87 @@ async function calcMonth(drv,y,m){
   return t;
 }
 
-async function getDebt(drv,salaryMode=false){
-  // Get all distinct yearMonths this driver has entries for
-  const eq=query(collection(db,'entries'),where('driverId','==',drv.id));
-  const es=await getDocs(eq);
-  const months=new Set();
-  es.docs.forEach(d=>{const ym=d.data().yearMonth;if(ym)months.add(ym);});
-  // Also derive from date if yearMonth missing
-  es.docs.forEach(d=>{const dt=d.data().date;if(!d.data().yearMonth&&dt)months.add(dt.slice(0,7));});
-  // Months that have been settled (marked or confirmed) are considered paid — exclude from running balance
-  const settledMonths=new Set();
-  try{const sq=query(collection(db,'settlements'),where('driverId','==',drv.id));const ss=await getDocs(sq);ss.docs.forEach(d=>{const ym=d.data().yearMonth;if(ym)settledMonths.add(ym);});}catch(e){console.warn('getDebt settlements:',e.message);}
-  // Sum balance across UNSETTLED months only (correct salary per month)
+function getDebtSync(drv,salaryMode){
+  const months=DS.months[drv.id]||new Set();
+  const settled=DS.settled[drv.id]||new Set();
   const currentYM=`${nowY()}-${pad(nowM())}`;
   let total=0;
-  for(const ym of months){
-    if(settledMonths.has(ym))continue;
-    const [yStr,mStr]=ym.split('-');
-    const t=await calcMonth(drv,+yStr,+mStr);
-    // salaryMode: current month shows full salary owed (not net-of-cash).
-    // Previous unsettled months always carry their real net (actual balance).
-    if(salaryMode&&ym===currentYM&&t.bal<0&&t.actualCash<t.netSal){total+=-t.netSal;}
-    else{total+=t.bal;}
-  }
-  // Add unpaid advances
-  const aq=query(collection(db,'advances'),where('driverId','==',drv.id),where('repaid','==',false));
-  const as=await getDocs(aq);as.docs.forEach(d=>total+=+d.data().amount||0);
+  months.forEach(ym=>{
+    if(settled.has(ym))return;
+    const t=calcMonthSync(drv,+ym.slice(0,4),+ym.slice(5,7));
+    if(salaryMode&&ym===currentYM&&t.bal<0&&t.actualCash<t.netSal)total+=-t.netSal;
+    else total+=t.bal;
+  });
+  DS.advs.forEach(a=>{if(a.driverId===drv.id&&!a.repaid)total+=+a.amount||0;});
   return total;
 }
 
-/* ===== MONTH-END SETTLEMENT ENGINE =====
-   One settlement doc per driver per month, id = `${driverId}_${yearMonth}`.
-   Whoever taps first = initiator (status:'pending', balance shown immediately, no waiting).
-   The other side taps Confirm -> status:'confirmed'. Either side can Undo while pending;
-   only the owner can Reopen once confirmed. */
+/* ===== MONTH-END SETTLEMENT ENGINE (same handshake, now in-memory) ===== */
 const setId=(did,ym)=>`${did}_${ym}`;
 const sFmtD=t=>{if(!t)return'';const d=new Date(t);return `${MNS[d.getMonth()]} ${d.getDate()}`;};
-async function getSettlement(did,ym){try{const s=await getDoc(doc(db,'settlements',setId(did,ym)));return s.exists()?{id:s.id,...s.data()}:null;}catch(e){console.warn('getSettlement:',e.message);return null;}}
-// Fetch all settlements for one driver, keyed by yearMonth (single read, no index needed)
-async function getDriverSettlements(did){try{const q=query(collection(db,'settlements'),where('driverId','==',did));const s=await getDocs(q);const m={};s.docs.forEach(d=>m[d.data().yearMonth]={id:d.id,...d.data()});return m;}catch(e){console.warn('getDriverSettlements:',e.message);return{};}}
+const getSettlement=(did,ym)=>DS.setts[setId(did,ym)]||null;
+const getDriverSettlements=did=>{const m={};Object.values(DS.setts).forEach(s=>{if(s.driverId===did)m[s.yearMonth]=s;});return m;};
 
-// Shared renderer: returns the settlement zone HTML for a given month.
-// s = settlement doc (or null), bal = signed month balance (<0 company owes, >0 driver owes), viewer = 'driver'|'owner'
 function settleZoneHTML(s,did,ym,viewer,bal){
   const other=viewer==='driver'?'owner':'driver';
   const cap=r=>r==='owner'?'Owner':'Driver';
   const emo=r=>r==='owner'?'🏢':'🚗';
   const dirTxt=(dir,amt)=>`${dir==='company_owes'?'Company owed':'Driver owed'} ${f2(amt)}`;
   const bsig=+bal||0;
-  // No settlement yet -> show "Mark as settled" button
   if(!s){
     return `<button class="btn bg2 bfull bsm" style="margin-top:8px" onclick="settleMonth('${did}','${ym}','${viewer}',${bsig.toFixed(2)})">🤝 Mark this month settled</button>
       <div style="font-size:9px;color:var(--text3);text-align:center;margin-top:4px">Tap when ${viewer==='driver'?'your salary / balance has been paid out':'you have paid out the driver'} — the ${other} confirms</div>`;
   }
-  // Confirmed -> locked badge (owner can reopen)
   if(s.status==='confirmed'){
     return `<div class="alert as2" style="margin-top:8px">✅ Settled &amp; confirmed by ${cap(s.confirmedBy)}${s.confirmedAt?' · '+sFmtD(s.confirmedAt):''} · <strong>${dirTxt(s.direction,s.amount)}</strong></div>
       ${viewer==='owner'?`<button onclick="unsettleMonth('${did}','${ym}','owner')" style="width:100%;padding:5px;background:none;border:none;color:var(--text3);font-size:10px;cursor:pointer;margin-top:2px">↩ Reopen settlement</button>`:''}`;
   }
-  // Pending, this viewer started it -> waiting on the other side
   if(s.initiatedBy===viewer){
     return `<div class="alert as2" style="margin-top:8px">✅ You marked this settled · ⏳ waiting for ${other} to confirm · <strong>${dirTxt(s.direction,s.amount)}</strong></div>
       <button onclick="unsettleMonth('${did}','${ym}','${viewer}')" style="width:100%;padding:5px;background:none;border:none;color:var(--text3);font-size:10px;cursor:pointer;margin-top:2px">↩ Undo mark</button>`;
   }
-  // Pending, the OTHER side started it -> this viewer must confirm
   return `<div class="alert aw" style="margin-top:8px">${emo(s.initiatedBy)} ${cap(s.initiatedBy)} marked this month settled · <strong>${dirTxt(s.direction,s.amount)}</strong></div>
     <button class="btn bg2 bfull bsm" style="margin-top:6px" onclick="confirmSettle('${did}','${ym}','${viewer}')">✓ Confirm settlement</button>`;
 }
-
-// Refresh whichever screen the actor is on after a settlement change
-function settleRefresh(viewer){if(viewer==='driver'){renderBal().catch(()=>{});}else{renderOwnerHist().catch(()=>{});renderDebt().catch(()=>{});}}
+function settleRefresh(viewer){if(viewer==='driver'){renderBal().catch(()=>{});}else{renderOwnerHist().catch(()=>{});renderDebt();}}
 
 window.settleMonth=async(did,ym,viewer,bal)=>{
   try{
     const ownerId=viewer==='owner'?CU.uid:(CD&&CD.ownerId)||'';
     const driverId=viewer==='driver'?CD.id:did;
     const b=+bal||0;const amount=Math.abs(b);const direction=b<0?'company_owes':'driver_owes';
-    await setDoc(doc(db,'settlements',setId(driverId,ym)),{driverId,ownerId,yearMonth:ym,amount,direction,initiatedBy:viewer,initiatedAt:new Date().toISOString(),confirmedBy:null,confirmedAt:null,status:'pending'});
+    const rec={driverId,ownerId,yearMonth:ym,amount,direction,initiatedBy:viewer,initiatedAt:new Date().toISOString(),confirmedBy:null,confirmedAt:null,status:'pending'};
+    await setDoc(doc(db,'settlements',setId(driverId,ym)),rec);
+    DS.setts[setId(driverId,ym)]={id:setId(driverId,ym),...rec};idxRebuild();
     showToast(viewer==='driver'?'Marked settled — owner will confirm':'Marked settled — driver will confirm');
     settleRefresh(viewer);
   }catch(e){showToast('Error: '+e.message);console.error('settleMonth:',e);}
 };
-
 window.confirmSettle=async(did,ym,viewer)=>{
   try{
     const driverId=viewer==='driver'?CD.id:did;
-    const ref=doc(db,'settlements',setId(driverId,ym));
+    const key=setId(driverId,ym);const ref=doc(db,'settlements',key);
     const snap=await getDoc(ref);
-    if(!snap.exists()){showToast('Settlement no longer exists');settleRefresh(viewer);return;}
+    if(!snap.exists()){showToast('Settlement no longer exists');delete DS.setts[key];idxRebuild();settleRefresh(viewer);return;}
     const s=snap.data();
-    if(s.status==='confirmed'){showToast('Already confirmed');settleRefresh(viewer);return;}
+    if(s.status==='confirmed'){showToast('Already confirmed');DS.setts[key]={id:key,...s};settleRefresh(viewer);return;}
     if(s.initiatedBy===viewer){showToast('You started this — the other side confirms it');return;}
-    await updateDoc(ref,{confirmedBy:viewer,confirmedAt:new Date().toISOString(),status:'confirmed'});
-    showToast('✅ Settlement confirmed');
-    settleRefresh(viewer);
+    const patch={confirmedBy:viewer,confirmedAt:new Date().toISOString(),status:'confirmed'};
+    await updateDoc(ref,patch);
+    DS.setts[key]={id:key,...s,...patch};idxRebuild();
+    showToast('✅ Settlement confirmed');settleRefresh(viewer);
   }catch(e){showToast('Error: '+e.message);console.error('confirmSettle:',e);}
 };
-
 window.unsettleMonth=async(did,ym,viewer)=>{
   try{
     const driverId=viewer==='driver'?CD.id:did;
-    const ref=doc(db,'settlements',setId(driverId,ym));
-    const snap=await getDoc(ref);
-    if(!snap.exists()){settleRefresh(viewer);return;}
-    const s=snap.data();
+    const key=setId(driverId,ym);const ref=doc(db,'settlements',key);
+    const s=DS.setts[key];
+    if(!s){settleRefresh(viewer);return;}
     if(s.status==='confirmed'&&viewer!=='owner'){showToast('Already confirmed — ask owner to reopen');return;}
     if(!confirm(s.status==='confirmed'?'Reopen this confirmed settlement?':'Undo this settlement mark?'))return;
     await deleteDoc(ref);
+    delete DS.setts[key];idxRebuild();
     showToast(s.status==='confirmed'?'Settlement reopened':'Settlement mark removed');
     settleRefresh(viewer);
   }catch(e){showToast('Error: '+e.message);console.error('unsettleMonth:',e);}
@@ -463,74 +603,55 @@ window.closeModal=()=>{
 const showScreen=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+id).classList.add('active');};
 const setMsg=msg=>document.getElementById('lmsg').textContent=msg;
 
-// Store owner creds at login time so we can silently re-auth after creating driver
 let _ownerEmail='',_ownerPass='';
-let _suppressAuthChange=false; // prevents onAuthStateChanged from hijacking UI during driver creation
+let _suppressAuthChange=false;
 
-// AUTH STATE
+// ══════════ AUTH ══════════
 onAuthStateChanged(auth,async user=>{
   if(_suppressAuthChange)return;
-  if(!user){CU=null;UP=null;CD=null;showScreen('auth');renderAuth();return;}
+  if(!user){CU=null;UP=null;CD=null;dsReset();showScreen('auth');renderAuth();return;}
   CU=user;
   setMsg('Loading profile...');
   showScreen('loading');
   try{
-    // Load user profile
     const snap=await getDoc(doc(db,'users',user.uid));
-    if(!snap.exists()){
-      showToast('Profile not found — contact manager',4000);
-      await signOut(auth);return;
-    }
+    if(!snap.exists()){showToast('Profile not found — contact manager',4000);await signOut(auth);return;}
     UP=snap.data();
 
     if(UP.role==='owner'){
-      // Owner flow
-      setMsg('Loading dashboard...');
+      setMsg('Loading fleet...');
       document.getElementById('osub').textContent=user.email;
+      dsReset();
+      await bootData('owner');
       buildOTabs();
       showScreen('owner');
       try{await oSwitch('dash');}catch(re){console.error('Dashboard render error:',re);showToast('Dashboard load error — try refreshing',4000);}
-
     }else{
-      // Driver flow
       setMsg('Loading driver profile...');
       let driverDoc=null;
-
-      // Try direct lookup first (fast — new accounts have driverDocId stored)
       if(UP.driverDocId){
-        try{
-          const dSnap=await getDoc(doc(db,'drivers',UP.driverDocId));
-          if(dSnap.exists()&&dSnap.data().active!==false) driverDoc={id:dSnap.id,...dSnap.data()};
-        }catch(e2){console.warn('Direct driver lookup failed:',e2.message);}
+        try{const dSnap=await getDoc(doc(db,'drivers',UP.driverDocId));
+          if(dSnap.exists()&&dSnap.data().active!==false)driverDoc={id:dSnap.id,...dSnap.data()};}
+        catch(e2){console.warn('Direct driver lookup failed:',e2.message);}
       }
-
-      // Fallback: query by userId (old accounts without driverDocId)
       if(!driverDoc){
-        try{
-          const dq=query(collection(db,'drivers'),where('userId','==',user.uid));
+        try{const dq=query(collection(db,'drivers'),where('userId','==',user.uid));
           const ds=await getDocs(dq);
-          if(!ds.empty){
-            const pick=ds.docs.find(d=>d.data().active!==false)||ds.docs[0];
-            driverDoc={id:pick.id,...pick.data()};
-          }
-        }catch(qe){console.warn('Driver query failed:',qe.message);}
+          if(!ds.empty){const pick=ds.docs.find(d=>d.data().active!==false)||ds.docs[0];driverDoc={id:pick.id,...pick.data()};}}
+        catch(qe){console.warn('Driver query failed:',qe.message);}
       }
-
-      if(!driverDoc){
-        showToast('Driver account not found — contact your manager',5000);
-        await signOut(auth);return;
-      }
-
+      if(!driverDoc){showToast('Driver account not found — contact your manager',5000);await signOut(auth);return;}
       CD=driverDoc;
+      dsReset();
+      await bootData('driver');
       showScreen('driver');
-      try{await renderDHdr();}catch(he){console.warn('Header render error:',he);}
+      try{renderDHdr();}catch(he){console.warn('Header render error:',he);}
       try{await dRender('entry');}catch(de){console.error('Entry render error:',de);document.getElementById('dp-entry').innerHTML='<div style="padding:20px;color:var(--text2);text-align:center">Error loading entry. Please refresh.</div>';}
     }
   }catch(e){
     console.error('Auth load error:',e.code,e.message);
     _suppressAuthChange=false;
-    showScreen('auth');
-    renderAuth();
+    showScreen('auth');renderAuth();
     showToast('Login error: '+e.message,5000);
   }
 });
@@ -542,18 +663,15 @@ window.setRole=r=>{
   document.getElementById('rtab-driver').classList.toggle('on',r==='driver');
   renderAuth();
 };
-
 let aMode='login';
 window.aTab=m=>{aMode=m;renderAuth();};
 
 function renderAuth(){
   const f=document.getElementById('aform'),sw=document.getElementById('asw');
   if(aRole==='driver'){
-    // Drivers can ONLY log in
     f.innerHTML=`<div class="inp"><label>Email</label><input type="email" id="ae" placeholder="your@email.com" autocomplete="email"></div><div class="inp"><label>Password</label><input type="password" id="ap" placeholder="Password" autocomplete="current-password"></div><button class="btnmain" onclick="doLogin()">Login as Driver</button>`;
     sw.innerHTML=`<span style="color:var(--text3)">Contact your manager to get login details &nbsp;·&nbsp; </span><span onclick="doForgot()" style="color:var(--blue);cursor:pointer;font-weight:600">Forgot password?</span>`;
   } else {
-    // Owner: login or register
     if(aMode==='login'){
       f.innerHTML=`<div class="inp"><label>Email</label><input type="email" id="ae" placeholder="your@email.com" autocomplete="email"></div><div class="inp"><label>Password</label><input type="password" id="ap" placeholder="Min 6 characters" autocomplete="current-password"></div><button class="btnmain" onclick="doLogin()">Login as Owner</button>`;
       sw.innerHTML=`New owner? <span onclick="aTab('register')">Register</span> &nbsp;·&nbsp; <span onclick="doForgot()" style="color:var(--blue);cursor:pointer;font-weight:600">Forgot password?</span>`;
@@ -564,41 +682,31 @@ function renderAuth(){
   }
 }
 
-
 window.doLogin=async()=>{
   const email=(document.getElementById('ae').value||'').trim().toLowerCase();
   const pass=document.getElementById('ap').value||'';
   if(!email||!pass){showToast('Fill all fields');return;}
   try{
     setMsg('Logging in...');showScreen('loading');
-    _ownerEmail=email;_ownerPass=pass; // store BEFORE signIn so ready when onAuthStateChanged fires
+    _ownerEmail=email;_ownerPass=pass;
     await signInWithEmailAndPassword(auth,email,pass);
-  }
-  catch(e){
+  }catch(e){
     _ownerEmail='';_ownerPass='';
     showScreen('auth');renderAuth();
     showToast(e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'?'Wrong email or password':e.message);
   }
 };
-
 window.doForgot=async()=>{
   const email=(document.getElementById('ae')?document.getElementById('ae').value||'':'').trim().toLowerCase();
   if(!email){showToast('Enter your email first, then tap Forgot Password');return;}
-  try{
-    await sendPasswordResetEmail(auth,email);
-    showToast('✅ Reset link sent! Check your email.',4000);
-  }catch(e){
-    showToast(e.code==='auth/user-not-found'?'No account with that email':'Error: '+e.message);
-  }
+  try{await sendPasswordResetEmail(auth,email);showToast('✅ Reset link sent! Check your email.',4000);}
+  catch(e){showToast(e.code==='auth/user-not-found'?'No account with that email':'Error: '+e.message);}
 };
-
-// Owner resets a driver's password by sending them a reset email
 window.resetDrvPass=async(email,name)=>{
   if(!email){showToast('No email on file for this driver');return;}
   try{
     await sendPasswordResetEmail(auth,email);
     showToast(`✅ Password reset email sent to ${name}`,3500);
-    // Also offer WhatsApp notify
     setTimeout(()=>{
       const appUrl='https://fahim6244.github.io/calcu/RazaCars_v5.html';
       const msg=`🔑 *Raza Cars — Password Reset*\n\nHi ${name}! Your manager has sent you a password reset link.\n\n📧 Check your email: ${email}\n\nAfter resetting, login at:\n${appUrl}\n\nSelect *🚗 Driver* and use your new password.`;
@@ -606,8 +714,6 @@ window.resetDrvPass=async(email,name)=>{
     },500);
   }catch(e){showToast('Error: '+e.message);}
 };
-
-// FIXED: entire doRegister wrapped in try-catch so errors never silently crash the button
 window.doRegister=async()=>{
   const btn=document.getElementById('regbtn');
   if(btn)btn.disabled=true;
@@ -618,7 +724,7 @@ window.doRegister=async()=>{
     if(!name){showToast('Enter your name');return;}
     if(!email){showToast('Enter your email');return;}
     if(!pass||pass.length<6){showToast('Password must be at least 6 characters');return;}
-    _ownerEmail=email;_ownerPass=pass; // store before createUser
+    _ownerEmail=email;_ownerPass=pass;
     setMsg('Creating account...');showScreen('loading');
     const cred=await createUserWithEmailAndPassword(auth,email,pass);
     const uid=cred.user.uid;
@@ -633,30 +739,26 @@ window.doRegister=async()=>{
     else if(e.code==='auth/invalid-email')showToast('Invalid email address.');
     else if(e.code==='auth/weak-password')showToast('Password is too weak. Use at least 6 characters.');
     else showToast('Error: '+e.message);
-  }finally{
-    const b=document.getElementById('regbtn');if(b)b.disabled=false;
-  }
+  }finally{const b=document.getElementById('regbtn');if(b)b.disabled=false;}
 };
+window.fbLogout=async()=>{_ownerEmail='';_ownerPass='';dsReset();try{await signOut(auth);}catch(e){}};
 
-window.fbLogout=async()=>{_ownerEmail='';_ownerPass='';UCYC={};try{await signOut(auth);}catch(e){}};
-
+// ══════════ OWNER ══════════
 const OTABS_FIXED=[['dash','Board','📊'],['drvs','Drivers','👥'],['cars','Cars','🚗'],['appr','Approve','✅'],['debt','Debt','💰'],['rpts','Reports','📈'],['exps','Expenses','💸'],['hist','History','📋'],['sets','Settings','⚙️']];
 let oTab='dash';
-
 function buildOTabs(){
   document.getElementById('otabs').innerHTML=OTABS_FIXED.map(t=>`<button class="tab${t[0]===oTab?' on':''}" onclick="oSwitch('${t[0]}')"><span class="ti">${t[2]}</span><span>${t[1]}</span></button>`).join('');
 }
-
 window.oSwitch=async tab=>{
   oTab=tab;buildOTabs();
   OTABS_FIXED.forEach(t=>document.getElementById('op-'+t[0]).classList.toggle('on',t[0]===tab));
   try{
-    if(tab==='dash')await renderDash();
-    else if(tab==='drvs')await renderDrvs();
-    else if(tab==='cars')await renderCars();
-    else if(tab==='appr')await renderAppr();
-    else if(tab==='debt')await renderDebt();
-    else if(tab==='rpts')await renderRpts();
+    if(tab==='dash')renderDash();
+    else if(tab==='drvs')renderDrvs();
+    else if(tab==='cars')renderCars();
+    else if(tab==='appr')renderAppr();
+    else if(tab==='debt')renderDebt();
+    else if(tab==='rpts')renderRpts();
     else if(tab==='exps')await renderExps();
     else if(tab==='hist')await renderOwnerHist();
     else if(tab==='sets')renderSets();
@@ -665,24 +767,22 @@ window.oSwitch=async tab=>{
     if(el)el.innerHTML='<div class="alert ad" style="margin-top:10px">⚠️ Error: '+esc(e.message)+'<br><button class="btn bs bsm" style="margin-top:8px" onclick="oSwitch(\''+tab+'\')">Retry</button></div>';
     console.error('Tab error ('+tab+'):',e);
   }
+  maybeSync();
 };
+const getDrivers=()=>DS.drivers;
+const getCars=()=>DS.cars;
+const drvById=id=>DS.drivers.find(d=>d.id===id)||null;
 
-const getDrivers=async()=>{const q=query(collection(db,'drivers'),where('ownerId','==',CU.uid),where('active','==',true));const s=await getDocs(q);return s.docs.map(d=>({id:d.id,...d.data()}));};
-const getCars=async()=>{const q=query(collection(db,'cars'),where('ownerId','==',CU.uid));const s=await getDocs(q);return s.docs.map(d=>({id:d.id,...d.data()}));};
-
-async function renderDash(){
-  const el=document.getElementById('op-dash');el.innerHTML='<div class="spin" style="margin:40px auto"></div>';
-  try{
-  const y=nowY(),m=nowM(),tod=today();const drivers=await getDrivers();
-  let totInc=0,totSal=0,pendCnt=0;const dData=[];
-  for(const d of drivers){const t=await calcMonth(d,y,m);const debt=await getDebt(d);totInc+=t.income;totSal+=t.salary;dData.push({d,t,debt});}
-  const pq=query(collection(db,'entries'),where('ownerId','==',CU.uid),where('status','==','pending'));
-  pendCnt=(await getDocs(pq)).size;
+function renderDash(){
+  const el=document.getElementById('op-dash');
+  const y=nowY(),m=nowM(),tod=today();const drivers=getDrivers();
+  let totInc=0,totSal=0;const dData=[];
+  for(const d of drivers){const t=calcMonthSync(d,y,m);const debt=getDebtSync(d);totInc+=t.income;totSal+=t.salary;dData.push({d,t,debt});}
+  const pendCnt=DS.entries.filter(e=>e.status==='pending').length;
   const ranked=[...dData].sort((a,b)=>b.t.income-a.t.income);const medals=['🥇','🥈','🥉'];
   let todH='';
   for(const d of drivers){
-    const eq=query(collection(db,'entries'),where('driverId','==',d.id),where('date','==',tod));
-    const es=await getDocs(eq);const e=es.empty?null:es.docs[0].data();const c=e?calcDay(e,d.salType,d.salParams):null;
+    const e=dayEntries(d.id,tod)[0]||null;const c=e?calcDay(e,d.salType,d.salParams):null;
     todH+=rH(`👤 ${esc(d.name)}`,e?f2(c.income)+(e.status==='pending'?' ⏳':' ✅'):'No entry',e?'green':'');
   }
   const mSumH=dData.map(({d,t,debt})=>`<div class="sd"><div class="sdh" onclick="this.nextElementSibling.classList.toggle('on')">
@@ -700,16 +800,14 @@ async function renderDash(){
     ${ranked.length?`<div class="card"><div class="ch" style="color:var(--gold)">🏆 Leaderboard</div><div class="cb">${ranked.slice(0,3).map((r,i)=>`<div style="display:flex;align-items:center;gap:7px;padding:5px 0;${i<2?'border-bottom:1px solid rgba(51,65,85,.25)':''}"><span style="font-size:17px">${medals[i]}</span><span style="flex:1;font-weight:600;font-size:12px">${esc(r.d.name)}</span><span style="font-family:monospace;font-weight:700;color:var(--green)">${f2(r.t.income)}</span></div>`).join('')}</div></div>`:''}
     <div class="card"><div class="ch" style="color:#34d399">📅 Today</div><div class="cb">${todH||'<div style="color:var(--text3);font-size:11px">No drivers</div>'}</div></div>
     <div class="card"><div class="ch" style="color:#93c5fd">📊 Month Summary</div><div class="cb">${mSumH||'<div style="color:var(--text3);font-size:11px">Share your owner code with drivers.</div>'}</div></div>`;
-  }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error loading dashboard: '+esc(e.message)+'</div>';console.error('renderDash:',e);}
 }
 
-async function renderDrvs(){
-  const el=document.getElementById('op-drvs');el.innerHTML='<div class="spin" style="margin:40px auto"></div>';
-  try{
-  const y=nowY(),m=nowM();const drivers=await getDrivers();const cols=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#14b8a6'];
+function renderDrvs(){
+  const el=document.getElementById('op-drvs');
+  const y=nowY(),m=nowM();const drivers=getDrivers();const cols=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#14b8a6'];
   let html=`<div style="font-size:15px;font-weight:700">Drivers (${drivers.length})</div><div class="alert ai">👥 Create driver accounts here — they receive login details via WhatsApp and just log in.</div>`;
   for(const d of drivers){
-    const t=await calcMonth(d,y,m);const debt=await getDebt(d);const col=cols[d.name.charCodeAt(0)%cols.length];
+    const t=calcMonthSync(d,y,m);const debt=getDebtSync(d);const col=cols[d.name.charCodeAt(0)%cols.length];
     html+=`<div class="di" onclick="showDrvEdit('${d.id}')"><div class="dav" style="background:${col}20;border:1px solid ${col}40;color:${col}">${esc(d.name[0].toUpperCase())}</div>
     <div class="din"><div class="dn">${esc(d.name)}</div><div class="dm">${STYPES[d.salType]} · Day off: ${DAYS[+d.dayOff>=0?+d.dayOff:2]}</div>
     <div style="margin-top:3px;display:flex;gap:3px"><span class="chip cg">Active</span><span class="chip ${debt<0?'cg':'co'}">${debt<0?'Co.'+abs2(debt):'Owes '+abs2(debt)}</span></div></div>
@@ -717,12 +815,11 @@ async function renderDrvs(){
   }
   html+=(!drivers.length?'<div class="empty"><div class="ei">👥</div><div class="et">No drivers yet</div><div class="es">Add your first driver below</div></div>':'')+'<button class="btn bp bfull" onclick="showAddDrv()">➕ Add Driver</button>';
   el.innerHTML=html;
-  }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error loading drivers: '+esc(e.message)+'</div>';console.error('renderDrvs:',e);}
 }
 
-window.showDrvEdit=async did=>{
-  const snap=await getDoc(doc(db,'drivers',did));if(!snap.exists())return;
-  const d={id:did,...snap.data()};const cars=await getCars();
+window.showDrvEdit=did=>{
+  const d=drvById(did);if(!d)return;
+  const cars=getCars();
   showModal(`<div class="mt">👤 ${esc(d.name)}</div><div style="display:flex;flex-direction:column;gap:10px">
     <div class="field"><label>Assign Car</label><select id="mcar"><option value="">-- No car --</option>${cars.map(c=>`<option value="${c.id}"${d.carId===c.id?' selected':''}>${esc(c.number)}</option>`).join('')}</select></div>
     <div class="field"><label>Day Off</label><select id="mdayoff"><option value="-1"${d.dayOff===-1?' selected':''}>No fixed day off</option><option value="0"${+d.dayOff===0?' selected':''}>Sunday</option><option value="1"${+d.dayOff===1?' selected':''}>Monday</option><option value="2"${(d.dayOff===undefined||+d.dayOff===2)?' selected':''}>Tuesday (default)</option><option value="3"${+d.dayOff===3?' selected':''}>Wednesday</option><option value="4"${+d.dayOff===4?' selected':''}>Thursday</option><option value="5"${+d.dayOff===5?' selected':''}>Friday</option><option value="6"${+d.dayOff===6?' selected':''}>Saturday</option></select></div>
@@ -736,7 +833,6 @@ window.showDrvEdit=async did=>{
     <button class="btn bs bfull" onclick="resetDrvPass('${esc(d.email||'')}','${esc(d.name)}')">🔑 Reset Driver Password</button>
     <button class="btn bs bfull" onclick="resendDrvWA('${esc(d.name)}','${esc(d.email||'')}')">📱 Resend Login Info via WhatsApp</button></div>`);
 };
-
 function salUI(type,p){p=p||{};
   if(type==='base_bonus')return`<div style="display:flex;flex-direction:column;gap:8px"><div class="field"><label>Base Salary (€)</label><input type="number" id="sp1" value="${p.base||1600}"></div><div class="field"><label>Threshold (€)</label><input type="number" id="sp2" value="${p.thr||6000}"></div><div class="field"><label>Bonus % above threshold</label><input type="number" id="sp3" value="${p.bonusPct||40}"></div></div>`;
   if(type==='uber_pct')return`<div style="display:flex;flex-direction:column;gap:8px"><div class="field"><label>Uber Deduction %</label><input type="number" id="sp1" value="${p.uberDeduct||10}"></div><div class="field"><label>Salary %</label><input type="number" id="sp2" value="${p.pct||35}"></div></div>`;
@@ -755,10 +851,16 @@ const getPrms=type=>{const g=id=>{const e=document.getElementById(id);return e?+
 window.saveDrvEdit=async did=>{
   const type=document.getElementById('mstype').value;
   const updates={salType:type,salParams:getPrms(type),dayOff:+document.getElementById('mdayoff').value,dailyTarget:+document.getElementById('mtgt').value||300,lockDays:+document.getElementById('mlock').value,reqApproval:document.getElementById('mappr').value==='1',carId:document.getElementById('mcar').value||null};
-  try{await updateDoc(doc(db,'drivers',did),updates);closeModal();showToast('Saved!');renderDrvs();}catch(e){showToast('Error: '+e.message);}
+  try{
+    await updateDoc(doc(db,'drivers',did),updates);
+    const i=DS.drivers.findIndex(d=>d.id===did);if(i>=0)DS.drivers[i]={...DS.drivers[i],...updates};
+    closeModal();showToast('Saved!');renderDrvs();
+  }catch(e){showToast('Error: '+e.message);}
 };
-window.deactDrv=async did=>{try{await updateDoc(doc(db,'drivers',did),{active:false});closeModal();showToast('Driver deactivated');renderDrvs();}catch(e){showToast('Error: '+e.message);}};
-
+window.deactDrv=async did=>{
+  try{await updateDoc(doc(db,'drivers',did),{active:false});DS.drivers=DS.drivers.filter(d=>d.id!==did);closeModal();showToast('Driver deactivated');renderDrvs();}
+  catch(e){showToast('Error: '+e.message);}
+};
 window.showAddDrv=()=>showModal(`<div class="mt">➕ Add Driver</div>
   <div class="alert ai" style="margin-bottom:10px">🔐 You set the driver's initial password — they use it to log in. They can recover it anytime via <em>Forgot Password</em> on the login screen.</div>
   <div style="display:flex;flex-direction:column;gap:9px">
@@ -772,13 +874,10 @@ window.showAddDrv=()=>showModal(`<div class="mt">➕ Add Driver</div>
   <div class="field"><label>Salary %</label><input type="number" id="ndpct" value="35"></div>
   <div class="field"><label>Daily Target (€)</label><input type="number" id="ndtgt" value="300"></div>
   <button class="btn bb bfull" id="addbtn" onclick="addDrv()">✅ Create Driver & Send via WhatsApp</button></div>`);
-
 window.genPass=()=>{
   const w=['raza','drive','cars','fast','road'];
-  const p=w[Math.floor(Math.random()*w.length)]+(Math.floor(Math.random()*900)+100);
-  document.getElementById('ndp').value=p;
+  document.getElementById('ndp').value=w[Math.floor(Math.random()*w.length)]+(Math.floor(Math.random()*900)+100);
 };
-
 window.addDrv=async()=>{
   const name=(document.getElementById('ndn').value||'').trim();
   const email=(document.getElementById('nde').value||'').trim().toLowerCase();
@@ -791,46 +890,26 @@ window.addDrv=async()=>{
   if(!email){showToast('Enter driver email');return;}
   if(!pass||pass.length<6){showToast('Password must be at least 6 chars');return;}
   if(!_ownerPass){showToast('Please log out and log back in first');return;}
-
   const btn=document.getElementById('addbtn');
   if(btn){btn.disabled=true;btn.textContent='⏳ Creating...';}
-
   const ownerUid=CU.uid;
-  const ownerEmail=_ownerEmail||CU.email; // declared outside try so catch can use it
+  const ownerEmail=_ownerEmail||CU.email;
   _suppressAuthChange=true;
-
   try{
-    // 1. Create Firebase Auth account (signs in as driver temporarily)
     const cred=await createUserWithEmailAndPassword(auth,email,pass);
     const driverUid=cred.user.uid;
-
-    // 2. Write all docs while signed in as driver (driver can write own docs)
-    await setDoc(doc(db,'users',driverUid),{
-      name,email,role:'driver',ownerId:ownerUid,ownerCode:null,
-      createdAt:new Date().toISOString()
-    });
-    const dRef=await addDoc(collection(db,'drivers'),{
-      userId:driverUid,name,email,ownerId:ownerUid,active:true,
-      salType:st,salParams:{pct:pct2},carId:null,
-      dailyTarget:tgt,lockDays:0,reqApproval:false,dayOff,
-      createdAt:new Date().toISOString()
-    });
-    // Save driverDocId so driver login uses fast getDoc not a query
+    await setDoc(doc(db,'users',driverUid),{name,email,role:'driver',ownerId:ownerUid,ownerCode:null,createdAt:new Date().toISOString()});
+    const drvRec={userId:driverUid,name,email,ownerId:ownerUid,active:true,salType:st,salParams:{pct:pct2},carId:null,dailyTarget:tgt,lockDays:0,reqApproval:false,dayOff,createdAt:new Date().toISOString()};
+    const dRef=await addDoc(collection(db,'drivers'),drvRec);
     await updateDoc(doc(db,'users',driverUid),{driverDocId:dRef.id});
-
-    // 3. Re-auth as owner silently
     const ownerCred=await signInWithEmailAndPassword(auth,ownerEmail,_ownerPass);
     CU=ownerCred.user;
-
-    // 4. Restore owner UI
     _suppressAuthChange=false;
+    DS.drivers.push({id:dRef.id,...drvRec});
     closeModal();
     document.getElementById('osub').textContent=ownerEmail;
-    buildOTabs();
-    showScreen('owner');
+    buildOTabs();showScreen('owner');
     await oSwitch('drvs');
-
-    // 5. Show success + WhatsApp
     setTimeout(()=>showModal(`<div class="mt">✅ Driver Created!</div>
       <div class="alert as2" style="margin-bottom:12px">🎉 <strong>${esc(name)}</strong> is ready. Send these details once — same login forever.</div>
       <div class="card" style="margin-bottom:10px"><div class="cb">
@@ -842,12 +921,10 @@ window.addDrv=async()=>{
       <div style="display:flex;flex-direction:column;gap:7px">
       <button class="btn bg2 bfull" onclick="sendDrvWA('${esc(name)}','${esc(email)}','${esc(pass)}')">📱 Send via WhatsApp</button>
       <button class="btn bs bfull" onclick="closeModal()">Done</button></div>`),200);
-
   }catch(e){
     _suppressAuthChange=false;
     if(btn){btn.disabled=false;btn.textContent='✅ Create Driver & Send via WhatsApp';}
     showToast(e.code==='auth/email-already-in-use'?'Email already in use — try another':'Error: '+e.message);
-    // Restore owner session
     try{
       const rc=await signInWithEmailAndPassword(auth,ownerEmail,_ownerPass);
       CU=rc.user;
@@ -856,65 +933,59 @@ window.addDrv=async()=>{
     }catch(re){_ownerEmail='';_ownerPass='';await signOut(auth);}
   }
 };
-
 window.sendDrvWA=(name,email,pass)=>{
   const appUrl='https://fahim6244.github.io/calcu/RazaCars_v5.html';
   const msg=`🚗 *Raza Cars — Your Login Details*\n\nHi ${name}! Your driver account is ready.\n\n📧 *Email:* ${email}\n🔑 *Password:* ${pass}\n\n*How to login:*\n1. Open: ${appUrl}\n2. Tap *🚗 Driver*\n3. Enter your email & password\n\n💡 Keep these details — you use the same login every time.\n\n🚗 Drive safe!`;
   window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
 };
-
 window.resendDrvWA=(name,email)=>{
   if(!email){showToast('No email on file for this driver');return;}
   const appUrl='https://fahim6244.github.io/calcu/RazaCars_v5.html';
   const msg=`🚗 *Raza Cars — Login Reminder*\n\nHi ${name}!\n\nYour Raza Cars login:\n📧 *Email:* ${email}\n🔑 *Password:* your password (contact manager if forgotten)\n\n*To login:*\n1. Open: ${appUrl}\n2. Tap *🚗 Driver*\n3. Enter email & password\n\n🔑 Forgot password? Open the app, select Driver, tap *Forgot password?* and check your email.\n\n🚗 Drive safe!`;
   window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
 };
-
 window.showAdvModal=(did,dname)=>showModal(`<div class="mt">💸 Advance for ${esc(dname)}</div><div style="display:flex;flex-direction:column;gap:9px">
   <div class="field"><label>Amount (€)</label><div class="fr"><span class="fpre">€</span><input type="text" inputmode="decimal" id="aamt" placeholder="0.00"></div></div>
   <div class="field"><label>Note</label><input type="text" id="anote" placeholder="e.g. Cash advance"></div>
   <div class="field"><label>Date</label><input type="date" id="adate" value="${today()}"></div>
   <div class="alert aw">⚠️ This adds to the driver's running debt</div>
   <button class="btn bor bfull" onclick="giveAdv('${did}')">Record Advance</button></div>`);
-
 window.giveAdv=async did=>{
-  const amt=+(document.getElementById('aamt').value||'').replace(',','.');const note=(document.getElementById('anote').value||'').trim();const date=document.getElementById('adate').value;
+  const amt=+(document.getElementById('aamt').value||'').replace(',','.');
+  const note=(document.getElementById('anote').value||'').trim();const date=document.getElementById('adate').value;
   if(!amt||amt<=0){showToast('Enter amount');return;}
-  try{await addDoc(collection(db,'advances'),{driverId:did,ownerId:CU.uid,amount:amt,note,date,repaid:false,createdAt:new Date().toISOString()});closeModal();showToast('Advance '+f2(amt)+' recorded');renderDebt();}
-  catch(e){showToast('Error: '+e.message);}
+  try{
+    const rec={driverId:did,ownerId:CU.uid,amount:amt,note,date,repaid:false,createdAt:new Date().toISOString()};
+    const r=await addDoc(collection(db,'advances'),rec);
+    DS.advs.push({id:r.id,...rec});
+    closeModal();showToast('Advance '+f2(amt)+' recorded');renderDebt();
+  }catch(e){showToast('Error: '+e.message);}
 };
 
-async function renderAppr(){
-  const el=document.getElementById('op-appr');el.innerHTML='<div class="spin" style="margin:40px auto"></div>';
-  try{
-  const drivers=await getDrivers();let pending=[];
-  for(const d of drivers){
-    if(!d.reqApproval)continue;
-    const q=query(collection(db,'entries'),where('driverId','==',d.id),where('status','==','pending'));
-    const s=await getDocs(q);s.docs.forEach(e=>pending.push({e:{id:e.id,...e.data()},d}));
-  }
-  pending.sort((a,b)=>b.e.date.localeCompare(a.e.date));
+function renderAppr(){
+  const el=document.getElementById('op-appr');
+  const drivers=getDrivers();const byId={};drivers.forEach(d=>byId[d.id]=d);
+  const pending=DS.entries.filter(e=>e.status==='pending'&&byId[e.driverId]&&byId[e.driverId].reqApproval)
+    .map(e=>({e,d:byId[e.driverId]})).sort((a,b)=>String(b.e.date).localeCompare(String(a.e.date)));
   el.innerHTML=`<div style="font-size:15px;font-weight:700">Pending Approvals (${pending.length})</div>`+
     pending.map(({e,d})=>{const c=calcDay(e,d.salType,d.salParams);return`<div class="api">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
       <div><div style="font-weight:700;font-size:12px">👤 ${esc(d.name)}</div><div style="font-size:10px;color:var(--text2)">${e.date}</div></div>
       <div style="text-align:right"><div style="font-family:monospace;font-weight:700;color:var(--green)">${f2(c.income)}</div><span class="chip co">⏳ Pending</span></div></div>
-      ${rH('Paid',f2(c.pT))+rH('Cash',f2(c.cT))+rH('Uber',f2(c.uA))+rH('Expenses',f2(c.ex),'red')+rH('Gross Salary',f2(c.salary))+(c.rent>0?rH('Car Rent','-'+f2(c.rent),'red'):'')+rH('Net Salary',f2(c.netSal),'big')}
+      ${rH('Paid',f2(c.pT))+rH('Cash',f2(c.cT))+rH('Uber',f2(c.uA))+rH('Expenses',f2(c.driverExp),'red')+rH('Gross Salary',f2(c.salary))+(c.rent>0?rH('Car Rent','-'+f2(c.rent),'red'):'')+rH('Net Salary',f2(c.netSal),'big')}
       <div style="display:flex;gap:7px;margin-top:7px"><button class="btn bg2 bsm" style="flex:1" onclick="approv('${e.id}')">✅ Approve</button><button class="btn br2 bsm" style="flex:1" onclick="reject('${e.id}')">❌ Reject</button></div></div>`;}).join('')+
     (!pending.length?'<div class="empty"><div class="ei">✅</div><div class="et">All clear!</div><div class="es">No entries pending approval</div></div>':'');
-  }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error loading approvals: '+esc(e.message)+'</div>';console.error('renderAppr:',e);}
 }
-window.approv=async eid=>{try{await updateDoc(doc(db,'entries',eid),{status:'approved'});showToast('Approved');renderAppr();renderDash();}catch(e){showToast('Error: '+e.message);}};
-window.reject=async eid=>{try{await updateDoc(doc(db,'entries',eid),{status:'rejected'});showToast('Rejected');renderAppr();}catch(e){showToast('Error: '+e.message);}};
+function patchEntryStatus(eid,status){const e=DS.entries.find(x=>x.id===eid);if(e)e.status=status;}
+window.approv=async eid=>{try{await updateDoc(doc(db,'entries',eid),{status:'approved'});patchEntryStatus(eid,'approved');showToast('Approved');renderAppr();}catch(e){showToast('Error: '+e.message);}};
+window.reject=async eid=>{try{await updateDoc(doc(db,'entries',eid),{status:'rejected'});patchEntryStatus(eid,'rejected');showToast('Rejected');renderAppr();}catch(e){showToast('Error: '+e.message);}};
 
-async function renderDebt(){
-  const el=document.getElementById('op-debt');el.innerHTML='<div class="spin" style="margin:40px auto"></div>';
-  try{
-  const drivers=await getDrivers();let totCo=0,totDrv=0,html='';
+function renderDebt(){
+  const el=document.getElementById('op-debt');
+  const drivers=getDrivers();let totCo=0,totDrv=0,html='';
   for(const d of drivers){
-    const debt=await getDebt(d);if(debt<0)totCo+=Math.abs(debt);else totDrv+=debt;
-    const aq=query(collection(db,'advances'),where('driverId','==',d.id),where('repaid','==',false));
-    const as=await getDocs(aq);const advs=as.docs.map(a=>({id:a.id,...a.data()}));
+    const debt=getDebtSync(d);if(debt<0)totCo+=Math.abs(debt);else totDrv+=debt;
+    const advs=DS.advs.filter(a=>a.driverId===d.id&&!a.repaid);
     html+=`<div class="dci"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
       <div style="font-weight:700;font-size:13px">👤 ${esc(d.name)}</div>
       <div class="bal ${debt<0?'owe':'give'}" style="padding:5px 9px"><div style="font-size:10px;font-weight:600;color:${debt<0?'#34d399':'#fb923c'}">${debt<0?'Co.owes':'Drv.owes'}</div>
@@ -924,10 +995,8 @@ async function renderDebt(){
       <button onclick="markRepaid('${a.id}')" style="background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.3);color:#34d399;border-radius:5px;padding:1px 6px;font-size:9px;cursor:pointer">Repaid</button></div></div>`).join('')}
       <button class="btn bor bsm bfull" style="margin-top:7px" onclick="showAdvModal('${d.id}','${esc(d.name)}')">+ Give Advance</button></div>`;
   }
-  // Pending settlement handshakes (single-field query, filtered client-side — no composite index needed)
-  let pendSetts=[];
-  try{const sq=query(collection(db,'settlements'),where('ownerId','==',CU.uid));const ss=await getDocs(sq);pendSetts=ss.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.status==='pending');}catch(se){console.warn('settlements load:',se.message);}
-  const _nm=id=>{const d=drivers.find(x=>x.id===id);return d?d.name:'Driver';};
+  const pendSetts=Object.values(DS.setts).filter(x=>x.status==='pending');
+  const _nm=id=>{const d=drvById(id);return d?d.name:'Driver';};
   const _yl=ym=>{const p=(ym||'').split('-');return p.length===2?`${MNS[+p[1]-1]} ${p[0]}`:ym;};
   const _need=pendSetts.filter(s=>s.initiatedBy==='driver');
   const _await=pendSetts.filter(s=>s.initiatedBy==='owner');
@@ -946,16 +1015,18 @@ async function renderDebt(){
     <div class="sc"><div class="sv" style="color:var(--orange)">${f2(totDrv)}</div><div class="sl">Drivers Owe Company</div></div></div>
     ${settBlock}
     <div class="alert ai">💡 Cumulative balance — all months + advances</div>${html||'<div class="empty"><div class="ei">💰</div><div class="et">No drivers yet</div></div>'}`;
-  }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error loading debt: '+esc(e.message)+'</div>';console.error('renderDebt:',e);}
 }
-window.markRepaid=async aid=>{try{await updateDoc(doc(db,'advances',aid),{repaid:true});showToast('Marked repaid');renderDebt();}catch(e){showToast('Error: '+e.message);}};
+window.markRepaid=async aid=>{
+  try{await updateDoc(doc(db,'advances',aid),{repaid:true});
+    const a=DS.advs.find(x=>x.id===aid);if(a)a.repaid=true;
+    showToast('Marked repaid');renderDebt();}
+  catch(e){showToast('Error: '+e.message);}
+};
 
 let rY=nowY(),rM=nowM();
-async function renderRpts(){
-  const el=document.getElementById('op-rpts');el.innerHTML='<div class="spin" style="margin:40px auto"></div>';
-  try{
-  const drivers=await getDrivers();const dData=[];
-  for(const d of drivers){const t=await calcMonth(d,rY,rM);dData.push({d,t});}
+function renderRpts(){
+  const el=document.getElementById('op-rpts');
+  const drivers=getDrivers();const dData=drivers.map(d=>({d,t:calcMonthSync(d,rY,rM)}));
   const ranked=[...dData].sort((a,b)=>b.t.income-a.t.income);const medals=['🥇','🥈','🥉'];
   el.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between">
     <div style="font-size:15px;font-weight:700">Reports</div>
@@ -970,31 +1041,38 @@ async function renderRpts(){
       <span style="font-family:monospace;font-weight:800;font-size:14px;color:${i===0?'var(--gold)':'var(--green)'}">${f2(r.t.income)}</span></div>`).join('')||'<div style="color:var(--text3);font-size:11px">No data</div>'}</div></div>
     <button class="btn bg2 bfull" onclick="shareReport()">📱 Share Fleet Report</button>
     <button class="btn bs bfull" onclick="exportCSV()">📥 Export to CSV</button>`;
-  }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error loading reports: '+esc(e.message)+'</div>';console.error('renderRpts:',e);}
 }
-window.chgRm=d=>{rM+=d;if(rM>12){rM=1;rY++;}if(rM<1){rM=12;rY--;}renderRpts();};
-window.shareReport=async()=>{
-  const drivers=await getDrivers();let msg=`📊 FLEET REPORT — ${MN[rM-1]} ${rY}\n🚗 Raza Cars\n━━━━━━━━━━━━\n`;let total=0;
-  for(const d of drivers){const t=await calcMonth(d,rY,rM);if(t.days>0){msg+=`👤 ${d.name}: ${f2(t.income)} (${t.days} days)\n`;total+=t.income;}}
+window.chgRm=async d=>{
+  rM+=d;if(rM>12){rM=1;rY++;}if(rM<1){rM=12;rY--;}
+  await ensureCycles(getDrivers().map(x=>[x.id,rY,rM]));
+  renderRpts();
+};
+window.shareReport=()=>{
+  let msg=`📊 FLEET REPORT — ${MN[rM-1]} ${rY}\n🚗 Raza Cars\n━━━━━━━━━━━━\n`;let total=0;
+  for(const d of getDrivers()){const t=calcMonthSync(d,rY,rM);if(t.days>0){msg+=`👤 ${d.name}: ${f2(t.income)} (${t.days} days)\n`;total+=t.income;}}
   msg+=`━━━━━━━━━━━━\n🏁 TOTAL: ${f2(total)}`;window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
 };
-window.exportCSV=async()=>{
-  const drivers=await getDrivers();let csv='Driver,Date,Paid,Cash,Uber,Total Income,Expenses,Gross Salary,Car Rent,Net Salary,Balance,Status\n';
-  for(const d of drivers){
-    const q=query(collection(db,'entries'),where('driverId','==',d.id),where('yearMonth','==',`${rY}-${pad(rM)}`));
-    const s=await getDocs(q);
-    // For CSV: use monthly salary ÷ days for per-row salary (correct for base_bonus)
-    const tM=await calcMonth(d,rY,rM);const salPerDay=tM.days>0?tM.salary/tM.days:0;
-    s.docs.forEach(e=>{const c=calcDay(e.data(),d.salType,d.salParams);const dailySal=salPerDay;const dailyExp=(+e.data().driverExp||0)+(+e.data().cashFuel||0)+(+e.data().expenses||0);const dailyNet=dailySal+(+e.data().tip||0)+dailyExp;csv+=`"${d.name}",${e.data().date},${c.pT},${c.cT},${c.uA},${c.income},${dailyExp.toFixed(2)},${dailySal.toFixed(2)},0,${dailyNet.toFixed(2)},,${e.data().status||'saved'}\n`;});
+window.exportCSV=()=>{
+  let csv='Driver,Date,Paid,Cash,Uber,Total Income,Expenses,Gross Salary,Car Rent,Net Salary,Balance,Status\n';
+  const ym=`${rY}-${pad(rM)}`;
+  for(const d of getDrivers()){
+    const tM=calcMonthSync(d,rY,rM);const salPerDay=tM.days>0?tM.salary/tM.days:0;
+    mEntries(d.id,ym).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).forEach(e=>{
+      const c=calcDay(e,d.salType,d.salParams);
+      const dailyExp=(+e.driverExp||0)+(+e.cashFuel||0)+(+e.expenses||0);
+      const dailyNet=salPerDay+(+e.tip||0)+dailyExp;
+      csv+=`"${d.name}",${e.date},${c.pT},${c.cT},${c.uA},${c.income},${dailyExp.toFixed(2)},${salPerDay.toFixed(2)},0,${dailyNet.toFixed(2)},,${e.status||'saved'}\n`;
+    });
   }
-  const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`RazaCars_${rY}_${rM}.csv`;a.click();URL.revokeObjectURL(url);showToast('CSV exported!');
+  const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`RazaCars_${rY}_${rM}.csv`;a.click();URL.revokeObjectURL(url);showToast('CSV exported!');
 };
 
-window.showInv=async did=>{
-  const snap=await getDoc(doc(db,'drivers',did));if(!snap.exists())return;
-  const d={id:did,...snap.data()};const y=nowY(),m=nowM();
-  const t=await calcMonth(d,y,m);if(t.days===0){showToast('No data this month');return;}
-  const debt=await getDebt(d);const invNo=`RC-${y}${pad(m)}-${did.slice(-4).toUpperCase()}`;
+window.showInv=did=>{
+  const d=drvById(did);if(!d)return;
+  const y=nowY(),m=nowM();
+  const t=calcMonthSync(d,y,m);if(t.days===0){showToast('No data this month');return;}
+  const debt=getDebtSync(d);const invNo=`RC-${y}${pad(m)}-${did.slice(-4).toUpperCase()}`;
   showModal(`<div class="mt">📄 Salary Invoice</div>
     <div class="inv"><h2>🚗 Raza Cars</h2>
     <div style="font-size:10px;color:#6b7280;margin-bottom:8px">Invoice #${invNo} · ${MN[m-1]} ${y}</div>
@@ -1013,35 +1091,42 @@ window.showInv=async did=>{
     <div style="font-size:9px;color:#9ca3af;margin-top:5px;text-align:center">Raza Cars · ${new Date().toLocaleDateString()}</div></div>
     <button class="btn bg2 bfull" style="margin-top:10px" onclick="shareInv('${did}')">📱 Share via WhatsApp</button>`);
 };
-window.shareInv=async did=>{
-  const snap=await getDoc(doc(db,'drivers',did));if(!snap.exists())return;
-  const d={id:did,...snap.data()};const y=nowY(),m=nowM();
-  const t=await calcMonth(d,y,m);const debt=await getDebt(d);
+window.shareInv=did=>{
+  const d=drvById(did);if(!d)return;
+  const y=nowY(),m=nowM();const t=calcMonthSync(d,y,m);const debt=getDebtSync(d);
   const msg=`📄 SALARY INVOICE\n🚗 Raza Cars\n━━━━━━━━━━━━\n👤 ${d.name}\n📅 ${MN[m-1]} ${y}\n────────────\nTotal Income: ${f2(t.income)}\nGross Salary: ${f2(t.salary)}${t.rent>0?'\nCar Rent: -'+f2(t.rent):''}\nNet Salary: ${f2(t.netSal)}\nDays: ${t.days}\n━━━━━━━━━━━━\n${debt<0?'✅ Company owes: '+abs2(debt):'⚠️ Driver owes: '+abs2(debt)}`;
   window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
 };
 
-async function renderCars(){
-  const el=document.getElementById('op-cars');el.innerHTML='<div class="spin" style="margin:40px auto"></div>';
-  try{
-  const cars=await getCars();const drivers=await getDrivers();const y=nowY(),m=nowM();
+function renderCars(){
+  const el=document.getElementById('op-cars');
+  const cars=getCars();const drivers=getDrivers();const y=nowY(),m=nowM();
   let html=`<div style="font-size:15px;font-weight:700">Cars (${cars.length})</div>`;
   for(const car of cars){
     const drvs=(car.driverIds||[]).map(id=>drivers.find(d=>d.id===id)).filter(Boolean);
-    let carInc=0,carDays=0;for(const d of drvs){const t=await calcMonth(d,y,m);carInc+=t.income;carDays+=t.days;}
+    let carInc=0,carDays=0;
+    drvs.forEach(d=>{const t=calcMonthSync(d,y,m);carInc+=t.income;carDays+=t.days;});
     html+=`<div class="ci"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
       <span class="plate">🚗 ${esc(car.number)}</span><button class="btn bs bsm" onclick="editCar('${car.id}')">Edit</button></div>
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:7px">${drvs.map(d=>`<span class="chip cb2">👤 ${esc(d.name)}</span>`).join('')||'<span style="color:var(--text3);font-size:10px">No drivers assigned</span>'}</div>
       ${rH('Month Income',f2(carInc),'green')}${rH('Avg/Day',f2(carDays>0?carInc/carDays:0))}${car.notes?`<div style="font-size:10px;color:var(--text2);margin-top:4px">📝 ${esc(car.notes)}</div>`:''}</div>`;
   }
   el.innerHTML=html+(!cars.length?'<div class="empty"><div class="ei">🚗</div><div class="et">No cars yet</div></div>':'')+'<button class="btn bb bfull" onclick="showAddCar()">+ Add Car</button>';
-  }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error loading cars: '+esc(e.message)+'</div>';console.error('renderCars:',e);}
 }
 window.showAddCar=()=>showModal(`<div class="mt">🚗 Add Car</div><div style="display:flex;flex-direction:column;gap:9px"><div class="field"><label>Car Number/Plate</label><input type="text" id="cn" placeholder="e.g. ABC 1234"></div><div class="field"><label>Notes</label><input type="text" id="cnotes" placeholder="e.g. Toyota Camry, White"></div><button class="btn bb bfull" onclick="addCar()">Add Car</button></div>`);
-window.addCar=async()=>{const num=(document.getElementById('cn').value||'').trim().toUpperCase();const notes=(document.getElementById('cnotes').value||'').trim();if(!num){showToast('Enter car number');return;}try{await addDoc(collection(db,'cars'),{number:num,notes,ownerId:CU.uid,driverIds:[],createdAt:new Date().toISOString()});closeModal();showToast('Car added!');renderCars();}catch(e){showToast('Error: '+e.message);}};
-window.editCar=async carId=>{
-  const snap=await getDoc(doc(db,'cars',carId));if(!snap.exists())return;
-  const car={id:carId,...snap.data()};const drivers=await getDrivers();
+window.addCar=async()=>{
+  const num=(document.getElementById('cn').value||'').trim().toUpperCase();
+  const notes=(document.getElementById('cnotes').value||'').trim();
+  if(!num){showToast('Enter car number');return;}
+  try{
+    const rec={number:num,notes,ownerId:CU.uid,driverIds:[],createdAt:new Date().toISOString()};
+    const r=await addDoc(collection(db,'cars'),rec);DS.cars.push({id:r.id,...rec});
+    closeModal();showToast('Car added!');renderCars();
+  }catch(e){showToast('Error: '+e.message);}
+};
+window.editCar=carId=>{
+  const car=DS.cars.find(c=>c.id===carId);if(!car)return;
+  const drivers=getDrivers();
   showModal(`<div class="mt">🚗 Edit ${esc(car.number)}</div><div style="display:flex;flex-direction:column;gap:9px">
     <div class="field"><label>Car Number</label><input type="text" id="ecn" value="${esc(car.number)}"></div>
     <div class="field"><label>Notes</label><input type="text" id="ecnotes" value="${esc(car.notes||'')}"></div>
@@ -1049,19 +1134,27 @@ window.editCar=async carId=>{
     <div class="brow"><button class="btn bg2" onclick="saveCar('${carId}')">✅ Save</button><button class="btn br2" onclick="delCar('${carId}')">🗑 Delete</button></div></div>`);
 };
 window.saveCar=async carId=>{
-  const num=(document.getElementById('ecn').value||'').trim().toUpperCase();const notes=(document.getElementById('ecnotes').value||'').trim();
-  const drivers=await getDrivers();const sel=drivers.filter(d=>{const el=document.getElementById('cd-'+d.id);return el&&el.checked;});
+  const num=(document.getElementById('ecn').value||'').trim().toUpperCase();
+  const notes=(document.getElementById('ecnotes').value||'').trim();
+  const sel=getDrivers().filter(d=>{const el=document.getElementById('cd-'+d.id);return el&&el.checked;});
   if(sel.length>2){showToast('Max 2 drivers per car');return;}
-  try{await updateDoc(doc(db,'cars',carId),{number:num,notes,driverIds:sel.map(d=>d.id)});closeModal();showToast('Saved!');renderCars();}catch(e){showToast('Error: '+e.message);}
+  try{
+    const patch={number:num,notes,driverIds:sel.map(d=>d.id)};
+    await updateDoc(doc(db,'cars',carId),patch);
+    const i=DS.cars.findIndex(c=>c.id===carId);if(i>=0)DS.cars[i]={...DS.cars[i],...patch};
+    closeModal();showToast('Saved!');renderCars();
+  }catch(e){showToast('Error: '+e.message);}
 };
-window.delCar=async carId=>{try{await deleteDoc(doc(db,'cars',carId));closeModal();showToast('Deleted');renderCars();}catch(e){showToast('Error: '+e.message);}};
+window.delCar=async carId=>{
+  try{await deleteDoc(doc(db,'cars',carId));DS.cars=DS.cars.filter(c=>c.id!==carId);closeModal();showToast('Deleted');renderCars();}
+  catch(e){showToast('Error: '+e.message);}
+};
 
 let eY=nowY(),eM=nowM();
 async function renderExps(){
-  const el=document.getElementById('op-exps');el.innerHTML='<div class="spin" style="margin:40px auto"></div>';
-  try{
-  const ym=`${eY}-${pad(eM)}`;const q=query(collection(db,'expenses'),where('ownerId','==',CU.uid),where('yearMonth','==',ym));
-  const s=await getDocs(q);const exps=s.docs.map(d=>({id:d.id,...d.data()}));
+  const el=document.getElementById('op-exps');
+  const ym=`${eY}-${pad(eM)}`;
+  const exps=await expsForOwnerMonth(ym);
   let total=0;exps.forEach(e=>total+=+e.amount||0);
   const byCat={};exps.forEach(e=>{if(!byCat[e.category])byCat[e.category]=0;byCat[e.category]+=+e.amount||0;});
   const drvTotal=exps.filter(e=>e.addedBy==='driver').reduce((s,e)=>s+(+e.amount||0),0);
@@ -1077,30 +1170,45 @@ async function renderExps(){
     ${Object.keys(byCat).length?`<div class="card"><div class="ch" style="color:var(--orange)">📊 By Category</div><div class="cb">${Object.keys(byCat).sort((a,b)=>byCat[b]-byCat[a]).map(cat=>{const ec=ECATS.find(c=>c.id===cat)||{l:cat,e:'📌'};return rH(ec.e+' '+ec.l,f2(byCat[cat]),'red');}).join('')}</div></div>`:''}
     <button class="btn br2 bfull" onclick="showAddExp()">➕ Add Expense</button>
     <div class="card"><div class="ch" style="color:var(--text2)">🧾 All Expenses</div><div class="cb">
-    ${exps.length?exps.sort((a,b)=>b.date.localeCompare(a.date)).map(e=>{
+    ${exps.length?exps.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(e=>{
       const ec=ECATS.find(c=>c.id===e.category)||{l:e.category,e:'📌'};
       const payBadge=e.category==='fuel'?(e.payMethod==='cash'?'<span class="chip co" style="font-size:9px">💵 Cash</span>':'<span class="chip cb2" style="font-size:9px">💳 Card</span>'):'';
       const rcpt=e.hasReceipt&&e.receiptPhoto?`<span class="chip cg" style="font-size:9px;cursor:pointer" onclick="viewReceipt('${e.id}')">📸 Receipt ✅</span>`:(e.category==='fuel'&&e.payMethod==='cash'?'<span class="chip cr" style="font-size:9px">⚠️ No receipt</span>':'');
       return`<div style="padding:7px 0;border-bottom:1px solid rgba(51,65,85,.2)"><div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600">${ec.e} ${ec.l}${e.driverName?' <span style="color:var(--blue);font-size:9px">· 👤 '+esc(e.driverName)+'</span>':''}</div>
-        <div style="font-size:9px;color:var(--text2);margin-top:1px">${e.date}${e.notes?' · '+e.notes:''}</div>
+        <div style="font-size:9px;color:var(--text2);margin-top:1px">${e.date}${e.notes?' · '+esc(e.notes):''}</div>
         <div style="margin-top:3px;display:flex;gap:3px;flex-wrap:wrap">${payBadge}${rcpt}</div></div>
         <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:8px">
           <span style="color:var(--red);font-family:monospace;font-weight:600;font-size:12px">${f2(e.amount)}</span>
-          <button onclick="delExp('${e.id}')" style="background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:0 2px">×</button>
+          <button onclick="delExp('${e.id}','${ym}')" style="background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:0 2px">×</button>
         </div></div></div>`;}).join(''):'<div style="color:var(--text3);font-size:11px">No expenses this month</div>'}
     </div></div>`;
-  }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error loading expenses: '+esc(e.message)+'</div>';console.error('renderExps:',e);}
 }
-window.chgEm=d=>{eM+=d;if(eM>12){eM=1;eY++;}if(eM<1){eM=12;eY--;}renderExps();};
+window.chgEm=d=>{eM+=d;if(eM>12){eM=1;eY++;}if(eM<1){eM=12;eY--;}renderExps().catch(()=>{});};
 window.showAddExp=()=>showModal(`<div class="mt">💸 Add Fleet Expense</div><div style="display:flex;flex-direction:column;gap:9px">
   <div class="field"><label>Category</label><select id="excat">${ECATS.map(c=>`<option value="${c.id}">${c.e} ${c.l}</option>`).join('')}</select></div>
   <div class="field"><label>Amount (€)</label><div class="fr"><span class="fpre">€</span><input type="text" id="examt" inputmode="decimal" placeholder="0.00"></div></div>
   <div class="field"><label>Date</label><input type="date" id="exdate" value="${today()}"></div>
   <div class="field"><label>Notes</label><input type="text" id="exnotes" placeholder="Details..."></div>
   <button class="btn br2 bfull" onclick="addExp()">➕ Add Expense</button></div>`);
-window.addExp=async()=>{const cat=document.getElementById('excat').value;const amt=+(document.getElementById('examt').value||'').replace(',','.');const date=document.getElementById('exdate').value;const notes=(document.getElementById('exnotes').value||'').trim();const ym=date.slice(0,7);if(!amt||amt<=0){showToast('Enter amount');return;}try{await addDoc(collection(db,'expenses'),{category:cat,amount:amt,date,notes,yearMonth:ym,ownerId:CU.uid,addedBy:'owner',createdAt:new Date().toISOString()});closeModal();showToast('✅ Added!');renderExps();}catch(e){showToast('Error: '+e.message);}};
-window.delExp=async id=>{try{await deleteDoc(doc(db,'expenses',id));showToast('Deleted');renderExps();}catch(e){showToast('Error: '+e.message);}};
+window.addExp=async()=>{
+  const cat=document.getElementById('excat').value;
+  const amt=+(document.getElementById('examt').value||'').replace(',','.');
+  const date=document.getElementById('exdate').value;
+  const notes=(document.getElementById('exnotes').value||'').trim();
+  const ym=date.slice(0,7);
+  if(!amt||amt<=0){showToast('Enter amount');return;}
+  try{
+    const rec={category:cat,amount:amt,date,notes,yearMonth:ym,ownerId:CU.uid,addedBy:'owner',createdAt:new Date().toISOString()};
+    const r=await addDoc(collection(db,'expenses'),rec);
+    const k='o:'+ym;if(DS.expCache[k])DS.expCache[k].push({id:r.id,...rec});
+    closeModal();showToast('✅ Added!');renderExps().catch(()=>{});
+  }catch(e){showToast('Error: '+e.message);}
+};
+window.delExp=async(id,ym)=>{
+  try{await deleteDoc(doc(db,'expenses',id));expCacheClear();showToast('Deleted');renderExps().catch(()=>{});}
+  catch(e){showToast('Error: '+e.message);}
+};
 
 // ── DRIVER EXPENSE FUNCTIONS ──
 const ECATS_OTHER=ECATS.filter(c=>c.id!=='fuel');
@@ -1108,17 +1216,12 @@ window.showDrvExpModal=()=>showModal(`<div class="mt">🧾 Add Other Expense</di
   <div class="alert ai" style="margin-bottom:10px">📋 Sent to owner for records. No salary effect — just informational.</div>
   <div style="display:flex;flex-direction:column;gap:9px">
   <div class="field"><label>Category</label>
-    <select id="dexcat" onchange="onDrvCatChange(this.value)">${ECATS_OTHER.map(c=>`<option value="${c.id}">${c.e} ${c.l}</option>`).join('')}</select></div>
-
+    <select id="dexcat">${ECATS_OTHER.map(c=>`<option value="${c.id}">${c.e} ${c.l}</option>`).join('')}</select></div>
   <div class="field"><label>Amount (€)</label><div class="fr"><span class="fpre">€</span>
     <input type="text" id="dexamt" inputmode="decimal" placeholder="0.00"></div></div>
   <div class="field"><label>Date</label><input type="date" id="dexdate" value="${today()}"></div>
   <div class="field"><label>Notes / Details</label><input type="text" id="dexnotes" placeholder="e.g. Filled at Shell station..."></div>
   <button class="btn br2 bfull" id="dex-submit-btn" onclick="submitDrvExp()">➕ Submit Expense</button></div>`);
-
-let _drvExpPhotoB64='';
-window.onDrvCatChange=cat=>{}; // no special handling needed now
-
 window.submitDrvExp=async()=>{
   const cat=document.getElementById('dexcat').value;
   const amt=+(document.getElementById('dexamt').value||'').replace(',','.');
@@ -1129,22 +1232,17 @@ window.submitDrvExp=async()=>{
   const btn=document.getElementById('dex-submit-btn');
   if(btn){btn.disabled=true;btn.textContent='⏳ Submitting...';}
   try{
-    await addDoc(collection(db,'expenses'),{
-      category:cat,amount:amt,date,notes,yearMonth:ym,
-      ownerId:CD.ownerId,driverId:CD.id,driverName:CD.name,
-      addedBy:'driver',createdAt:new Date().toISOString()
-    });
-    _drvExpPhotoB64='';
-    closeModal();
-    showToast('✅ Expense sent to owner!',3000);
-    renderDrvExps();
-    loadDrvExpRecent().catch(()=>{});
+    const rec={category:cat,amount:amt,date,notes,yearMonth:ym,ownerId:CD.ownerId,driverId:CD.id,driverName:CD.name,addedBy:'driver',createdAt:new Date().toISOString()};
+    const r=await addDoc(collection(db,'expenses'),rec);
+    const k='all:'+CD.id;if(DS.expCache[k])DS.expCache[k].push({id:r.id,...rec});
+    delete DS.expCache['d:'+CD.id+':'+ym];
+    closeModal();showToast('✅ Expense sent to owner!',3000);
+    renderDrvExps().catch(()=>{});
   }catch(e){
     if(btn){btn.disabled=false;btn.textContent='➕ Submit Expense';}
     showToast('Error: '+e.message);
   }
 };
-
 window.viewReceipt=async expId=>{
   showModal('<div class="mt">📸 Receipt Photo</div><div style="text-align:center"><div class="spin" style="margin:30px auto"></div></div>');
   try{
@@ -1152,20 +1250,16 @@ window.viewReceipt=async expId=>{
     if(!snap.exists()||!snap.data().receiptPhoto){showToast('Receipt not found');closeModal();return;}
     const e=snap.data();const ec=ECATS.find(c=>c.id===e.category)||{l:e.category,e:'📌'};
     document.getElementById('modal-body').innerHTML=`<div class="mt">📸 ${ec.e} ${ec.l} Receipt</div>
-      <div style="font-size:11px;color:var(--text2);margin-bottom:10px">${e.date}${e.driverName?' · 👤 '+esc(e.driverName):''}${e.notes?' · '+e.notes:''} · <span style="color:var(--orange);font-weight:700">${f2(e.amount)}</span></div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:10px">${e.date}${e.driverName?' · 👤 '+esc(e.driverName):''}${e.notes?' · '+esc(e.notes):''} · <span style="color:var(--orange);font-weight:700">${f2(e.amount)}</span></div>
       <img src="${e.receiptPhoto}" style="width:100%;max-height:65vh;object-fit:contain;border-radius:10px;border:1px solid var(--border2)">
       <button class="btn bs bfull" style="margin-top:10px" onclick="closeModal()">Close</button>`;
   }catch(err){showToast('Error: '+err.message);closeModal();}
 };
-
 async function renderDrvExps(){
   const el=document.getElementById('dp-drvexps');
   if(!el)return;
-  el.innerHTML='<div class="spin" style="margin:30px auto"></div>';
   try{
-    const q=query(collection(db,'expenses'),where('driverId','==',CD.id));
-    const s=await getDocs(q);
-    const exps=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.date.localeCompare(a.date));
+    const exps=(await expsForDriverAll()).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
     let total=0;exps.forEach(e=>total+=+e.amount||0);
     el.innerHTML=
       `<div style="display:flex;justify-content:space-between;align-items:center">
@@ -1180,7 +1274,7 @@ async function renderDrvExps(){
         const rcpt=e.hasReceipt&&e.receiptPhoto?`<span class="chip cg" style="font-size:9px;cursor:pointer" onclick="viewReceipt('${e.id}')">📸 Receipt</span>`:(e.category==='fuel'&&e.payMethod==='cash'?'<span class="chip cr" style="font-size:9px">⚠️ No receipt</span>':'');
         return`<div style="padding:7px 0;border-bottom:1px solid rgba(51,65,85,.2)"><div style="display:flex;justify-content:space-between;align-items:flex-start">
           <div><div style="font-size:12px;font-weight:600">${ec.e} ${ec.l}</div>
-          <div style="font-size:9px;color:var(--text2);margin-top:1px">${e.date}${e.notes?' · '+e.notes:''}</div>
+          <div style="font-size:9px;color:var(--text2);margin-top:1px">${e.date}${e.notes?' · '+esc(e.notes):''}</div>
           <div style="margin-top:3px;display:flex;gap:3px;flex-wrap:wrap">${payBadge}${rcpt}</div></div>
           <span style="color:var(--red);font-family:monospace;font-weight:700;font-size:13px;flex-shrink:0;margin-left:8px">${f2(e.amount)}</span>
         </div></div>`;
@@ -1193,28 +1287,22 @@ async function renderDrvExps(){
 let oHistDrv=null,oHistY=nowY(),oHistM=nowM();
 async function renderOwnerHist(){
   const el=document.getElementById('op-hist');
-  el.innerHTML='<div class="spin" style="margin:40px auto"></div>';
   try{
-    const drivers=await getDrivers();
+    const drivers=getDrivers();
     if(!drivers.length){el.innerHTML='<div class="empty"><div class="ei">👥</div><div class="et">No drivers yet</div></div>';return;}
     if(!oHistDrv||!drivers.find(d=>d.id===oHistDrv))oHistDrv=drivers[0].id;
     const selD=drivers.find(d=>d.id===oHistDrv);
+    const ym=`${oHistY}-${pad(oHistM)}`;
+    await ensureCycles([[selD.id,oHistY,oHistM]]);
 
     const drvPills=drivers.map(d=>`<button onclick="oHistSelDrv('${d.id}')" style="padding:7px 15px;border-radius:20px;font-size:12px;font-weight:700;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0;${d.id===selD.id?'background:linear-gradient(135deg,var(--blue2),var(--blue));color:#fff':'background:var(--bg4);color:var(--text2);border:1px solid var(--border2)'}">${esc(d.name)}</button>`).join('');
 
-    const ym=`${oHistY}-${pad(oHistM)}`;
-    const q=query(collection(db,'entries'),where('driverId','==',selD.id),where('yearMonth','==',ym));
-    const s=await getDocs(q);
-    const entries=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.date.localeCompare(b.date));
-
-    const eq2=query(collection(db,'expenses'),where('driverId','==',selD.id),where('yearMonth','==',ym));
-    const es2=await getDocs(eq2);
-    const submittedExps=es2.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.date.localeCompare(b.date));
+    const entries=mEntries(selD.id,ym).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+    const submittedExps=(await expsForDriverMonth(selD.id,ym)).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
     const submittedExpTotal=submittedExps.reduce((s,e)=>s+(+e.amount||0),0);
 
-    // Use calcMonth for salary — it computes base_bonus ONCE on monthly total (not per day)
-    const mt=await calcMonth(selD,oHistY,oHistM);
-    const sett=await getSettlement(selD.id,ym);
+    const mt=calcMonthSync(selD,oHistY,oHistM);
+    const sett=getSettlement(selD.id,ym);
     const mPaid=mt.pT,mCashT=mt.cT,mUber=mt.uA,mUberC=mt.uC,mCardC=mt.cC,mTip=mt.tip;
     const mPhys=mt.phys,mActCash=mt.actualCash,mInHand=mt.totalInHand;
     const mEntryExp=mt.driverExp,mSal=mt.salary,mNetSal=mt.netSal,mBal=mt.bal,mAdj=mt.adj;
@@ -1343,29 +1431,30 @@ async function renderOwnerHist(){
       ${dayCards||'<div class="empty"><div class="ei">📋</div><div class="et">No entries</div><div class="es">'+esc(selD.name)+' has no data for '+MN[oHistM-1]+' '+oHistY+'</div></div>'}`;
   }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error: '+esc(e.message)+'</div>';console.error('renderOwnerHist:',e);}
 }
-window.oHistSelDrv=did=>{oHistDrv=did;renderOwnerHist();};
-window.oHistChgM=delta=>{oHistM+=delta;if(oHistM>12){oHistM=1;oHistY++;}if(oHistM<1){oHistM=12;oHistY--;}renderOwnerHist();};
-
+window.oHistSelDrv=did=>{oHistDrv=did;renderOwnerHist().catch(()=>{});};
+window.oHistChgM=delta=>{oHistM+=delta;if(oHistM>12){oHistM=1;oHistY++;}if(oHistM<1){oHistM=12;oHistY--;}renderOwnerHist().catch(()=>{});};
 
 function renderSets(){
   document.getElementById('op-sets').innerHTML=`<div style="font-size:15px;font-weight:700">Settings</div>
-    <div class="card"><div class="cb">${rH('Owner Name',esc(UP.name))+rH('Email',esc(UP.email))}</div></div>
+    <div class="card"><div class="cb">${rH('Owner Name',esc(UP.name))+rH('Email',esc(UP.email))+rH('Entries cached',DS.entries.length)+rH('Last sync',new Date(DS.loadedAt).toLocaleTimeString())}</div></div>
     <div class="card"><div class="ch" style="color:var(--blue)">📱 Driver Management</div><div class="cb">
     <p style="font-size:11px;color:var(--text2);margin-bottom:8px">Add drivers from the Drivers tab. They receive login info via WhatsApp and log in by selecting <strong>🚗 Driver</strong> on the login screen.</p>
     <button class="btn bp bfull" onclick="oSwitch('drvs')">👥 Go to Drivers</button></div></div>
+    <button class="btn bs bfull" onclick="forceSync()">🔄 Force refresh from server</button>
     <button class="btn br2 bfull" onclick="fbLogout()">🚪 Logout</button>`;
 }
 
-async function renderDHdr(){
+// ══════════ DRIVER ══════════
+function renderDHdr(){
   try{
-  const y=nowY(),m=nowM();
-  document.getElementById('dname').textContent='👋 '+UP.name;
-  document.getElementById('dcar').textContent=MN[m-1]+' '+y;
-  const t=await calcMonth(CD,y,m);const target=(CD.dailyTarget||300)*dim(y,m);
-  const inc=t?t.income:0,prog=Math.min(100,(inc/target)*100);
-  document.getElementById('dprog').style.width=prog+'%';
-  document.getElementById('dprogl').textContent=f2(inc);
-  document.getElementById('dprogp').textContent=prog.toFixed(0)+'% of monthly target';
+    const y=nowY(),m=nowM();
+    document.getElementById('dname').textContent='👋 '+UP.name;
+    document.getElementById('dcar').textContent=MN[m-1]+' '+y;
+    const t=calcMonthSync(CD,y,m);const target=(CD.dailyTarget||300)*dim(y,m);
+    const inc=t?t.income:0,prog=Math.min(100,(inc/target)*100);
+    document.getElementById('dprog').style.width=prog+'%';
+    document.getElementById('dprogl').textContent=f2(inc);
+    document.getElementById('dprogp').textContent=prog.toFixed(0)+'% of monthly target';
   }catch(e){console.warn('renderDHdr error:',e);}
 }
 
@@ -1373,27 +1462,41 @@ let dCurTab='entry',dSel=today(),dCalY=nowY(),dCalM=nowM();
 const BLANK={paidTrans:'',cashTrans:'',uberApp:'',uberCash:'',cardCash:'',tip:'',adjustment:'',km:'',notes:'',driverExp:'',driverExpCat:'',driverExpNote:'',transfers:[]};
 let dEntry={...BLANK},dEntryId=null,dEntryStatus='';
 let twiz={step:0,dest:'',price:0,qty:1,needsDest:false,needsPrice:false};
-window.dTab=tab=>{dCurTab=tab;document.querySelectorAll('#screen-driver .tab').forEach((b,i)=>b.classList.toggle('on',['entry','history','summary','balance','drvexps'][i]===tab));['entry','history','summary','balance','drvexps'].forEach(t=>document.getElementById('dp-'+t).classList.toggle('on',t===tab));dRender(tab);};
-async function dRender(tab){try{if(tab==='entry')await renderEnt();else if(tab==='history')await renderHist();else if(tab==='summary')await renderSum();else if(tab==='balance')await renderBal();else if(tab==='drvexps')await renderDrvExps();}catch(e){console.error('dRender error:',e);}}
-
-async function renderEnt(){
-  const el=document.getElementById('dp-entry');el.innerHTML='<div class="spin" style="margin:40px auto"></div>';
+window.dTab=tab=>{
+  dCurTab=tab;
+  document.querySelectorAll('#screen-driver .tab').forEach((b,i)=>b.classList.toggle('on',['entry','history','summary','balance','drvexps'][i]===tab));
+  ['entry','history','summary','balance','drvexps'].forEach(t=>document.getElementById('dp-'+t).classList.toggle('on',t===tab));
+  dRender(tab).catch(()=>{});
+  maybeSync();
+};
+async function dRender(tab){
   try{
-  const eq=query(collection(db,'entries'),where('driverId','==',CD.id),where('date','==',dSel));
-  const es=await getDocs(eq);
-  if(!es.empty){
-    dEntryId=es.docs[0].id;const e=es.docs[0].data();dEntryStatus=e.status||'';
+    if(tab==='entry')renderEnt();
+    else if(tab==='history')renderHist();
+    else if(tab==='summary')await renderSum();
+    else if(tab==='balance')await renderBal();
+    else if(tab==='drvexps')await renderDrvExps();
+  }catch(e){console.error('dRender error:',e);}
+}
+
+function renderEnt(){
+  const el=document.getElementById('dp-entry');
+  try{
+  const rows=dayEntries(CD.id,dSel);
+  if(rows.length){
+    dEntryId=rows[0].id;const e=rows[0];dEntryStatus=e.status||'';
     Object.keys(BLANK).forEach(k=>{if(Array.isArray(BLANK[k]))dEntry[k]=Array.isArray(e[k])?[...e[k]]:[];else dEntry[k]=e[k]!==undefined?e[k]:BLANK[k];});
-    if(es.docs.length>1)es.docs.slice(1).forEach(d=>deleteDoc(doc(db,'entries',d.id)).catch(()=>{}));
+    if(rows.length>1)rows.slice(1).forEach(r=>{deleteDoc(doc(db,'entries',r.id)).catch(()=>{});dropEntry(r.id);});
+  }else{
+    dEntryId=null;dEntryStatus='';
+    Object.keys(BLANK).forEach(k=>{if(Array.isArray(BLANK[k]))dEntry[k]=[];else dEntry[k]=BLANK[k];});
   }
-  else{dEntryId=null;dEntryStatus='';Object.keys(BLANK).forEach(k=>{if(Array.isArray(BLANK[k]))dEntry[k]=[];else dEntry[k]=BLANK[k];});}
   const c=calcDay(dEntry,CD.salType,CD.salParams);
   const parts=dSel.split('-');const sY=+parts[0],sM=+parts[1],sD=+parts[2];
   const locked=isLocked(dSel,CD.lockDays);const isOff=isDayOff(dSel,CD.dayOff);
   const target=CD.dailyTarget||300;const prog=Math.min(100,(c.income/target)*100);
   const offset=dow(dCalY,dCalM,1),days=dim(dCalY,dCalM);
-  const mq=query(collection(db,'entries'),where('driverId','==',CD.id),where('yearMonth','==',`${dCalY}-${pad(dCalM)}`));
-  const ms=await getDocs(mq);const eMap={};ms.docs.forEach(d=>{eMap[d.data().date]={id:d.id,...d.data()};});
+  const eMap={};mEntries(CD.id,`${dCalY}-${pad(dCalM)}`).forEach(e=>{eMap[e.date]=e;});
   const isCurMon=dCalY===nowY()&&dCalM===nowM();
   let calH=`<div class="mnav"><button onclick="chgCalM(-1)">‹</button><span>${MN[dCalM-1]} ${dCalY}</span><button onclick="chgCalM(1)" ${isCurMon?'style="opacity:.35;pointer-events:none"':''}>›</button></div><div id="cal">`;
   ['S','M','T','W','T','F','S'].forEach(d=>calH+=`<div class="cd">${d}</div>`);
@@ -1447,7 +1550,7 @@ async function renderEnt(){
       <div class="field"><label>Type</label>
         <select id="dexpcat-sel" onchange="dC('driverExpCat',this.value)" style="background:var(--bg4);color:var(--text);border:1px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:14px;outline:none;width:100%">
           <option value="">-- Select type --</option>
-          ${ECATS.map(c=>`<option value="${c.id}" ${dEntry.driverExpCat===c.id?'selected':''}>${c.e} ${c.l}</option>`).join('')}
+          ${ECATS.map(c2=>`<option value="${c2.id}" ${dEntry.driverExpCat===c2.id?'selected':''}>${c2.e} ${c2.l}</option>`).join('')}
         </select>
       </div>
       <div class="field"><label>Amount I Paid (€)</label><div class="fr"><span class="fpre">€</span>
@@ -1474,10 +1577,8 @@ window.chgCalM=d=>{
   if(dCalY>nowY()||(dCalY===nowY()&&dCalM>nowM())){dCalM=nowM();dCalY=nowY();}
   renderEnt();
 };
-
 const dF=(id,label,emoji,val)=>`<div class="field"><label>${emoji} ${label}</label><div class="fr"><span class="fpre">€</span><input type="text" inputmode="decimal" placeholder="0.00" value="${esc(val)}" oninput="dC('${id}',this.value)"></div></div>`;
 
-// FIXED: c.rent not c.carRent — Car Rent now shows correctly in breakdown
 const dCalc=c=>{
   const trs=dEntry.transfers||[];
   const trTotal=trs.length?trs.reduce((s,t)=>s+(+t.amount||0),0):(c.pT+c.cT);
@@ -1498,21 +1599,15 @@ const dCalc=c=>{
 };
 
 window.dC=(field,val)=>{
-  // Allow comma as decimal separator (iPhone numeric pad has no dot)
   if(typeof val==='string')val=val.replace(',','.');
   dEntry[field]=val;
   const c=calcDay(dEntry,CD.salType,CD.salParams);
   const el=document.getElementById('dcalc');if(el)el.innerHTML=dCalc(c);
-  // Update the expense return hint live
   const expHint=document.getElementById('exp-return-hint');
   if(expHint){
     expHint.innerHTML=+dEntry.driverExp>0?`<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:8px 10px;font-size:11px;color:#34d399">✅ €${(+dEntry.driverExp).toFixed(2)} will be added to what owner owes you</div>`:'';
   }
 };
-
-
-
-
 window.selDate=date=>{dSel=date;const p=date.split('-');dCalY=+p[0];dCalM=+p[1];renderEnt();};
 
 // ---- Transfer management ----
@@ -1525,18 +1620,14 @@ function renderTrList(){
     <button onclick="rmTr(${i})" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0 4px">×</button>
   </div>`).join('')+`<div style="text-align:right;font-size:12px;font-weight:700;color:var(--green);padding-top:6px">Total transfers: €${tot%1===0?tot:tot.toFixed(2)}</div>`;
 }
-
 function renderWizard(){
   const iBtn=(label,fn,accent)=>`<button onclick="${fn}" style="flex:1;padding:10px 6px;background:${accent||'var(--bg3)'};border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer">${label}</button>`;
   const inp=(id,ph,mode)=>`<input id="${id}" type="text" inputmode="${mode||'text'}" placeholder="${ph}" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:9px;padding:9px 12px;font-size:14px;outline:none">`;
   const bc=[twiz.dest?`📍 ${twiz.dest==='city'?'Barcelona':twiz.dest}`:'',twiz.price?`€${twiz.price}`:'',twiz.qty>1?`×${twiz.qty}`:''].filter(Boolean).join(' · ');
   const cancelBtn=`<button onclick="twReset()" style="width:100%;padding:4px;background:none;border:none;color:var(--text3);font-size:10px;cursor:pointer;margin-top:8px">✕ Cancel</button>`;
-
   if(twiz.step===0) return `<button onclick="twStep(1)" style="width:100%;padding:10px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;color:#93c5fd;font-size:14px;font-weight:600;cursor:pointer">➕ Add Transfer</button>`;
-
   let body='';
   const header=bc?`<div style="font-size:10px;color:var(--text2);margin-bottom:8px;padding:5px 8px;background:var(--bg4);border-radius:7px">${bc}</div>`:'';
-
   if(twiz.step===1){
     body=`<div style="font-size:11px;color:var(--text2);margin-bottom:8px;font-weight:600">📍 Where?</div>
       <div style="display:flex;gap:6px">${iBtn('🏙 Barcelona',"twPick('dest','city',2)")}${iBtn('🛣 Outside',"twPick('dest','outside',1)")}</div>`;
@@ -1546,7 +1637,7 @@ function renderWizard(){
       <button onclick="twConfirmDest()" style="padding:9px 14px;background:var(--blue);border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Next →</button></div>`;
   } else if(twiz.step===2){
     body=`<div style="font-size:11px;color:var(--text2);margin-bottom:8px;font-weight:600">💶 Price?</div>
-      <div style="display:flex;gap:6px;margin-bottom:${twiz.needsPrice?8:0}px">${iBtn('€25',"twPick('price',25,3)")}${iBtn('€40',"twPick('price',40,3)")}${iBtn('✏️ Other',"twShowCustomPrice()")}</div>
+      <div style="display:flex;gap:6px;margin-bottom:${twiz.needsPrice?8:0}px">${iBtn('€25',"twPick('price',25,3)")}${iBtn('€35',"twPick('price',35,3)")}${iBtn('✏️ Other',"twShowCustomPrice()")}</div>
       ${twiz.needsPrice?`<div style="display:flex;gap:6px">${inp('tw-price','0','decimal')}
       <button onclick="twConfirmPrice()" style="padding:9px 14px;background:var(--blue);border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Next →</button></div>`:''}`;
   } else if(twiz.step===3){
@@ -1558,7 +1649,6 @@ function renderWizard(){
   }
   return `<div style="background:var(--bg4);border-radius:11px;padding:11px;border:1px solid var(--border2)">${header}${body}${cancelBtn}</div>`;
 }
-
 function twRefreshWizard(){const el=document.getElementById('tw-wizard');if(el)el.innerHTML=renderWizard();}
 window.twStep=s=>{twiz.step=s;twRefreshWizard();};
 window.twReset=()=>{twiz={step:0,dest:'',price:0,qty:1,needsDest:false,needsPrice:false};twRefreshWizard();};
@@ -1605,16 +1695,6 @@ window.qTr=(label,amount,payment)=>{
   dEntry.transfers.push({label,amount:+amount,payment});
   trTotals();trRefresh();
 };
-window.cTr=(payment)=>{
-  const dest=(document.getElementById('tr-dest')||{}).value?.trim();
-  const amt=parseFloat((document.getElementById('tr-amt')||{}).value)||0;
-  if(!dest||!amt){showToast('Enter destination and amount');return;}
-  if(!Array.isArray(dEntry.transfers))dEntry.transfers=[];
-  dEntry.transfers.push({label:dest,amount:amt,payment});
-  const di=document.getElementById('tr-dest');const ai=document.getElementById('tr-amt');
-  if(di)di.value='';if(ai)ai.value='';
-  trTotals();trRefresh();
-};
 window.rmTr=(idx)=>{
   if(!Array.isArray(dEntry.transfers))return;
   dEntry.transfers.splice(idx,1);trTotals();trRefresh();
@@ -1627,21 +1707,25 @@ window.saveEnt=async()=>{
   try{
     if(dEntryId){
       await updateDoc(doc(db,'entries',dEntryId),data);
+      putEntry({id:dEntryId,...data});
     }else{
-      // Always check Firestore before creating — prevents duplicates on same day
+      // one cheap safety check so two devices can't create the same day twice
       const chk=await getDocs(query(collection(db,'entries'),where('driverId','==',CD.id),where('date','==',dSel)));
       if(!chk.empty){dEntryId=chk.docs[0].id;await updateDoc(doc(db,'entries',dEntryId),data);}
       else{const r=await addDoc(collection(db,'entries'),data);dEntryId=r.id;}
+      putEntry({id:dEntryId,...data});
     }
     dEntryStatus=status;
-    showToast(CD.reqApproval?'Saved — waiting approval':'Saved!');renderDHdr().catch(()=>{});renderEnt().catch(()=>{});
+    showToast(CD.reqApproval?'Saved — waiting approval':'Saved!');
+    renderDHdr();renderEnt();
   }catch(e){showToast('Error: '+e.message);}
 };
-
 window.clearEnt=async()=>{
   if(isLocked(dSel,CD.lockDays)){showToast('Entry locked');return;}
-  if(dEntryId){try{await deleteDoc(doc(db,'entries',dEntryId));}catch(e){}}
-  dEntryId=null;dEntryStatus='';Object.keys(BLANK).forEach(k=>{if(Array.isArray(BLANK[k]))dEntry[k]=[];else dEntry[k]=BLANK[k];});showToast('Cleared');renderEnt().catch(()=>{});
+  if(dEntryId){try{await deleteDoc(doc(db,'entries',dEntryId));}catch(e){}dropEntry(dEntryId);}
+  dEntryId=null;dEntryStatus='';
+  Object.keys(BLANK).forEach(k=>{if(Array.isArray(BLANK[k]))dEntry[k]=[];else dEntry[k]=BLANK[k];});
+  showToast('Cleared');renderEnt();renderDHdr();
 };
 
 window.shareDay=()=>{
@@ -1649,7 +1733,6 @@ window.shareDay=()=>{
   const trs=dEntry.transfers||[];
   const p=dSel.split('-');
   const dateStr=`${p[2]}.${p[1]}.${p[0]}`;
-  // fS = "272.90 €" (space before €), fN = "51.09€" (no space, used for card/expense)
   const fA=x=>{const v=+x||0;return v%1===0?`${Math.round(v)}`:`${v.toFixed(2)}`;};
   const fS=x=>`${fA(x)} €`;
   const fN=x=>`${fA(x)}€`;
@@ -1663,12 +1746,9 @@ window.shareDay=()=>{
 };
 
 window.shareAll=async()=>{
-  showToast('Building month…');
   try{
     const ym=`${dCalY}-${pad(dCalM)}`;
-    const q=query(collection(db,'entries'),where('driverId','==',CD.id),where('yearMonth','==',ym));
-    const s=await getDocs(q);
-    const entries=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.date.localeCompare(b.date));
+    const entries=mEntries(CD.id,ym).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
     if(!entries.length){showToast('No entries for '+MN[dCalM-1]);return;}
     const fA=x=>{const v=+x||0;return v%1===0?`${Math.round(v)}`:`${v.toFixed(2)}`;};
     const fS=x=>`${fA(x)} €`;const fN=x=>`${fA(x)}€`;
@@ -1690,21 +1770,17 @@ window.shareAll=async()=>{
   }catch(e){showToast('Error: '+e.message);console.error('shareAll:',e);}
 };
 
-async function renderHist(){
-  const el=document.getElementById('dp-history');el.innerHTML='<div class="spin" style="margin:40px auto"></div>';
+function renderHist(){
+  const el=document.getElementById('dp-history');
   try{
-  const q=query(collection(db,'entries'),where('driverId','==',CD.id));
-  const s=await getDocs(q);
-  const entries=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.date.localeCompare(a.date));
-  // Monthly totals
+  const entries=DS.entries.filter(e=>e.driverId===CD.id).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   const months={};
   entries.forEach(e=>{
     const c=calcDay(e,CD.salType,CD.salParams);
-    const ym=e.yearMonth||e.date.slice(0,7);
+    const ym=e.yearMonth||String(e.date).slice(0,7);
     if(!months[ym])months[ym]={income:0,cash:0,exp:0,netSal:0,days:0};
     months[ym].income+=c.income;months[ym].cash+=c.totalInHand;months[ym].exp+=c.driverExp;months[ym].netSal+=c.netSal;months[ym].days++;
   });
-  // Summary strip
   let mStripH='';
   Object.keys(months).sort((a,b)=>b.localeCompare(a)).slice(0,3).forEach(ym=>{
     const [y,m]=ym.split('-');const mn=months[ym];
@@ -1725,10 +1801,11 @@ async function renderHist(){
 
 let svY=nowY(),svM=nowM();
 async function renderSum(){
-  const el=document.getElementById('dp-summary');el.innerHTML='<div class="spin" style="margin:40px auto"></div>';
+  const el=document.getElementById('dp-summary');
   try{
-  const t=await calcMonth(CD,svY,svM);const mBal=t?t.bal:0;const target=(CD.dailyTarget||300)*dim(svY,svM);
-  const cyc=await getUberCycle(CD.id,svY,svM);
+  await ensureCycles([[CD.id,svY,svM]]);
+  const t=calcMonthSync(CD,svY,svM);const mBal=t?t.bal:0;const target=(CD.dailyTarget||300)*dim(svY,svM);
+  const cyc=cycleOf(CD.id,svY,svM);
   el.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between">
     <div style="font-size:15px;font-weight:700">My Summary</div>
     <div style="display:flex;gap:5px"><button onclick="chgSvm(-1)" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:7px;padding:3px 9px">‹</button>
@@ -1756,9 +1833,9 @@ async function renderSum(){
     :'<div class="empty"><div class="ei">📊</div><div class="et">No data this month</div></div>');
   }catch(e){el.innerHTML='<div class="alert ad">⚠️ Error loading summary: '+esc(e.message)+'</div>';console.error('renderSum:',e);}
 }
-window.chgSvm=d=>{svM+=d;if(svM>12){svM=1;svY++;}if(svM<1){svM=12;svY--;}renderSum();};
+window.chgSvm=d=>{svM+=d;if(svM>12){svM=1;svY++;}if(svM<1){svM=12;svY--;}renderSum().catch(()=>{});};
 
-// ── UBER MONTH CYCLE CARD (driver picks + locks the Uber window) ──
+// ── UBER MONTH CYCLE CARD ──
 function ucCardHTML(cyc,y,m){
   const lk=!!cyc.locked, last=dim(y,m);
   const isNow=(y===nowY()&&m===nowM());
@@ -1782,7 +1859,14 @@ function ucCardHTML(cyc,y,m){
           :`<div class="brow"><button class="btn bs" onclick="ucSave(${y},${m},false)">💾 Save</button><button class="btn bor" onclick="ucSave(${y},${m},true)">🔒 Save &amp; Lock</button></div>`}
     </div></div>`;
 }
-window.ucGoNow=()=>{svY=nowY();svM=nowM();renderSum();};
+window.ucGoNow=()=>{svY=nowY();svM=nowM();renderSum().catch(()=>{});};
+async function saveUberCycle(did,y,m,start,end,locked){
+  const key=ucKey(did,y,m);
+  const rec={driverId:did,yearMonth:`${y}-${pad(m)}`,start,end,locked:!!locked,auto:false,setAt:new Date().toISOString()};
+  await setDoc(doc(db,'ubercycles',key),rec);
+  DS.cycles[key]=rec;DS.cycChecked[key]=1;
+  return rec;
+}
 window.ucSave=async(y,m,lock)=>{
   const a=document.getElementById('ucStart'),b=document.getElementById('ucEnd');
   if(!a||!b)return;
@@ -1793,28 +1877,24 @@ window.ucSave=async(y,m,lock)=>{
   try{
     await saveUberCycle(CD.id,y,m,s,e,lock);
     showToast(lock?'🔒 Uber month locked':'💾 Uber month saved');
-    await renderSum();await renderDHdr();
+    await renderSum();renderDHdr();
   }catch(err){showToast('Error: '+err.message);console.error('ucSave:',err);}
 };
 window.ucUnlock=async(y,m)=>{
   if(!confirm(`Unlock the Uber month for ${MN[m-1]} ${y}?`))return;
-  const c=await getUberCycle(CD.id,y,m);
+  const c=cycleOf(CD.id,y,m);
   try{await saveUberCycle(CD.id,y,m,c.start,c.end,false);showToast('🔓 Unlocked — you can change the dates');await renderSum();}
   catch(err){showToast('Error: '+err.message);console.error('ucUnlock:',err);}
 };
-window.shareMonth=async()=>{
-  const t=await calcMonth(CD,svY,svM);if(!t)return;const debt=await getDebt(CD);
+window.shareMonth=()=>{
+  const t=calcMonthSync(CD,svY,svM);if(!t)return;const debt=getDebtSync(CD);
   const msg=`📊 MONTHLY — ${MN[svM-1]} ${svY}\n🚗 Raza Cars\n━━━━━━━━━━━━\nTotal Income: ${f2(t.income)}\nGross Salary: ${f2(t.salary)}${t.tip>0?'\n🎁 Tips: +'+f2(t.tip):''}${t.driverExp>0?'\n💸 Expenses (return): +'+f2(t.driverExp):''}\nNet Salary: ${f2(t.netSal)}\nActual Cash: ${f2(t.actualCash)}\nDays: ${t.days} · Avg: ${f2(t.days>0?t.income/t.days:0)}\n━━━━━━━━━━━━\n${debt<0?'✅ Co.owes: '+abs2(debt):'⚠️ You owe: '+abs2(debt)}`;
   window.location.href='whatsapp://send?text='+encodeURIComponent(msg);
 };
-
-// Compile EVERY day of the selected month into one detailed message for the owner
 window.sendMonthToOwner=async()=>{
   try{
     const ym=`${svY}-${pad(svM)}`;
-    const q=query(collection(db,'entries'),where('driverId','==',CD.id),where('yearMonth','==',ym));
-    const s=await getDocs(q);
-    const entries=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.date.localeCompare(b.date));
+    const entries=mEntries(CD.id,ym).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
     if(!entries.length){showToast('No entries to send this month');return;}
     const fA=x=>{const v=+x||0;return v%1===0?`${Math.round(v)}`:`${v.toFixed(2)}`;};
     const fS=x=>`${fA(x)} €`;const fN=x=>`${fA(x)}€`;
@@ -1839,23 +1919,27 @@ window.sendMonthToOwner=async()=>{
 };
 
 async function renderBal(){
-  const el=document.getElementById('dp-balance');el.innerHTML='<div class="spin" style="margin:40px auto"></div>';
+  const el=document.getElementById('dp-balance');
   try{
     const y=nowY(),m=nowM(),currentYM=`${y}-${pad(m)}`;
-    const setts=await getDriverSettlements(CD.id);
+    const pairs=[];for(let i=0;i<6;i++){let mm=m-i,yy=y;if(mm<1){mm+=12;yy--;}pairs.push([CD.id,yy,mm]);}
+    await ensureCycles(pairs);
+    const setts=getDriverSettlements(CD.id);
     const settledSet=new Set(Object.keys(setts));
     const isCurrentSettled=settledSet.has(currentYM);
-    const aq=query(collection(db,'advances'),where('driverId','==',CD.id));
-    const as=await getDocs(aq);const myAdv=as.docs.map(d=>({id:d.id,...d.data()}));
+    const myAdv=DS.advs.filter(a=>a.driverId===CD.id);
     const advDebt=myAdv.filter(a=>!a.repaid).reduce((s,a)=>s+(+a.amount||0),0);
-    const totalDebt=await getDebt(CD);
+    const totalDebt=getDebtSync(CD);
     const monthsTotal=totalDebt-advDebt;
-    const curT=await calcMonth(CD,y,m);
+    const curT=calcMonthSync(CD,y,m);
     const currentBal=(!isCurrentSettled&&curT&&curT.days>0)?curT.bal:0;
     const prevBal=monthsTotal-currentBal;
     const monthRows=[];
-    for(let i=0;i<6;i++){let mm=m-i,yy=y;if(mm<1){mm+=12;yy--;}const t=await calcMonth(CD,yy,mm);if(t&&t.days>0)monthRows.push({label:`${MNS[mm-1]} ${yy}`,ym:`${yy}-${pad(mm)}`,bal:t.bal,days:t.days,inc:t.income});}
-    const settleLog=Object.values(setts).sort((a,b)=>(b.initiatedAt||'').localeCompare(a.initiatedAt||''));
+    pairs.forEach(([,yy,mm])=>{
+      const t=calcMonthSync(CD,yy,mm);
+      if(t&&t.days>0)monthRows.push({label:`${MNS[mm-1]} ${yy}`,ym:`${yy}-${pad(mm)}`,bal:t.bal,days:t.days,inc:t.income});
+    });
+    const settleLog=Object.values(setts).sort((a,b)=>String(b.initiatedAt||'').localeCompare(String(a.initiatedAt||'')));
     const bCol=v=>v<0?'#34d399':'#fb923c';
     const bLbl=v=>v<0?'Co.owes':'You owe';
     const roleName=r=>r==='owner'?'Owner':'Driver';
