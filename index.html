@@ -85,6 +85,16 @@
     </div>
   </header>
 
+  <!-- ── RECUPERACIÓN TEMPORAL — SOLO LECTURA ───────────── -->
+  <div style="background:#FFFBEA;border:2px solid var(--sign);padding:12px;margin-bottom:12px">
+    <div class="row">
+      <button class="main" id="btnRecover" style="background:#946B00">RECOVER OLD DATA</button>
+      <span style="font-size:11px;color:var(--ink2)">Solo lectura. No escribe, no borra, no modifica nada.</span>
+    </div>
+    <p id="lockMsg" style="font-size:11px;color:#946B00;font-weight:600;margin:8px 0 0;line-height:1.5"></p>
+    <div id="recOut" style="margin-top:12px"></div>
+  </div>
+
   <div class="stats" id="stats"></div>
 
   <!-- entrada -->
@@ -201,11 +211,21 @@
 
   /* ── almacenamiento ──────────────────────────────────── */
   var K = { rows: "cm.rows.v1", key: "cm.apikey", model: "cm.model", detail: "cm.detail", sheet: "cm.sheet", borradas: "cm.borradas" };
+  /* MODO RECUPERACIÓN — mientras sea true, la app NO escribe ni borra nada.
+     Protege los datos antiguos de ser sobrescritos. */
+  var RECOVERY_LOCK = true;
+
   var store = {
     get: function (k, def) { try { var v = localStorage.getItem(k); return v === null ? def : JSON.parse(v); }
       catch (e) { return def; } },
-    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
-    del: function (k) { try { localStorage.removeItem(k); } catch (e) {} }
+    set: function (k, v) {
+      if (RECOVERY_LOCK) { console.warn("Bloqueo de recuperación: no se ha guardado nada."); return; }
+      try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
+    },
+    del: function (k) {
+      if (RECOVERY_LOCK) { console.warn("Bloqueo de recuperación: no se ha borrado nada."); return; }
+      try { localStorage.removeItem(k); } catch (e) {}
+    }
   };
 
   var rows = store.get(K.rows, []);
@@ -1319,6 +1339,128 @@
     a.download = "matriculas-" + isoOf() + ".csv";
     a.click();
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  });
+
+  /* ── RECUPERACIÓN (solo lectura) ─────────────────────── */
+  if (RECOVERY_LOCK) {
+    document.getElementById("lockMsg").textContent =
+      "🔒 Escritura bloqueada en toda la app. Añadir o editar se verá en pantalla pero NO se guardará, "
+      + "para que nada pueda sobrescribir los datos antiguos.";
+  }
+
+  function bajar(nombre, texto, tipo){
+    var blob = new Blob([tipo.indexOf("csv") >= 0 ? "﻿" + texto : texto], { type: tipo + ";charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = nombre;
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+  }
+
+  function aCsv(arr){
+    if (!arr || !arr.length) return "";
+    var cols = [];
+    arr.forEach(function(o){
+      if (o && typeof o === "object") Object.keys(o).forEach(function(c){ if (cols.indexOf(c) < 0) cols.push(c); });
+    });
+    if (!cols.length) return "";
+    function esc(v){
+      return '"' + String(v === null || v === undefined ? "" : typeof v === "object" ? JSON.stringify(v) : v).replace(/"/g,'""') + '"';
+    }
+    var filas = arr.map(function(o){ return cols.map(function(c){ return esc(o && typeof o === "object" ? o[c] : o); }).join(","); });
+    return [cols.join(",")].concat(filas).join("\n");
+  }
+
+  var recFound = {};
+
+  on("btnRecover","click",function(){
+    var PRINCIPALES = ["cm.rows.v1", "matriculas:registro:v1"];
+    var log = [];
+    var candidatas = PRINCIPALES.slice();
+
+    /* localStorage sí se puede enumerar: listamos TODAS las claves. */
+    var todas = [];
+    try {
+      for (var i = 0; i < localStorage.length; i++) todas.push(localStorage.key(i));
+      log.push("localStorage → " + todas.length + " clave(s): " + (todas.join(", ") || "ninguna"));
+    } catch (e) {
+      log.push("No se ha podido enumerar localStorage: " + (e.message || e));
+    }
+    todas.forEach(function(k){ if (k && candidatas.indexOf(k) < 0) candidatas.push(k); });
+
+    var html = "";
+    recFound = {};
+
+    candidatas.forEach(function(k){
+      var principal = PRINCIPALES.indexOf(k) >= 0;
+      var raw = null, err = "";
+      try { raw = localStorage.getItem(k); }
+      catch (e) { err = e.message || String(e); }
+
+      var existe = !err && raw !== null && raw !== "";
+      if (!existe && !principal && !err) return;
+
+      var records = null, parsed = null, parseErr = "";
+      if (existe) {
+        try {
+          parsed = JSON.parse(raw);
+          if (Object.prototype.toString.call(parsed) === "[object Array]") records = parsed.length;
+          else if (parsed && typeof parsed === "object") records = Object.keys(parsed).length;
+        } catch (pe) { parseErr = pe.message || String(pe); }
+        recFound[k] = { raw: raw, parsed: parsed };
+      }
+
+      log.push(k + " → " + (err ? "ERROR: " + err : existe
+        ? "FOUND · " + raw.length + " caracteres · " + (parseErr ? "JSON inválido" : (records === null ? "sin contar" : records + " registro(s)"))
+        : "NOT FOUND"));
+
+      var color = err ? "var(--red)" : existe ? "var(--green)" : "var(--ink3)";
+      html += '<div style="background:#fff;border:1px solid var(--line);border-left:5px solid ' + color + ';padding:10px;margin-bottom:8px">'
+        + '<div style="font-family:ui-monospace,monospace;font-size:13px;font-weight:700;word-break:break-all">' + esc(k) + '</div>'
+        + '<div style="font-family:ui-monospace,monospace;font-size:22px;font-weight:800;color:' + color + ';margin:2px 0">'
+        + (err ? "ERROR" : existe ? "FOUND" : "NOT FOUND") + '</div>';
+
+      if (existe) {
+        html += '<div style="font-family:ui-monospace,monospace;font-size:17px;font-weight:700">Records: '
+          + (parseErr ? "—" : (records === null ? "?" : records)) + '</div>'
+          + '<div style="font-size:11.5px;color:var(--ink3);margin-top:2px">Raw length: ' + raw.length + ' caracteres</div>';
+        if (parseErr) html += '<div style="font-size:11.5px;color:var(--red);margin-top:4px">JSON inválido: ' + esc(parseErr)
+          + ' — usa igualmente «Download RAW JSON».</div>';
+        if (parsed && Object.prototype.toString.call(parsed) === "[object Array]" && parsed.length) {
+          html += '<div style="font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-top:8px">'
+            + 'Primeros ' + Math.min(5, parsed.length) + ' de ' + parsed.length + '</div>'
+            + '<pre style="font-size:10px;max-height:190px;margin:4px 0 0">' + esc(JSON.stringify(parsed.slice(0,5), null, 1)) + '</pre>';
+        }
+        html += '<div class="row" style="margin-top:8px">'
+          + '<button class="main" data-raw="' + esc(k) + '">Download RAW JSON</button>'
+          + '<button class="ghost" data-csv="' + esc(k) + '">Download CSV</button></div>'
+          + '<textarea readonly style="width:100%;margin-top:8px;height:80px;font-size:10px">' + esc(raw) + '</textarea>';
+      }
+      if (err) html += '<div style="font-size:11.5px;color:var(--red);margin-top:4px">' + esc(err) + '</div>';
+      html += '</div>';
+    });
+
+    html += '<pre style="font-size:10px;color:var(--ink3);background:#fff;margin:0">' + esc(log.join("\n")) + '</pre>'
+      + '<p style="font-size:10.5px;color:var(--ink3);margin:8px 0 0">Nada se ha guardado ni modificado. '
+      + 'Los datos siguen exactamente como estaban.</p>';
+
+    document.getElementById("recOut").innerHTML = html;
+  });
+
+  document.body.addEventListener("click", function(e){
+    var t = e.target;
+    var kr = t.getAttribute && t.getAttribute("data-raw");
+    var kc = t.getAttribute && t.getAttribute("data-csv");
+    if (kr && recFound[kr]) {
+      bajar("RAW-" + kr.replace(/[^a-zA-Z0-9]/g,"_") + ".json", recFound[kr].raw, "application/json");
+    }
+    if (kc && recFound[kc]) {
+      var p = recFound[kc].parsed;
+      var arr = Object.prototype.toString.call(p) === "[object Array]" ? p : (p ? [p] : []);
+      var csv = aCsv(arr);
+      if (!csv) { alert("Este valor no tiene forma de tabla. Usa «Download RAW JSON»."); return; }
+      bajar("RECUPERADO-" + kc.replace(/[^a-zA-Z0-9]/g,"_") + ".csv", csv, "text/csv");
+    }
   });
 
   on("btnWipe","click",function(){
