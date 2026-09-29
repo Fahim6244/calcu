@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Calcu Data Recovery</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;margin:0;background:#f4f6f8;color:#15202b}
+  .wrap{max-width:900px;margin:auto;padding:20px}
+  .card{background:#fff;border:1px solid #d9e0e6;border-radius:16px;padding:18px;margin:14px 0;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+  h1{font-size:24px;margin:0 0 10px} h2{font-size:18px;margin:0 0 10px}
+  .warn{background:#fff4d8;border-color:#f0c36d}
+  button{border:0;border-radius:12px;padding:13px 16px;font-size:16px;font-weight:700;margin:6px 8px 6px 0}
+  .primary{background:#0b6b45;color:white}.secondary{background:#e9eef3;color:#15202b}
+  pre{white-space:pre-wrap;word-break:break-word;background:#0f1720;color:#e7edf3;padding:14px;border-radius:12px;max-height:420px;overflow:auto}
+  .ok{color:#0b6b45;font-weight:700}.bad{color:#b42318;font-weight:700}.muted{color:#667085}
+  .item{border-top:1px solid #edf0f2;padding:10px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card warn">
+    <h1>Calcu Browser Data Recovery</h1>
+    <p><b>This page does not delete or overwrite anything.</b> Open it in the SAME browser/app and on the SAME device that you used with the old Calcu website.</p>
+    <p class="muted">If your old data was in Firefox, open this page in Firefox. Safari cannot read Firefox's browser storage, and vice versa.</p>
+  </div>
+
+  <div class="card">
+    <button class="primary" onclick="scan()">Scan browser storage</button>
+    <button class="secondary" onclick="downloadBackup()">Download backup JSON</button>
+    <button class="secondary" onclick="copyReport()">Copy report</button>
+    <p id="status" class="muted">Nothing scanned yet.</p>
+  </div>
+
+  <div class="card">
+    <h2>Possible Calcu / matrícula data</h2>
+    <div id="matches">Press “Scan browser storage”.</div>
+  </div>
+
+  <div class="card">
+    <h2>All Local Storage keys</h2>
+    <div id="allkeys">—</div>
+  </div>
+
+  <div class="card">
+    <h2>IndexedDB databases</h2>
+    <div id="idb">—</div>
+  </div>
+
+  <div class="card">
+    <h2>Raw recovery report</h2>
+    <pre id="raw">{}</pre>
+  </div>
+</div>
+
+<script>
+let report = {};
+
+function safeParse(v){
+  try{return JSON.parse(v)}catch(e){return v}
+}
+function looksRelevant(k,v){
+  const s=(k+" "+v).toLowerCase();
+  return /matric|registro|cm\.rows|calcu|plate|vehicle|barcelona|girona|lleida|tarragona/.test(s);
+}
+function esc(s){
+  return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+
+async function scan(){
+  const local = {};
+  const session = {};
+  const matches = [];
+
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      const v=localStorage.getItem(k);
+      local[k]=safeParse(v);
+      if(looksRelevant(k,v)) matches.push({source:"localStorage",key:k,value:safeParse(v)});
+    }
+  }catch(e){ local.__error=String(e); }
+
+  try{
+    for(let i=0;i<sessionStorage.length;i++){
+      const k=sessionStorage.key(i);
+      const v=sessionStorage.getItem(k);
+      session[k]=safeParse(v);
+      if(looksRelevant(k,v)) matches.push({source:"sessionStorage",key:k,value:safeParse(v)});
+    }
+  }catch(e){ session.__error=String(e); }
+
+  let dbs=[];
+  try{
+    if(indexedDB.databases){
+      dbs = await indexedDB.databases();
+    } else {
+      dbs = [{note:"This browser does not expose IndexedDB database names via indexedDB.databases()."}];
+    }
+  }catch(e){ dbs=[{error:String(e)}]; }
+
+  report = {
+    scannedAt: new Date().toISOString(),
+    origin: location.origin,
+    href: location.href,
+    userAgent: navigator.userAgent,
+    localStorage: local,
+    sessionStorage: session,
+    possibleMatches: matches,
+    indexedDB: dbs
+  };
+
+  document.getElementById("status").innerHTML =
+    matches.length
+      ? '<span class="ok">Found '+matches.length+' possible old-data item(s).</span>'
+      : '<span class="bad">No obvious matrícula data found in this browser storage.</span>';
+
+  document.getElementById("matches").innerHTML = matches.length ? matches.map(x =>
+    '<div class="item"><b>'+esc(x.source)+' → <code>'+esc(x.key)+'</code></b><pre>'+esc(JSON.stringify(x.value,null,2))+'</pre></div>'
+  ).join("") : '<p>No obvious matching keys found.</p>';
+
+  const keys = Object.keys(local);
+  document.getElementById("allkeys").innerHTML = keys.length
+    ? keys.map(k=>'<div class="item"><code>'+esc(k)+'</code></div>').join("")
+    : '<p>No localStorage keys found for this site in this browser.</p>';
+
+  document.getElementById("idb").innerHTML = '<pre>'+esc(JSON.stringify(dbs,null,2))+'</pre>';
+  document.getElementById("raw").textContent = JSON.stringify(report,null,2);
+}
+
+function downloadBackup(){
+  if(!report.scannedAt){ alert("Run the scan first."); return; }
+  const blob = new Blob([JSON.stringify(report,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="calcu-recovery-backup-"+new Date().toISOString().replace(/[:.]/g,"-")+".json";
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+async function copyReport(){
+  if(!report.scannedAt){ alert("Run the scan first."); return; }
+  try{
+    await navigator.clipboard.writeText(JSON.stringify(report,null,2));
+    alert("Recovery report copied.");
+  }catch(e){
+    alert("Copy failed. You can select the text from Raw recovery report manually.");
+  }
+}
+</script>
+</body>
+</html>
