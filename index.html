@@ -85,14 +85,20 @@
     </div>
   </header>
 
-  <!-- ── RECUPERACIÓN TEMPORAL — SOLO LECTURA ───────────── -->
-  <div style="background:#FFFBEA;border:2px solid var(--sign);padding:12px;margin-bottom:12px">
-    <div class="row">
-      <button class="main" id="btnRecover" style="background:#946B00">RECOVER OLD DATA</button>
-      <span style="font-size:11px;color:var(--ink2)">Solo lectura. No escribe, no borra, no modifica nada.</span>
+  <a href="./vtc.html" style="display:block;background:var(--green);color:#fff;text-decoration:none;
+     padding:11px 12px;margin-bottom:10px;border-radius:3px;font-size:13.5px;font-weight:600;text-align:center">
+    Verificador VTC urbanas &rarr; <span style="font-weight:400;opacity:.85">busca una matr&iacute;cula al instante</span>
+  </a>
+
+  <!-- estado de la copia de seguridad: siempre visible -->
+  <div id="syncBar" style="background:#fff;border:1px solid var(--line);border-left:5px solid var(--line);padding:8px 10px;margin-bottom:10px">
+    <div id="syncMsg" style="font-size:11.5px;color:var(--ink3);line-height:1.45">Copia de seguridad: comprobando…</div>
+    <div class="row" style="margin-top:6px">
+      <button class="ghost" id="btnSheet">Guardar copia ahora</button>
+      <button class="ghost" id="btnRecover">Ver almacenamiento</button>
+      <button class="ghost" id="btnPull">Restaurar desde la hoja</button>
     </div>
-    <p id="lockMsg" style="font-size:11px;color:#946B00;font-weight:600;margin:8px 0 0;line-height:1.5"></p>
-    <div id="recOut" style="margin-top:12px"></div>
+    <div id="recOut" style="margin-top:10px"></div>
   </div>
 
   <div class="stats" id="stats"></div>
@@ -176,7 +182,6 @@
       <button class="ghost" id="btnPlates">Solo matrículas</button>
       <button class="ghost" id="btnSent" hidden>marcar como enviado</button>
       <button class="ghost" id="btnCsv">CSV</button>
-      <button class="ghost" id="btnSheet">Google Sheets</button>
       <label class="chk"><input type="checkbox" id="detail"> con municipio</label>
     </div>
     <p class="hint" id="sheetMsg" style="margin:6px 0 0"></p>
@@ -210,17 +215,17 @@
   "use strict";
 
   /* ── almacenamiento ──────────────────────────────────── */
-  var K = { rows: "cm.rows.v1", key: "cm.apikey", model: "cm.model", detail: "cm.detail", sheet: "cm.sheet", borradas: "cm.borradas" };
-  /* MODO RECUPERACIÓN — mientras sea true, la app NO escribe ni borra nada.
-     Protege los datos antiguos de ser sobrescritos. */
-  var RECOVERY_LOCK = true;
+  var K = { rows: "cm.rows.v1", key: "cm.apikey", model: "cm.model", detail: "cm.detail", sheet: "cm.sheet", borradas: "cm.borradas", lastSync: "cm.lastsync" };
+  /* MODO RECUPERACIÓN — true bloquea toda escritura. Ya no hace falta. */
+  var RECOVERY_LOCK = false;
 
   var store = {
     get: function (k, def) { try { var v = localStorage.getItem(k); return v === null ? def : JSON.parse(v); }
       catch (e) { return def; } },
     set: function (k, v) {
-      if (RECOVERY_LOCK) { console.warn("Bloqueo de recuperación: no se ha guardado nada."); return; }
-      try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
+      if (RECOVERY_LOCK) { console.warn("Bloqueo de recuperación: no se ha guardado nada."); return false; }
+      try { localStorage.setItem(k, JSON.stringify(v)); return true; }
+      catch (e) { avisarFalloGuardado(e && e.message ? e.message : String(e)); return false; }
     },
     del: function (k) {
       if (RECOVERY_LOCK) { console.warn("Bloqueo de recuperación: no se ha borrado nada."); return; }
@@ -338,7 +343,11 @@
   function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, function(c){
     return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
   function wait(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
-  function save(){ store.set(K.rows, rows); render(); }
+  function save(){
+    store.set(K.rows, rows);
+    render();
+    sincronizar();   /* copia automática a Google Sheets */
+  }
 
   /* ── lectura de capturas ─────────────────────────────── */
   var PROMPT = 'Estás leyendo una captura de pantalla de apps.fomento.gob.es (Registro de Empresas y Actividades de Transporte, España).\n\n'
@@ -1292,30 +1301,75 @@
   });
   on("imgClose","click",function(){ document.getElementById("imgModal").hidden = true; });
 
-  on("btnSheet","click",function(){
-    var msg = document.getElementById("sheetMsg");
-    if (!sheetUrl) { msg.textContent = "Pega primero la URL del Apps Script en «ajustes»."; return; }
-    if (!rows.length) { msg.textContent = "Todavía no hay matrículas."; return; }
-    msg.textContent = "Enviando " + rows.length + " matrículas…";
+  /* ── COPIA AUTOMÁTICA A GOOGLE SHEETS ──────────────────
+     Cada cambio se envía solo. La hoja es la copia de seguridad real:
+     sobrevive aunque Safari borre el almacenamiento del navegador. */
+  function payloadSheets(){
     var GS = grupos();
-    var payload = rows.slice().sort(function(a,b2){
+    return rows.slice().sort(function(a,b2){
       return cmp(a.province, b2.province) || cmpPlate(a.plate, b2.plate);
     }).map(function(r){
-      return { fecha:r.firstIso, provincia:r.province, matricula:r.plate, municipio:r.municipality,
+      return { id:r.id, fecha:r.firstIso, provincia:r.province, matricula:r.plate, municipio:r.municipality,
         autorizacion:r.authorization, validez:r.validUntil,
         estado: r.status === "SIN_TITULO" ? "SIN TITULOS EN VIGOR" : r.status === "VIGOR" ? "EN VIGOR" : "REVISAR",
         fuera: r.province && !isCat(r.province) ? "SI" : "", catalunya: r.province && isCat(r.province) ? "SI" : "",
-        grupo: GS[r.id] ? GS[r.id].letra : "" };
+        grupo: GS[r.id] ? GS[r.id].letra : "",
+        enviado: r.sentAt || "", status_raw: r.status, okey: r.okey || "", grupo_manual: r.grupo || "" };
     });
-    fetch(sheetUrl, {
+  }
+
+  var syncTimer = null, syncing = false;
+
+  function pintarSync(txt, color){
+    var el = document.getElementById("syncMsg");
+    if (el) { el.textContent = txt; el.style.color = color || "var(--ink3)"; }
+  }
+
+  function enviarSheets(silencioso){
+    if (!sheetUrl) {
+      if (!silencioso) pintarSync("⚠️ Sin copia de seguridad: falta la URL de Google Sheets en «ajustes».", "var(--red)");
+      return Promise.resolve(false);
+    }
+    syncing = true;
+    pintarSync("Guardando copia…");
+    return fetch(sheetUrl, {
       method: "POST", mode: "no-cors",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ actualizado: new Date().toISOString(), filas: payload })
+      body: JSON.stringify({ actualizado: new Date().toISOString(), filas: payloadSheets() })
     }).then(function(){
-      msg.textContent = "✓ Enviado a Google Sheets (" + rows.length + " filas) — " + new Date().toLocaleTimeString("es-ES");
+      syncing = false;
+      store.set(K.lastSync, new Date().toISOString());
+      pintarSync("✓ Copia guardada · " + rows.length + " matrículas · " + new Date().toLocaleTimeString("es-ES"), "var(--green)");
+      return true;
     })["catch"](function(e){
-      msg.textContent = "No se ha podido enviar: " + e.message;
+      syncing = false;
+      pintarSync("⚠️ NO se ha podido guardar la copia: " + (e.message || e) + " — vuelve a intentarlo.", "var(--red)");
+      return false;
     });
+  }
+
+  /* Se agrupan los cambios: se envía una sola vez, 2 s después del último. */
+  function sincronizar(){
+    if (syncTimer) clearTimeout(syncTimer);
+    pintarSync("Cambios sin copiar…", "#946B00");
+    syncTimer = setTimeout(function(){ enviarSheets(false); }, 2000);
+  }
+
+  function avisarFalloGuardado(msg){
+    var el = document.getElementById("syncMsg");
+    if (el) {
+      el.textContent = "⚠️ El navegador no ha podido guardar en el teléfono (" + msg + "). La copia en Google Sheets sigue siendo válida.";
+      el.style.color = "var(--red)";
+    }
+  }
+
+  on("btnSheet","click",function(){
+    if (!sheetUrl) {
+      pintarSync("Pega primero la URL del Apps Script en «ajustes».", "var(--red)");
+      return;
+    }
+    if (syncTimer) clearTimeout(syncTimer);
+    enviarSheets(false);
   });
 
   on("btnSent","click",function(){
@@ -1343,9 +1397,8 @@
 
   /* ── RECUPERACIÓN (solo lectura) ─────────────────────── */
   if (RECOVERY_LOCK) {
-    document.getElementById("lockMsg").textContent =
-      "🔒 Escritura bloqueada en toda la app. Añadir o editar se verá en pantalla pero NO se guardará, "
-      + "para que nada pueda sobrescribir los datos antiguos.";
+    var lm = document.getElementById("lockMsg");
+    if (lm) lm.textContent = "🔒 Escritura bloqueada en toda la app.";
   }
 
   function bajar(nombre, texto, tipo){
@@ -1463,6 +1516,59 @@
     }
   });
 
+  /* ── RESTAURAR DESDE LA HOJA ───────────────────────────
+     Si el navegador pierde los datos, se recuperan de Google Sheets. */
+  function urlGet(){
+    return sheetUrl + (sheetUrl.indexOf("?") >= 0 ? "&" : "?") + "format=json&t=" + Date.now();
+  }
+
+  on("btnPull","click",function(){
+    if (!sheetUrl) { pintarSync("Falta la URL de Google Sheets en «ajustes».", "var(--red)"); return; }
+    if (rows.length && !confirm("Esto sustituirá las " + rows.length + " matrículas de este teléfono por las de la hoja. ¿Seguir?")) return;
+    pintarSync("Leyendo la hoja…");
+    fetch(urlGet())
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var filas = (d && d.filas) || (Array.isArray(d) ? d : []);
+        if (!filas.length) { pintarSync("La hoja está vacía; no se ha cambiado nada.", "var(--red)"); return; }
+        rows = filas.map(function(f, i){
+          var st = f.status_raw || (/SIN TITULOS/.test(f.estado || "") ? "SIN_TITULO"
+                    : /EN VIGOR/.test(f.estado || "") ? "VIGOR" : "UNKNOWN");
+          return {
+            id: f.id || (Date.now() + "-r" + i),
+            plate: normPlate(f.matricula), province: normProv(f.provincia),
+            municipality: strip(f.municipio), authorization: strip(f.autorizacion),
+            validUntil: f.validez || "", status: st,
+            okey: f.okey || "", grupo: f.grupo_manual || "",
+            date: today(), firstIso: f.fecha || isoOf(), lastIso: isoOf(),
+            sentAt: f.enviado || null
+          };
+        }).filter(function(r){ return r.plate; });
+        store.set(K.rows, rows);
+        render();
+        pintarSync("✓ Restauradas " + rows.length + " matrículas desde la hoja.", "var(--green)");
+      })["catch"](function(e){
+        pintarSync("No se ha podido leer la hoja: " + (e.message || e)
+          + " — comprueba que el Apps Script está desplegado para «Cualquier usuario».", "var(--red)");
+      });
+  });
+
+  /* Al abrir: si el teléfono está vacío pero hay hoja configurada, avisa. */
+  function comprobarInicio(){
+    if (!sheetUrl) {
+      pintarSync("⚠️ Sin copia de seguridad. Pega la URL de Google Sheets en «ajustes» para que los datos se guarden solos.", "var(--red)");
+      return;
+    }
+    var last = store.get(K.lastSync, "");
+    if (!rows.length) {
+      pintarSync("Este teléfono no tiene matrículas. Pulsa «Restaurar desde la hoja» para recuperarlas.", "#946B00");
+    } else if (last) {
+      pintarSync("✓ " + rows.length + " matrículas · última copia " + new Date(last).toLocaleString("es-ES"), "var(--green)");
+    } else {
+      pintarSync(rows.length + " matrículas · aún sin copia. Se guardará sola al primer cambio.", "#946B00");
+    }
+  }
+
   on("btnWipe","click",function(){
     if (confirm("¿Borrar todas las matrículas guardadas?")) { rows = []; save(); }
   });
@@ -1475,6 +1581,7 @@
   });
 
   render();
+  comprobarInicio();
 })();
 </script>
 </body>
