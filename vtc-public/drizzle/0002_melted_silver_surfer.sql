@@ -1,0 +1,1 @@
+ALTER TABLE `evidence` ADD `operation_id` text DEFAULT '' NOT NULL;

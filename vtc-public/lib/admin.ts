@@ -1,0 +1,2 @@
+import {getChatGPTUser} from '@/app/chatgpt-auth';import {runtime} from './server';import {AppError} from './reports.mjs';import {isOwner} from './admin-auth.mjs';
+export async function requireOwner(){const user=await getChatGPTUser();if(!user)throw new AppError('Inicia sesión para acceder.',401);if(!isOwner(user,runtime().OWNER_EMAIL))throw new AppError('Solo el administrador puede acceder.',403);return user;}

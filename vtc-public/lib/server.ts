@@ -1,0 +1,13 @@
+import {env} from 'cloudflare:workers';
+import {ReportService,AppError,hash} from './reports.mjs';
+import {classifyPlate} from './plates.mjs';
+import snapshot from '@/data/reference.json';
+export const runtime=()=>env as Cloudflare.Env & {OWNER_EMAIL?:string;GOOGLE_SERVICE_ACCOUNT_JSON?:string;GOOGLE_SHEET_ID?:string;PUBLIC_ORIGIN?:string;SYNC_SECRET?:string};
+export function database(){const db=runtime().DB;if(!db)throw new AppError('Servicio temporalmente no disponible.',503);return db;}
+export function service(){return new ReportService(database(),()=>Date.now(),async(plate:string)=>{const override=await database().prepare("SELECT category FROM reports WHERE plate=? AND status='approved' AND publication='published' ORDER BY updated_at DESC LIMIT 1").bind(plate).first<{category:string}>();return classifyPlate(plate,override?{...snapshot,records:{...snapshot.records,[plate]:override}}:snapshot).captureEligible;});}
+export function credential(req:Request){const value=req.headers.get('x-draft-token')??'';if(!/^[a-f0-9]{64}$/.test(value))throw new AppError('Este borrador pertenece a otro dispositivo.',403);return value;}
+export function sameOrigin(req:Request){const origin=req.headers.get('origin');if(origin&&origin!==new URL(req.url).origin)throw new AppError('Origen no permitido.',403);}
+export async function input(req:Request){sameOrigin(req);if(Number(req.headers.get('content-length')??0)>12000)throw new AppError('Solicitud demasiado grande.',413);const raw=await req.text();if(raw.length>12000)throw new AppError('Solicitud demasiado grande.',413);try{return JSON.parse(raw)}catch{throw new AppError('Solicitud no válida.',400)}}
+export function json(value:any,status=200){return Response.json(value,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...(status===429?{'Retry-After':'60'}:{})}});}
+export async function route(fn:()=>Promise<Response>){try{return await fn()}catch(e:any){return json({error:e instanceof AppError?e.message:'No se ha podido completar. Tu borrador se conserva.'},e instanceof AppError?e.status:503)}}
+export async function rate(req:Request,scope:string,max:number){const ip=req.headers.get('cf-connecting-ip')??'unknown';const key=await hash(scope+ip+Math.floor(Date.now()/60000));const db=database();await db.prepare('INSERT INTO limits(id,count,expires) VALUES(?,1,?) ON CONFLICT(id) DO UPDATE SET count=count+1').bind(key,Date.now()+120000).run();const r=await db.prepare('SELECT count FROM limits WHERE id=?').bind(key).first<{count:number}>();if((r?.count??0)>max)throw new AppError('Demasiadas solicitudes. Espera un minuto.',429);await db.prepare('DELETE FROM limits WHERE expires<?').bind(Date.now()).run();}

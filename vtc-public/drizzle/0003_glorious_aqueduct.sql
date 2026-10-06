@@ -1,0 +1,1 @@
+ALTER TABLE `reports` ADD `vehicle` text DEFAULT '' NOT NULL;
