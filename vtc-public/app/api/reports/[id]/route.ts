@@ -1,0 +1,3 @@
+import {route,input,credential,service,json,database} from '@/lib/server';
+export async function GET(req:Request,{params}:{params:Promise<{id:string}>}){return route(async()=>{const {id}=await params;const r=await service().get(id,credential(req));const ev=await database().prepare('SELECT id,kind,mime,size,metadata FROM evidence WHERE report_id=?').bind(id).all();return json({...r,evidence:ev.results});});}
+export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){return route(async()=>{const {id}=await params,b=await input(req);return json(await service().mutate(id,credential(req),b.revision,b));});}

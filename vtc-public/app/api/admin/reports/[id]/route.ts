@@ -1,0 +1,2 @@
+import {requireOwner} from '@/lib/admin';import {route,input,database,json} from '@/lib/server';import {ReviewService} from '@/lib/review.mjs';
+export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){return route(async()=>{const owner=await requireOwner(),{id}=await params,b=await input(req);return json(await new ReviewService(database()).review(id,b.revision,b,owner.userId));});}

@@ -1,0 +1,2 @@
+import {route,json,database} from '@/lib/server';import {normalizePlate} from '@/lib/plates.mjs';
+export async function GET(req:Request){return route(async()=>{const plate=normalizePlate(new URL(req.url).searchParams.get('plate'));const r=await database().prepare('SELECT r.status,r.publication,s.expires,s.blocked FROM reservations s JOIN reports r ON r.id=s.report_id WHERE s.plate=?').bind(plate).first<any>();return json({state:!r?'available':r.blocked?'listed':r.expires>Date.now()?'reserved':'available',published:r?.publication==='published'});});}
